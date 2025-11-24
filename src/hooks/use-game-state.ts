@@ -59,7 +59,10 @@ export function useGameState(initialBoardState: BoardState) {
         if (diceIndex !== -1) {
           // Valid move! Update board state
           setGameState((prev) => {
-            const newPoints = [...prev.boardState.points];
+            const newPoints = prev.boardState.points.map((point) => ({
+              checkers: [...point.checkers],
+              count: point.count,
+            }));
             const fromPoint = newPoints[fromIndex];
             const toPoint = newPoints[toIndex];
 

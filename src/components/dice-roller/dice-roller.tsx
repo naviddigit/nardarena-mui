@@ -221,8 +221,8 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     setIsRolling(true);
 
     // Play dice roll sound
-    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiDYIG2m98OScTgwOUKXi7rdkHA');
-    audio.volume = 0.3;
+    const audio = new Audio('/assets/sounds/dice-roll.mp3');
+    audio.volume = 0.5;
     audio.play().catch(() => {}); // Ignore if audio fails
 
     // Clear previous dice
