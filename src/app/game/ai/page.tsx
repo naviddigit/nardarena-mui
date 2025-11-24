@@ -7,14 +7,13 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import { useSettingsContext } from 'src/components/settings';
+import { useGameState } from 'src/hooks/use-game-state';
+
 import { Iconify } from 'src/components/iconify';
 import { DiceRoller } from 'src/components/dice-roller';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
-import { useGameState } from 'src/hooks/use-game-state';
 
 // ----------------------------------------------------------------------
 
@@ -47,11 +46,10 @@ const createInitialBoardState = (): BoardState => {
 // ----------------------------------------------------------------------
 
 export default function GameAIPage() {
-  const settings = useSettingsContext();
   const [diceResults, setDiceResults] = useState<{ value: number; type: string }[]>([]);
   
   const initialBoardState = createInitialBoardState();
-  const { gameState, handleDiceRoll, handlePointClick, resetGame, validDestinations } = useGameState(initialBoardState);
+  const { gameState, handleDiceRoll, handlePointClick, validDestinations } = useGameState(initialBoardState);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     setDiceResults(results);

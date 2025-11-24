@@ -1,11 +1,11 @@
 'use client';
 
-import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import { useTheme } from '@mui/material/styles';
 
-import { PointTriangle } from './point-triangle';
 import { Checker } from './checker';
+import { PointTriangle } from './point-triangle';
 
 // ----------------------------------------------------------------------
 

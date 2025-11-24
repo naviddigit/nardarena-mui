@@ -75,7 +75,7 @@ export function GameModeCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: (theme) => varAlpha(theme.vars.palette[color].mainChannel, 0.16),
+          bgcolor: (muiTheme) => varAlpha(muiTheme.vars.palette[color].mainChannel, 0.16),
           color: `${color}.main`,
           mb: 2,
         }}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
+
 import * as CANNON from 'cannon-es';
+import * as THREE from 'three';
 
 import Box from '@mui/material/Box';
 
@@ -167,10 +168,10 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     mesh.castShadow = true;
 
     // Add labels (1-6)
-    const createLabel = (text: string, faceIndex: number) => {
+    const createLabel = (text: string, faceIndex: number): THREE.MeshBasicMaterial | null => {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
-      if (!context) return;
+      if (!context) return null;
 
       canvas.width = 64;
       canvas.height = 64;
