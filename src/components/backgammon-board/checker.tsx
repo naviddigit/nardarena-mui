@@ -1,3 +1,5 @@
+'use client';
+
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 
@@ -13,24 +15,21 @@ type CheckerProps = {
 // ----------------------------------------------------------------------
 
 export function Checker({ player, size, top, bottom }: CheckerProps) {
-  const color = player === 'white' ? '#F5F5F5' : '#1A1A1A';
-  const borderColor = player === 'white' ? '#D0D0D0' : '#000000';
-
   return (
     <Box
       sx={{
         width: size,
         height: size,
         borderRadius: '50%',
-        bgcolor: color,
-        border: `2px solid ${borderColor}`,
+        bgcolor: player === 'white' ? '#F5F5F5' : '#1A1A1A',
+        border: player === 'white' ? '2px solid #D0D0D0' : '2px solid #000000',
         position: 'absolute',
         left: '50%',
         transform: 'translateX(-50%)',
         ...(top !== undefined && { top }),
         ...(bottom !== undefined && { bottom }),
         boxShadow: `0 2px 8px ${alpha('#000', 0.3)}`,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth transition for movement
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         transitionProperty: 'top, bottom, left, box-shadow',
         cursor: 'pointer',
         '&:hover': {
