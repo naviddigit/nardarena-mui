@@ -14,6 +14,7 @@ import { useSettingsContext } from 'src/components/settings';
 import { Iconify } from 'src/components/iconify';
 import { DiceRoller } from 'src/components/dice-roller';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
+import { useGameState } from 'src/hooks/use-game-state';
 
 // ----------------------------------------------------------------------
 
@@ -48,14 +49,13 @@ const createInitialBoardState = (): BoardState => {
 export default function GameAIPage() {
   const settings = useSettingsContext();
   const [diceResults, setDiceResults] = useState<{ value: number; type: string }[]>([]);
-  const [boardState] = useState<BoardState>(createInitialBoardState());
+  
+  const initialBoardState = createInitialBoardState();
+  const { gameState, handleDiceRoll, handlePointClick, resetGame } = useGameState(initialBoardState);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     setDiceResults(results);
-  };
-
-  const handlePointClick = (pointIndex: number) => {
-    console.log('Point clicked:', pointIndex);
+    handleDiceRoll(results);
   };
 
   return (
@@ -74,7 +74,8 @@ export default function GameAIPage() {
 
         <IconButton
           onClick={() => {
-            settings.onUpdateField('colorScheme', settings.colorScheme === 'light' ? 'dark' : 'light');
+            const newMode = settings.colorScheme === 'light' ? 'dark' : 'light';
+            settings.onUpdate({ ...settings, colorScheme: newMode });
           }}
           sx={{
             width: 40,
@@ -92,7 +93,11 @@ export default function GameAIPage() {
       <Stack direction="row" spacing={3} alignItems="flex-start">
         {/* Game Board */}
         <Box sx={{ flex: 1 }}>
-          <BackgammonBoard boardState={boardState} onPointClick={handlePointClick} />
+          <BackgammonBoard 
+            boardState={gameState.boardState} 
+            onPointClick={handlePointClick}
+            selectedPoint={gameState.selectedPoint}
+          />
         </Box>
 
         {/* Right Sidebar */}
@@ -143,22 +148,48 @@ export default function GameAIPage() {
                 <Typography variant="body2" color="text.secondary">
                   Current Turn
                 </Typography>
-                <Typography variant="body2" fontWeight={600}>
-                  White
+                <Typography variant="body2" fontWeight={600} sx={{ textTransform: 'capitalize' }}>
+                  {gameState.currentPlayer}
+                </Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between">
+                <Typography variant="body2" color="text.secondary">
+                  Game Phase
+                </Typography>
+                <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
+                  {gameState.gamePhase}
+                </Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between">
+                <Typography variant="body2" color="text.secondary">
+                  Dice Remaining
+                </Typography>
+                <Typography variant="body2">
+                  {gameState.diceValues.length > 0 ? gameState.diceValues.join(', ') : 'None'}
                 </Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="body2" color="text.secondary">
                   White Off
                 </Typography>
-                <Typography variant="body2">{boardState.off.white}/15</Typography>
+                <Typography variant="body2">{gameState.boardState.off.white}/15</Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="body2" color="text.secondary">
                   Black Off
                 </Typography>
-                <Typography variant="body2">{boardState.off.black}/15</Typography>
+                <Typography variant="body2">{gameState.boardState.off.black}/15</Typography>
               </Stack>
+              {gameState.selectedPoint !== null && (
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">
+                    Selected Point
+                  </Typography>
+                  <Typography variant="body2" color="primary.main" fontWeight={600}>
+                    {gameState.selectedPoint}
+                  </Typography>
+                </Stack>
+              )}
             </Stack>
           </Card>
         </Stack>

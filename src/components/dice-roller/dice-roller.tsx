@@ -120,19 +120,19 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     const h = height / 2;
 
     createBarrier(
-      new CANNON.Vec3(0, h * 0.93, 0),
+      new CANNON.Vec3(0, h * 0.99, 0),
       new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2)
     );
     createBarrier(
-      new CANNON.Vec3(0, -h * 0.93, 0),
+      new CANNON.Vec3(0, -h * 0.99, 0),
       new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
     );
     createBarrier(
-      new CANNON.Vec3(w * 0.93, 0, 0),
+      new CANNON.Vec3(w * 0.99, 0, 0),
       new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -Math.PI / 2)
     );
     createBarrier(
-      new CANNON.Vec3(-w * 0.93, 0, 0),
+      new CANNON.Vec3(-w * 0.99, 0, 0),
       new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2)
     );
 
@@ -220,6 +220,11 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
     setIsRolling(true);
 
+    // Play dice roll sound
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiDYIG2m98OScTgwOUKXi7rdkHA');
+    audio.volume = 0.3;
+    audio.play().catch(() => {}); // Ignore if audio fails
+
     // Clear previous dice
     dicesRef.current.forEach((die) => {
       sceneRef.current?.remove(die.mesh);
@@ -235,11 +240,11 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     const w = containerRef.current?.clientWidth || 500;
     const h = containerRef.current?.clientHeight || 300;
 
-    // Create dice with random throw
+    // Create dice with random throw - expanded area
     for (let i = 0; i < numDice; i += 1) {
       const position = new CANNON.Vec3(
-        (Math.random() - 0.5) * w * 0.5,
-        (Math.random() - 0.5) * h * 0.5,
+        (Math.random() - 0.5) * w * 0.8, // Increased from 0.5 to 0.8
+        (Math.random() - 0.5) * h * 0.8, // Increased from 0.5 to 0.8
         300 + i * 50
       );
 

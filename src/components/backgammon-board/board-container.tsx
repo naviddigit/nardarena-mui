@@ -23,6 +23,7 @@ export type BoardState = {
 type BackgammonBoardProps = {
   boardState: BoardState;
   onPointClick?: (pointIndex: number) => void;
+  selectedPoint?: number | null;
 };
 
 // ----------------------------------------------------------------------
@@ -30,7 +31,7 @@ type BackgammonBoardProps = {
 // Standard backgammon board ratio: 1.25:1 (width:height)
 const BOARD_RATIO = 1.25;
 
-export function BackgammonBoard({ boardState, onPointClick }: BackgammonBoardProps) {
+export function BackgammonBoard({ boardState, onPointClick, selectedPoint }: BackgammonBoardProps) {
   const theme = useTheme();
 
   // Calculate board dimensions
@@ -80,6 +81,8 @@ export function BackgammonBoard({ boardState, onPointClick }: BackgammonBoardPro
               height: pointHeight,
               position: 'relative',
               cursor: 'pointer',
+              border: selectedPoint === pointIndex ? `3px solid ${theme.palette.primary.main}` : 'none',
+              borderRadius: selectedPoint === pointIndex ? 1 : 0,
               '&:hover': { opacity: 0.8 },
             }}
           >
@@ -129,6 +132,8 @@ export function BackgammonBoard({ boardState, onPointClick }: BackgammonBoardPro
               height: pointHeight,
               position: 'relative',
               cursor: 'pointer',
+              border: selectedPoint === pointIndex ? `3px solid ${theme.palette.primary.main}` : 'none',
+              borderRadius: selectedPoint === pointIndex ? 1 : 0,
               '&:hover': { opacity: 0.8 },
             }}
           >
@@ -171,6 +176,8 @@ export function BackgammonBoard({ boardState, onPointClick }: BackgammonBoardPro
                 height: pointHeight,
                 position: 'relative',
                 cursor: 'pointer',
+                border: selectedPoint === pointIndex ? `3px solid ${theme.palette.primary.main}` : 'none',
+                borderRadius: selectedPoint === pointIndex ? 1 : 0,
                 '&:hover': { opacity: 0.8 },
               }}
             >
@@ -222,6 +229,8 @@ export function BackgammonBoard({ boardState, onPointClick }: BackgammonBoardPro
                 height: pointHeight,
                 position: 'relative',
                 cursor: 'pointer',
+                border: selectedPoint === pointIndex ? `3px solid ${theme.palette.primary.main}` : 'none',
+                borderRadius: selectedPoint === pointIndex ? 1 : 0,
                 '&:hover': { opacity: 0.8 },
               }}
             >
