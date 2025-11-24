@@ -31,10 +31,10 @@ export function Checker({ player, size, top, bottom }: CheckerProps) {
         ...(bottom !== undefined && { bottom }),
         boxShadow: `0 2px 8px ${alpha('#000', 0.3)}`,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth transition for movement
-        transitionProperty: 'top, bottom, left, transform, box-shadow',
+        transitionProperty: 'top, bottom, left, box-shadow',
+        cursor: 'pointer',
         '&:hover': {
-          transform: 'translateX(-50%) scale(1.05)',
-          boxShadow: `0 4px 12px ${alpha('#000', 0.4)}`,
+          boxShadow: `0 4px 12px ${alpha('#000', 0.5)}`,
         },
       }}
     />

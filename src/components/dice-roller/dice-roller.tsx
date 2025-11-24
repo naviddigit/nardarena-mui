@@ -81,6 +81,7 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     world.gravity.set(0, 0, -9.8 * 800);
     world.broadphase = new CANNON.NaiveBroadphase();
     (world.solver as any).iterations = 16;
+    (world.solver as any).tolerance = 0.1; // Add tolerance to reduce clamping warnings
     worldRef.current = world;
 
     // Materials

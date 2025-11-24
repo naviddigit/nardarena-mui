@@ -75,7 +75,9 @@ export default function GameAIPage() {
         <IconButton
           onClick={() => {
             const newMode = settings.colorScheme === 'light' ? 'dark' : 'light';
-            settings.onUpdateField('colorScheme', newMode);
+            // Force update with localStorage
+            localStorage.setItem('settings', JSON.stringify({ ...settings, colorScheme: newMode }));
+            window.location.reload();
           }}
           sx={{
             width: 40,

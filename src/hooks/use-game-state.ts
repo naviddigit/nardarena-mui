@@ -52,11 +52,21 @@ export function useGameState(initialBoardState: BoardState) {
         const fromIndex = gameState.selectedPoint;
         const toIndex = pointIndex;
 
-        // Simple validation: just check if we have a dice value that matches the distance
-        const distance = Math.abs(toIndex - fromIndex);
-        const diceIndex = gameState.diceValues.indexOf(distance);
+        console.log('Move attempt:', { fromIndex, toIndex, currentPlayer: gameState.currentPlayer, diceValues: gameState.diceValues });
 
-        if (diceIndex !== -1) {
+        // White moves from 0->23, Black moves from 23->0
+        let distance = 0;
+        if (gameState.currentPlayer === 'white') {
+          distance = toIndex - fromIndex; // Positive direction
+        } else {
+          distance = fromIndex - toIndex; // Negative direction (but we need positive)
+        }
+
+        console.log('Calculated distance:', distance);
+        const diceIndex = gameState.diceValues.indexOf(distance);
+        console.log('Dice index found:', diceIndex);
+
+        if (diceIndex !== -1 && distance > 0) {
           // Valid move! Update board state
           setGameState((prev) => {
             const newPoints = prev.boardState.points.map((point) => ({

@@ -13,10 +13,10 @@ type PointTriangleProps = {
 
 export function PointTriangle({ color, direction, width, height }: PointTriangleProps) {
   // Create triangle using CSS clip-path
-  const points =
+  const clipPath =
     direction === 'down'
-      ? '50% 100%, 0 0, 100% 0' // Triangle pointing down
-      : '50% 0, 0 100%, 100% 100%'; // Triangle pointing up
+      ? 'polygon(50% 100%, 0 0, 100% 0)' // Triangle pointing down
+      : 'polygon(50% 0, 0 100%, 100% 100%)'; // Triangle pointing up
 
   return (
     <Box
@@ -24,7 +24,7 @@ export function PointTriangle({ color, direction, width, height }: PointTriangle
         width,
         height,
         bgcolor: color,
-        clipPath: `polygon(${points})`,
+        clipPath,
         position: 'absolute',
         top: 0,
         left: 0,
