@@ -51,7 +51,7 @@ export default function GameAIPage() {
   const [diceResults, setDiceResults] = useState<{ value: number; type: string }[]>([]);
   
   const initialBoardState = createInitialBoardState();
-  const { gameState, handleDiceRoll, handlePointClick, resetGame } = useGameState(initialBoardState);
+  const { gameState, handleDiceRoll, handlePointClick, resetGame, validDestinations } = useGameState(initialBoardState);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     setDiceResults(results);
@@ -72,24 +72,7 @@ export default function GameAIPage() {
 
         <Typography variant="h4">Play vs AI</Typography>
 
-        <IconButton
-          onClick={() => {
-            const newMode = settings.colorScheme === 'light' ? 'dark' : 'light';
-            // Force update with localStorage
-            localStorage.setItem('settings', JSON.stringify({ ...settings, colorScheme: newMode }));
-            window.location.reload();
-          }}
-          sx={{
-            width: 40,
-            height: 40,
-            bgcolor: 'background.neutral',
-          }}
-        >
-          <Iconify
-            icon={settings.colorScheme === 'light' ? 'solar:moon-bold-duotone' : 'solar:sun-bold-duotone'}
-            width={24}
-          />
-        </IconButton>
+        <Box sx={{ width: 40 }} />
       </Stack>
 
       <Stack direction="row" spacing={3} alignItems="flex-start">
@@ -99,6 +82,7 @@ export default function GameAIPage() {
             boardState={gameState.boardState} 
             onPointClick={handlePointClick}
             selectedPoint={gameState.selectedPoint}
+            validDestinations={validDestinations}
           />
         </Box>
 

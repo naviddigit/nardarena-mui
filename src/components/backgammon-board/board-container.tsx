@@ -24,6 +24,7 @@ type BackgammonBoardProps = {
   boardState: BoardState;
   onPointClick?: (pointIndex: number) => void;
   selectedPoint?: number | null;
+  validDestinations?: number[];
 };
 
 // ----------------------------------------------------------------------
@@ -31,7 +32,7 @@ type BackgammonBoardProps = {
 // Standard backgammon board ratio: 1.25:1 (width:height)
 const BOARD_RATIO = 1.25;
 
-export function BackgammonBoard({ boardState, onPointClick, selectedPoint }: BackgammonBoardProps) {
+export function BackgammonBoard({ boardState, onPointClick, selectedPoint, validDestinations = [] }: BackgammonBoardProps) {
   const theme = useTheme();
 
   // Calculate board dimensions
@@ -45,6 +46,9 @@ export function BackgammonBoard({ boardState, onPointClick, selectedPoint }: Bac
   const lightPoint = theme.palette.mode === 'dark' ? theme.palette.grey[600] : theme.palette.grey[300];
   const boardBg = theme.palette.mode === 'dark' ? theme.palette.grey[900] : '#8B4513';
   const barColor = theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#654321';
+
+  // Helper to check if point is a valid destination
+  const isValidDestination = (pointIndex: number) => validDestinations.includes(pointIndex);
 
   // Point indices:
   // Top: 12-23 (right to left)
@@ -72,37 +76,45 @@ export function BackgammonBoard({ boardState, onPointClick, selectedPoint }: Bac
         }}
       >
         {/* Right quadrant: points 18-23 */}
-        {topPoints.slice(0, 6).map((pointIndex, i) => (
-          <Box
-            key={pointIndex}
-            onClick={() => onPointClick?.(pointIndex)}
-            sx={{
-              width: pointWidth,
-              height: pointHeight,
-              position: 'relative',
-              cursor: 'pointer',
-              border: selectedPoint === pointIndex ? `3px solid ${theme.palette.primary.main}` : 'none',
-              borderRadius: selectedPoint === pointIndex ? 1 : 0,
-              '&:hover': { opacity: 0.8 },
-            }}
-          >
-            <PointTriangle
-              color={i % 2 === 0 ? darkPoint : lightPoint}
-              direction="down"
-              width={pointWidth}
-              height={pointHeight}
-            />
-            {/* Render checkers on this point */}
-            {boardState.points[pointIndex]?.checkers.map((player, idx) => (
-              <Checker
-                key={idx}
-                player={player}
-                size={pointWidth * 0.85}
-                top={idx * (pointWidth * 0.75)}
+        {topPoints.slice(0, 6).map((pointIndex, i) => {
+          const isValid = isValidDestination(pointIndex);
+          return (
+            <Box
+              key={pointIndex}
+              onClick={() => onPointClick?.(pointIndex)}
+              sx={{
+                width: pointWidth,
+                height: pointHeight,
+                position: 'relative',
+                cursor: 'pointer',
+                border: selectedPoint === pointIndex 
+                  ? `3px solid ${theme.palette.primary.main}` 
+                  : isValid
+                    ? `3px solid ${theme.palette.success.main}`
+                    : 'none',
+                borderRadius: selectedPoint === pointIndex || isValid ? 1 : 0,
+                bgcolor: isValid ? theme.palette.success.lighter : 'transparent',
+                '&:hover': { opacity: 0.8 },
+              }}
+            >
+              <PointTriangle
+                color={i % 2 === 0 ? darkPoint : lightPoint}
+                direction="down"
+                width={pointWidth}
+                height={pointHeight}
               />
-            ))}
-          </Box>
-        ))}
+              {/* Render checkers on this point */}
+              {boardState.points[pointIndex]?.checkers.map((player, idx) => (
+                <Checker
+                  key={idx}
+                  player={player}
+                  size={pointWidth * 0.85}
+                  top={idx * (pointWidth * 0.75)}
+                />
+              ))}
+            </Box>
+          );
+        })}
 
         {/* Bar area */}
         <Box
@@ -123,36 +135,44 @@ export function BackgammonBoard({ boardState, onPointClick, selectedPoint }: Bac
         </Box>
 
         {/* Left quadrant: points 12-17 */}
-        {topPoints.slice(6, 12).map((pointIndex, i) => (
-          <Box
-            key={pointIndex}
-            onClick={() => onPointClick?.(pointIndex)}
-            sx={{
-              width: pointWidth,
-              height: pointHeight,
-              position: 'relative',
-              cursor: 'pointer',
-              border: selectedPoint === pointIndex ? `3px solid ${theme.palette.primary.main}` : 'none',
-              borderRadius: selectedPoint === pointIndex ? 1 : 0,
-              '&:hover': { opacity: 0.8 },
-            }}
-          >
-            <PointTriangle
-              color={i % 2 === 0 ? darkPoint : lightPoint}
-              direction="down"
-              width={pointWidth}
-              height={pointHeight}
-            />
-            {boardState.points[pointIndex]?.checkers.map((player, idx) => (
-              <Checker
-                key={idx}
-                player={player}
-                size={pointWidth * 0.85}
-                top={idx * (pointWidth * 0.75)}
+        {topPoints.slice(6, 12).map((pointIndex, i) => {
+          const isValid = isValidDestination(pointIndex);
+          return (
+            <Box
+              key={pointIndex}
+              onClick={() => onPointClick?.(pointIndex)}
+              sx={{
+                width: pointWidth,
+                height: pointHeight,
+                position: 'relative',
+                cursor: 'pointer',
+                border: selectedPoint === pointIndex 
+                  ? `3px solid ${theme.palette.primary.main}` 
+                  : isValid
+                    ? `3px solid ${theme.palette.success.main}`
+                    : 'none',
+                borderRadius: selectedPoint === pointIndex || isValid ? 1 : 0,
+                bgcolor: isValid ? theme.palette.success.lighter : 'transparent',
+                '&:hover': { opacity: 0.8 },
+              }}
+            >
+              <PointTriangle
+                color={i % 2 === 0 ? darkPoint : lightPoint}
+                direction="down"
+                width={pointWidth}
+                height={pointHeight}
               />
-            ))}
-          </Box>
-        ))}
+              {boardState.points[pointIndex]?.checkers.map((player, idx) => (
+                <Checker
+                  key={idx}
+                  player={player}
+                  size={pointWidth * 0.85}
+                  top={idx * (pointWidth * 0.75)}
+                />
+              ))}
+            </Box>
+          );
+        })}
       </Box>
 
       {/* Bottom half - Points 0-11 */}
@@ -167,36 +187,44 @@ export function BackgammonBoard({ boardState, onPointClick, selectedPoint }: Bac
         {bottomPoints
           .slice(6, 12)
           .reverse()
-          .map((pointIndex, i) => (
-            <Box
-              key={pointIndex}
-              onClick={() => onPointClick?.(pointIndex)}
-              sx={{
-                width: pointWidth,
-                height: pointHeight,
-                position: 'relative',
-                cursor: 'pointer',
-                border: selectedPoint === pointIndex ? `3px solid ${theme.palette.primary.main}` : 'none',
-                borderRadius: selectedPoint === pointIndex ? 1 : 0,
-                '&:hover': { opacity: 0.8 },
-              }}
-            >
-              <PointTriangle
-                color={i % 2 === 0 ? darkPoint : lightPoint}
-                direction="up"
-                width={pointWidth}
-                height={pointHeight}
-              />
-              {boardState.points[pointIndex]?.checkers.map((player, idx) => (
-                <Checker
-                  key={idx}
-                  player={player}
-                  size={pointWidth * 0.85}
-                  bottom={idx * (pointWidth * 0.75)}
+          .map((pointIndex, i) => {
+            const isValid = isValidDestination(pointIndex);
+            return (
+              <Box
+                key={pointIndex}
+                onClick={() => onPointClick?.(pointIndex)}
+                sx={{
+                  width: pointWidth,
+                  height: pointHeight,
+                  position: 'relative',
+                  cursor: 'pointer',
+                  border: selectedPoint === pointIndex 
+                    ? `3px solid ${theme.palette.primary.main}` 
+                    : isValid
+                      ? `3px solid ${theme.palette.success.main}`
+                      : 'none',
+                  borderRadius: selectedPoint === pointIndex || isValid ? 1 : 0,
+                  bgcolor: isValid ? theme.palette.success.lighter : 'transparent',
+                  '&:hover': { opacity: 0.8 },
+                }}
+              >
+                <PointTriangle
+                  color={i % 2 === 0 ? darkPoint : lightPoint}
+                  direction="up"
+                  width={pointWidth}
+                  height={pointHeight}
                 />
-              ))}
-            </Box>
-          ))}
+                {boardState.points[pointIndex]?.checkers.map((player, idx) => (
+                  <Checker
+                    key={idx}
+                    player={player}
+                    size={pointWidth * 0.85}
+                    bottom={idx * (pointWidth * 0.75)}
+                  />
+                ))}
+              </Box>
+            );
+          })}
 
         {/* Bar area */}
         <Box
@@ -220,36 +248,44 @@ export function BackgammonBoard({ boardState, onPointClick, selectedPoint }: Bac
         {bottomPoints
           .slice(0, 6)
           .reverse()
-          .map((pointIndex, i) => (
-            <Box
-              key={pointIndex}
-              onClick={() => onPointClick?.(pointIndex)}
-              sx={{
-                width: pointWidth,
-                height: pointHeight,
-                position: 'relative',
-                cursor: 'pointer',
-                border: selectedPoint === pointIndex ? `3px solid ${theme.palette.primary.main}` : 'none',
-                borderRadius: selectedPoint === pointIndex ? 1 : 0,
-                '&:hover': { opacity: 0.8 },
-              }}
-            >
-              <PointTriangle
-                color={i % 2 === 0 ? darkPoint : lightPoint}
-                direction="up"
-                width={pointWidth}
-                height={pointHeight}
-              />
-              {boardState.points[pointIndex]?.checkers.map((player, idx) => (
-                <Checker
-                  key={idx}
-                  player={player}
-                  size={pointWidth * 0.85}
-                  bottom={idx * (pointWidth * 0.75)}
+          .map((pointIndex, i) => {
+            const isValid = isValidDestination(pointIndex);
+            return (
+              <Box
+                key={pointIndex}
+                onClick={() => onPointClick?.(pointIndex)}
+                sx={{
+                  width: pointWidth,
+                  height: pointHeight,
+                  position: 'relative',
+                  cursor: 'pointer',
+                  border: selectedPoint === pointIndex 
+                    ? `3px solid ${theme.palette.primary.main}` 
+                    : isValid
+                      ? `3px solid ${theme.palette.success.main}`
+                      : 'none',
+                  borderRadius: selectedPoint === pointIndex || isValid ? 1 : 0,
+                  bgcolor: isValid ? theme.palette.success.lighter : 'transparent',
+                  '&:hover': { opacity: 0.8 },
+                }}
+              >
+                <PointTriangle
+                  color={i % 2 === 0 ? darkPoint : lightPoint}
+                  direction="up"
+                  width={pointWidth}
+                  height={pointHeight}
                 />
-              ))}
-            </Box>
-          ))}
+                {boardState.points[pointIndex]?.checkers.map((player, idx) => (
+                  <Checker
+                    key={idx}
+                    player={player}
+                    size={pointWidth * 0.85}
+                    bottom={idx * (pointWidth * 0.75)}
+                  />
+                ))}
+              </Box>
+            );
+          })}
       </Box>
 
       {/* Off areas (borne off checkers) */}
