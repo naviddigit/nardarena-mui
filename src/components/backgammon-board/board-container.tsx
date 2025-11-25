@@ -51,6 +51,7 @@ const SCALE_CONFIG = {
 export function BackgammonBoard({
   boardState,
   onPointClick,
+  onBarClick,
   selectedPoint,
   validDestinations = [],
   diceRoller,
@@ -206,6 +207,7 @@ export function BackgammonBoard({
         {topPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
 
         <Box
+          onClick={() => boardState.bar.white > 0 && onBarClick?.()}
           sx={{
             width: pointWidth * SCALE_CONFIG.barWidth,
             height: pointHeight,
@@ -217,6 +219,10 @@ export function BackgammonBoard({
             borderRadius: 2,
             py: 1,
             mx: '8px',
+            cursor: boardState.bar.white > 0 ? 'pointer' : 'default',
+            border: selectedPoint === -1 && boardState.bar.white > 0 ? '3px solid' : 'none',
+            borderColor: theme.vars.palette.primary.main,
+            '&:hover': boardState.bar.white > 0 ? { opacity: 0.8 } : {},
           }}
         >
           {Array.from({ length: boardState.bar.white }).map((_, idx) => {
@@ -244,6 +250,7 @@ export function BackgammonBoard({
         {bottomPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, false))}
 
         <Box
+          onClick={() => boardState.bar.black > 0 && onBarClick?.()}
           sx={{
             width: pointWidth * SCALE_CONFIG.barWidth,
             height: pointHeight,
@@ -255,6 +262,10 @@ export function BackgammonBoard({
             borderRadius: 2,
             py: 1,
             mx: '8px',
+            cursor: boardState.bar.black > 0 ? 'pointer' : 'default',
+            border: selectedPoint === -1 && boardState.bar.black > 0 ? '3px solid' : 'none',
+            borderColor: theme.vars.palette.primary.main,
+            '&:hover': boardState.bar.black > 0 ? { opacity: 0.8 } : {},
           }}
         >
           {Array.from({ length: boardState.bar.black }).map((_, idx) => {

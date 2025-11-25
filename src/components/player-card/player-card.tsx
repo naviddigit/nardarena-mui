@@ -26,6 +26,8 @@ type PlayerCardProps = {
   canUndo?: boolean;
   timeRemaining?: number;
   checkerColor?: 'white' | 'black';
+  isWinner?: boolean;
+  isLoser?: boolean;
 };
 
 export function PlayerCard({ 
@@ -41,6 +43,8 @@ export function PlayerCard({
   canUndo = false,
   timeRemaining = 60,
   checkerColor = 'white',
+  isWinner = false,
+  isLoser = false,
 }: PlayerCardProps) {
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
@@ -51,15 +55,60 @@ export function PlayerCard({
       sx={{ 
         display: 'flex', 
         alignItems: 'center', 
-        p: (theme) => theme.spacing(3, 2, 3, 3),
-        border: (theme) => isActive ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
+        p: (theme) => theme.spacing(1.5, 1.5, 1.5, 1.5),
+        border: (theme) => {
+          if (isLoser) return `3px solid ${theme.palette.error.main}`;
+          if (isActive) return `2px solid ${theme.palette.primary.main}`;
+          return '2px solid transparent';
+        },
         transition: 'all 0.3s ease-in-out',
         boxShadow: (theme) => isActive ? theme.shadows[8] : theme.shadows[2],
       }}
     >
-      <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48, mr: 2 }} />
+      <Box sx={{ position: 'relative', mr: 2 }}>
+        <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48 }} />
+        {isWinner && (
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: -4,
+              right: -4,
+              bgcolor: 'warning.main',
+              borderRadius: '50%',
+              width: 24,
+              height: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: 2,
+            }}
+          >
+            <Iconify icon="solar:cup-star-bold" width={16} sx={{ color: 'common.white' }} />
+          </Box>
+        )}
+        {isLoser && (
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: -4,
+              right: -4,
+              bgcolor: 'error.main',
+              borderRadius: '50%',
+              width: 24,
+              height: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: 2,
+            }}
+          >
+            <Iconify icon="solar:close-circle-bold" width={16} sx={{ color: 'common.white' }} />
+          </Box>
+        )}
+      </Box>
 
       <ListItemText
+        sx={{ flex: 1 }}
         primary={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {name}
@@ -97,8 +146,8 @@ export function PlayerCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          minWidth: 60,
-          mr: 1.5,
+          minWidth: 50,
+          mr: 1,
         }}
       >
         <Typography
@@ -114,7 +163,7 @@ export function PlayerCard({
       </Box>
 
       {/* Action Buttons - Show only relevant button based on game state */}
-      <Stack direction="column" spacing={1} sx={{ flexShrink: 0 }}>
+      <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
         {/* Roll Button - Only show when player can roll */}
         {canRoll && (
           <Button
@@ -122,7 +171,7 @@ export function PlayerCard({
             variant="contained"
             color="primary"
             onClick={onRollDice}
-            sx={{ minWidth: 80 }}
+            sx={{ minWidth: 70, px: 1 }}
           >
             Roll
           </Button>
@@ -135,9 +184,7 @@ export function PlayerCard({
             color="default"
             onClick={onUndo}
             sx={{
-              bgcolor: (theme) => theme.palette.background.neutral,
-              '&:hover': { bgcolor: (theme) => theme.palette.action.hover },
-              width: 80,
+              width: 36,
               height: 36,
             }}
           >
@@ -152,7 +199,7 @@ export function PlayerCard({
             variant="outlined"
             color="success"
             onClick={onDone}
-            sx={{ minWidth: 80 }}
+            sx={{ minWidth: 70, px: 1 }}
           >
             Done
           </Button>

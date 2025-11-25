@@ -57,21 +57,23 @@ export default function GameAIPage() {
   const diceRollerRef = useRef<any>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
+  const [winner, setWinner] = useState<'white' | 'black' | null>(null);
   
   const initialBoardState = createInitialBoardState();
   const { 
     gameState, 
     handleDiceRoll, 
-    handlePointClick, 
+    handlePointClick,
+    handleBarClick,
     handleUndo, 
     handleEndTurn, 
     validDestinations 
   } = useGameState(initialBoardState);
 
-  // Timer for White player (60 seconds)
-  const whiteTimer = useCountdownSeconds(60);
-  // Timer for Black player (60 seconds)
-  const blackTimer = useCountdownSeconds(60);
+  // Timer for White player (120 seconds = 2 minutes)
+  const whiteTimer = useCountdownSeconds(120);
+  // Timer for Black player (120 seconds = 2 minutes)
+  const blackTimer = useCountdownSeconds(120);
 
   // Start/stop timers based on current player
   useEffect(() => {
@@ -81,11 +83,11 @@ export default function GameAIPage() {
     }
 
     if (gameState.currentPlayer === 'white' && gameState.gamePhase !== 'waiting') {
-      if (!whiteTimer.counting && whiteTimer.countdown === 60) {
+      if (!whiteTimer.counting && whiteTimer.countdown === 120) {
         whiteTimer.startCountdown();
       }
     } else if (gameState.currentPlayer === 'black' && gameState.gamePhase !== 'waiting') {
-      if (!blackTimer.counting && blackTimer.countdown === 60) {
+      if (!blackTimer.counting && blackTimer.countdown === 120) {
         blackTimer.startCountdown();
       }
     }
@@ -95,12 +97,25 @@ export default function GameAIPage() {
   useEffect(() => {
     if (gameState.gamePhase === 'waiting') {
       if (gameState.currentPlayer === 'white') {
-        whiteTimer.setCountdown(60);
+        whiteTimer.setCountdown(120);
       } else {
-        blackTimer.setCountdown(60);
+        blackTimer.setCountdown(120);
       }
     }
   }, [gameState.gamePhase, gameState.currentPlayer, whiteTimer, blackTimer]);
+
+  // Check for time-out loss
+  useEffect(() => {
+    if (whiteTimer.countdown === 0 && !winner) {
+      setWinner('black');
+      whiteTimer.stopCountdown();
+      blackTimer.stopCountdown();
+    } else if (blackTimer.countdown === 0 && !winner) {
+      setWinner('white');
+      whiteTimer.stopCountdown();
+      blackTimer.stopCountdown();
+    }
+  }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer]);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     handleDiceRoll(results);
@@ -173,6 +188,8 @@ export default function GameAIPage() {
           onUndo={handleUndo}
           canUndo={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           timeRemaining={blackTimer.countdown}
+          isWinner={winner === 'black'}
+          isLoser={winner === 'white'}
         />
       </Box>
 
@@ -181,6 +198,7 @@ export default function GameAIPage() {
         <BackgammonBoard 
           boardState={gameState.boardState} 
           onPointClick={handlePointClick}
+          onBarClick={handleBarClick}
           selectedPoint={gameState.selectedPoint}
           validDestinations={validDestinations}
           isRolling={isRolling}
@@ -191,7 +209,7 @@ export default function GameAIPage() {
               onRollComplete={handleDiceRollComplete}
             />
           }
-          dicePosition={{ top: '20%', left: '0%' }}
+          dicePosition={{ top: 20, left: 0 }}
         />
       </Box>
 
@@ -216,6 +234,8 @@ export default function GameAIPage() {
           onUndo={handleUndo}
           canUndo={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           timeRemaining={whiteTimer.countdown}
+          isWinner={winner === 'white'}
+          isLoser={winner === 'black'}
         />
       </Box>
 

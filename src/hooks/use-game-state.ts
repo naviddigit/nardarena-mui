@@ -225,6 +225,23 @@ export function useGameState(initialBoardState: BoardState) {
       .map((m) => m.to);
   }, [gameState.selectedPoint, gameState.validMoves]);
 
+  const handleBarClick = useCallback(() => {
+    console.log('handleBarClick called');
+    if (gameState.gamePhase !== 'moving') return;
+    
+    // Check if current player has checkers on bar
+    if (gameState.boardState.bar[gameState.currentPlayer] > 0) {
+      // Check if there are valid moves from bar
+      const hasValidMove = gameState.validMoves.some((m) => m.from === -1);
+      if (hasValidMove) {
+        setGameState((prev) => ({
+          ...prev,
+          selectedPoint: -1, // -1 represents bar
+        }));
+      }
+    }
+  }, [gameState]);
+
   const handlePointClick = useCallback(
     (pointIndex: number) => {
       console.log('handlePointClick called:', { 
@@ -283,26 +300,46 @@ export function useGameState(initialBoardState: BoardState) {
               count: point.count,
             }));
 
-            const fromPoint = newPoints[fromIndex];
-            const toPoint = newPoints[toIndex];
-            
             let newBar = { ...prev.boardState.bar };
-
-            // Handle hitting opponent checker
-            if (toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer) {
-              const hitColor = toPoint.checkers[0];
-              historyEntry.hitChecker = hitColor;
-              toPoint.checkers = [];
-              toPoint.count = 0;
-              newBar = { ...newBar, [hitColor]: newBar[hitColor] + 1 };
-            }
-
-            // Move checker
-            const checker = fromPoint.checkers.pop();
-            if (checker) {
-              fromPoint.count -= 1;
-              toPoint.checkers.push(checker);
+            
+            // Handle move from bar
+            if (fromIndex === -1) {
+              const toPoint = newPoints[toIndex];
+              
+              // Handle hitting opponent checker
+              if (toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer) {
+                const hitColor = toPoint.checkers[0];
+                historyEntry.hitChecker = hitColor;
+                toPoint.checkers = [];
+                toPoint.count = 0;
+                newBar = { ...newBar, [hitColor]: newBar[hitColor] + 1 };
+              }
+              
+              // Move checker from bar to point
+              newBar = { ...newBar, [prev.currentPlayer]: newBar[prev.currentPlayer] - 1 };
+              toPoint.checkers.push(prev.currentPlayer);
               toPoint.count += 1;
+            } else {
+              // Handle normal move from point to point
+              const fromPoint = newPoints[fromIndex];
+              const toPoint = newPoints[toIndex];
+
+              // Handle hitting opponent checker
+              if (toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer) {
+                const hitColor = toPoint.checkers[0];
+                historyEntry.hitChecker = hitColor;
+                toPoint.checkers = [];
+                toPoint.count = 0;
+                newBar = { ...newBar, [hitColor]: newBar[hitColor] + 1 };
+              }
+
+              // Move checker
+              const checker = fromPoint.checkers.pop();
+              if (checker) {
+                fromPoint.count -= 1;
+                toPoint.checkers.push(checker);
+                toPoint.count += 1;
+              }
             }
 
             // Remove used dice value
@@ -401,6 +438,7 @@ export function useGameState(initialBoardState: BoardState) {
     gameState,
     handleDiceRoll,
     handlePointClick,
+    handleBarClick,
     handleUndo,
     handleEndTurn,
     resetGame,

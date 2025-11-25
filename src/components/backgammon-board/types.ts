@@ -16,9 +16,10 @@ export type BoardState = {
 export type BackgammonBoardProps = {
   boardState: BoardState;
   onPointClick?: (pointIndex: number) => void;
+  onBarClick?: () => void;
   selectedPoint?: number | null;
   validDestinations?: number[];
   diceRoller?: React.ReactNode;
-  dicePosition?: { top?: string | number; bottom?: string | number; left?: string | number; right?: string | number };
+  dicePosition?: { top?: number; bottom?: number; left?: number; right?: number };
   isRolling?: boolean;
 };
