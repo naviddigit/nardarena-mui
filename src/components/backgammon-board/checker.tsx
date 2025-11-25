@@ -16,21 +16,19 @@ type CheckerProps = BoxProps & {
   player: Player;
   size: number;
   yPosition: number;
-  layoutId: string;
   isSelected?: boolean;
   onCheckerClick?: () => void;
 };
 
 // ----------------------------------------------------------------------
 
-export function Checker({ player, size, x, y, isSelected, onCheckerClick, sx, ...other }: CheckerProps & { x?: number, y?: number }) {
+export function Checker({ player, size, yPosition, isSelected, onCheckerClick, sx, ...other }: CheckerProps) {
   return (
     <Box
       component={m.div}
       initial={false}
       animate={{ 
-        x, 
-        y,
+        y: yPosition,
         opacity: 1, 
         scale: 1 
       }}
@@ -50,8 +48,7 @@ export function Checker({ player, size, x, y, isSelected, onCheckerClick, sx, ..
         borderRadius: '50%',
         position: 'absolute',
         top: 0,
-        left: 0,
-        zIndex: 10,
+        left: `calc(50% - ${size / 2}px)`,
         cursor: 'pointer',
         // White checkers
         ...(player === 'white' && {

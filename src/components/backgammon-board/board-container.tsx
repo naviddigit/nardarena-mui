@@ -230,8 +230,6 @@ export function BackgammonBoard({
   const boardHeight = isSmallMobile ? 450 : isMobile ? 500 : 600;
   const boardWidth = boardHeight * BOARD_RATIO;
   const padding = isSmallMobile ? 8 : isMobile ? 12 : 16;
-  const cardPaddingX = 6; // px
-  const barMarginX = 8; // px
   
   // استفاده از SCALE_CONFIG برای محاسبه سایزها
   const basePointWidth = (boardWidth - padding * 2) / 16;
@@ -240,78 +238,6 @@ export function BackgammonBoard({
   const pointHeight = (boardHeight - padding * 2 - 20) / 2;
   const triangleHeight = pointHeight - (pointHeight * 0.2); // ارتفاع مثلث‌ها نسبت به ارتفاع جایگاه‌ها
   
-  // Calculate absolute positions for checkers
-  const getCheckerPosition = (pointIndex: number | 'bar-white' | 'bar-black' | 'off-white' | 'off-black', stackIndex: number) => {
-    const stackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
-    const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
-    const checkerSize = pointWidth * checkerScale;
-    const barWidthPx = pointWidth * SCALE_CONFIG.barWidth;
-
-    let x = 0;
-    let y = 0;
-
-    // Helper to get X for a point index (0-11 bottom, 12-23 top)
-    const getPointX = (idx: number) => {
-      // Normalize index to 0-11 (left to right visually)
-      // Top: 12->0, 13->1 ... 17->5 | Bar | 18->6 ... 23->11
-      // Bottom: 11->0 ... 6->5 | Bar | 5->6 ... 0->11
-      
-      let visualIndex = 0;
-      let isLeftGroup = false;
-
-      if (idx >= 12) { // Top row
-        // 12 is leftmost (visual 0)
-        visualIndex = idx - 12;
-      } else { // Bottom row
-        // 11 is leftmost (visual 0)
-        visualIndex = 11 - idx;
-      }
-
-      isLeftGroup = visualIndex < 6;
-
-      if (isLeftGroup) {
-        return cardPaddingX + (visualIndex * pointWidth);
-      } else {
-        return cardPaddingX + (6 * pointWidth) + (barMarginX * 2) + barWidthPx + ((visualIndex - 6) * pointWidth);
-      }
-    };
-
-    if (typeof pointIndex === 'number') {
-      const isTop = pointIndex >= 12;
-      x = getPointX(pointIndex) + (pointWidth - checkerSize) / 2;
-      
-      const stackOffset = stackIndex * (pointWidth * stackSpacing);
-      const maxStack = Math.min(stackOffset, pointHeight - checkerSize);
-      
-      if (isTop) {
-        y = maxStack;
-      } else {
-        y = (pointHeight * 2) - maxStack - checkerSize;
-      }
-    } else if (pointIndex === 'bar-white' || pointIndex === 'bar-black') {
-      // Bar position
-      x = cardPaddingX + (6 * pointWidth) + barMarginX + (barWidthPx - checkerSize) / 2;
-      const barStackSpacing = pointWidth * stackSpacing;
-      
-      if (pointIndex === 'bar-white') {
-        // White bar (top)
-        y = pointHeight / 2 - (stackIndex * barStackSpacing) - checkerSize;
-        // Center vertically in top half roughly? No, usually from middle out or top down
-        // Let's stack from center-line outwards
-        y = pointHeight - (pointHeight * 0.1) - (stackIndex * barStackSpacing) - checkerSize;
-      } else {
-        // Black bar (bottom)
-        y = pointHeight + (pointHeight * 0.1) + (stackIndex * barStackSpacing);
-      }
-    } else {
-      // Off position
-      x = boardWidth - 40; // Approximate
-      y = pointHeight;
-    }
-
-    return { x, y };
-  };
-
   // Theme-based colors (no hardcoded values)
   const darkPoint = theme.vars.palette.grey[700];
   const lightPoint = theme.vars.palette.grey[500];
@@ -372,7 +298,34 @@ export function BackgammonBoard({
         )}
 
         {/* Render checkers - max 5 visible with count label if more */}
-        {/* Checkers are now rendered absolutely in a separate layer */}
+        {boardState.points[pointIndex]?.checkers.slice(0, 5).map((player, idx) => {
+          // Use stable ID from our calculated map
+          const checkerId = checkerIds.points[pointIndex][idx] || `${player}-p${pointIndex}-s${idx}`;
+          
+          // استفاده از SCALE_CONFIG
+          const stackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+          const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
+          
+          const stackPosition = idx * (pointWidth * stackSpacing);
+          const checkerSize = pointWidth * checkerScale;
+          // Ensure checkers don't overflow
+          const maxStack = Math.min(stackPosition, pointHeight - checkerSize);
+          const absolutePosition = isTop ? maxStack : pointHeight - maxStack - checkerSize;
+          const isCheckerSelected = selectedPoint === pointIndex && idx === boardState.points[pointIndex].count - 1;
+          
+          return (
+            <Checker
+              key={checkerId}
+              player={player}
+              size={checkerSize}
+              yPosition={absolutePosition}
+              isSelected={isCheckerSelected}
+              onCheckerClick={() => {
+                onPointClick?.(pointIndex);
+              }}
+            />
+          );
+        })}
         
         {/* Show count label if more than 5 checkers */}
         {boardState.points[pointIndex]?.count > 5 && (
@@ -411,43 +364,18 @@ export function BackgammonBoard({
     const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
     const checkerSize = pointWidth * checkerScale;
 
-    // Points
-    for (let i = 0; i < 24; i++) {
-      const point = boardState.points[i];
-      // Only render up to 5 checkers visually per stack (plus count label handled in renderPoint)
-      const renderCount = Math.min(point.count, 5);
-      
-      for (let j = 0; j < renderCount; j++) {
-        const player = point.checkers[j];
-        const checkerId = checkerIds.points[i][j] || `${player}-p${i}-s${j}`;
-        const { x, y } = getCheckerPosition(i, j);
-        const isCheckerSelected = selectedPoint === i && j === point.count - 1;
-
-        checkers.push(
-          <Checker
-            key={checkerId}
-            player={player}
-            size={checkerSize}
-            x={x}
-            y={y}
-            isSelected={isCheckerSelected}
-            onCheckerClick={() => onPointClick?.(i)}
-          />
-        );
-      }
-    }
-
     // Bar White
     for (let i = 0; i < boardState.bar.white; i++) {
       const checkerId = checkerIds.bar.white[i] || `white-bar-${i}`;
-      const { x, y } = getCheckerPosition('bar-white', i);
+      const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+      const yPos = i * (pointWidth * barStackSpacing);
+      
       checkers.push(
         <Checker
           key={checkerId}
           player="white"
           size={checkerSize}
-          x={x}
-          y={y}
+          yPosition={yPos}
           onCheckerClick={() => onBarClick?.()}
         />
       );
@@ -456,14 +384,15 @@ export function BackgammonBoard({
     // Bar Black
     for (let i = 0; i < boardState.bar.black; i++) {
       const checkerId = checkerIds.bar.black[i] || `black-bar-${i}`;
-      const { x, y } = getCheckerPosition('bar-black', i);
+      const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+      const yPos = i * (pointWidth * barStackSpacing);
+      
       checkers.push(
         <Checker
           key={checkerId}
           player="black"
           size={checkerSize}
-          x={x}
-          y={y}
+          yPosition={yPos}
           onCheckerClick={() => onBarClick?.()}
         />
       );
@@ -479,8 +408,6 @@ export function BackgammonBoard({
   return (
     <Card
       sx={{
-        width: boardWidth,
-        height: boardHeight,
         bgcolor: boardBg,
         position: 'relative',
         boxSizing: 'border-box',
@@ -507,14 +434,6 @@ export function BackgammonBoard({
         },
       }}
     >
-      {/* Checker Layer - Absolute positioned on top */}
-      <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10, pointerEvents: 'none' }}>
-        {/* Enable pointer events only for checkers */}
-        <Box sx={{ pointerEvents: 'auto' }}>
-          {renderCheckers()}
-        </Box>
-      </Box>
-
       {/* Top half */}
       <Box sx={{ display: 'flex', height: pointHeight }}>
         {topPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
@@ -538,7 +457,7 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.white > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          {/* Bar checkers are now rendered in renderCheckers */}
+          {renderCheckers().filter(c => c.key?.toString().includes('white-bar'))}
         </Box>
 
         {topPoints.slice(6, 12).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
@@ -568,7 +487,7 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.black > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          {/* Bar checkers are now rendered in renderCheckers */}
+          {renderCheckers().filter(c => c.key?.toString().includes('black-bar'))}
         </Box>
 
         {/* Right side: points 5→0 */}
