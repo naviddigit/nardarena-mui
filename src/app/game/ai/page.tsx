@@ -76,15 +76,12 @@ export default function GameAIPage() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
-  const [colorDialogOpen, setColorDialogOpen] = useState(false);
+  const [colorDialogOpen, setColorDialogOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
   const maxSets = 5;
 
   // Load player color from localStorage on mount
   useEffect(() => {
-    // Always clear localStorage to ask for color every time
-    localStorage.removeItem('playerColor');
-    setColorDialogOpen(true);
     setMounted(true);
   }, []);
   
