@@ -46,10 +46,6 @@ export function PlayerCard({
   const seconds = timeRemaining % 60;
   const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
   
-  // Determine border position based on checker color
-  const borderPosition = checkerColor === 'white' ? 'Bottom' : 'Top';
-  const borderColor = checkerColor === 'white' ? '#FFFFFF' : '#212B36';
-  
   return (
     <Card 
       sx={{ 
@@ -57,7 +53,6 @@ export function PlayerCard({
         alignItems: 'center', 
         p: (theme) => theme.spacing(3, 2, 3, 3),
         border: (theme) => isActive ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
-        [`border${borderPosition}`]: `4px solid ${borderColor}`,
         transition: 'all 0.3s ease-in-out',
         boxShadow: (theme) => isActive ? theme.shadows[8] : theme.shadows[2],
       }}
@@ -65,7 +60,22 @@ export function PlayerCard({
       <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48, mr: 2 }} />
 
       <ListItemText
-        primary={name}
+        primary={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {name}
+            <Box
+              sx={{
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                bgcolor: checkerColor === 'white' ? 'common.white' : 'grey.900',
+                border: (theme) => `2px solid ${theme.palette.divider}`,
+                boxShadow: 1,
+                flexShrink: 0,
+              }}
+            />
+          </Box>
+        }
         secondary={
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
             <Iconify icon="mingcute:location-fill" width={16} sx={{ flexShrink: 0, mr: 0.5 }} />
