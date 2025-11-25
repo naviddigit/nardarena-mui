@@ -64,12 +64,12 @@ export default function GameAIPage() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const maxSets = 5;
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setMounted(true);
+      setShowDialog(true);
     }, 800);
     return () => clearTimeout(timer);
   }, []);
@@ -176,7 +176,7 @@ export default function GameAIPage() {
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
-  if (!mounted) {
+  if (!showDialog) {
     return <SplashScreen portal={false} />;
   }
 
