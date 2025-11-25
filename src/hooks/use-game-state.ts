@@ -182,16 +182,15 @@ export function useGameState(initialBoardState: BoardState) {
           };
         }
         
+        // Winner starts - go to waiting phase so they can roll 2d6
         const starter: Player = newOpeningRoll.white! > newOpeningRoll.black! ? 'white' : 'black';
-        const diceValues = [newOpeningRoll.white!, newOpeningRoll.black!];
-        const validMoves = calculateValidMoves(prev.boardState, starter, diceValues);
         
         return {
           ...prev,
           currentPlayer: starter,
-          diceValues,
-          gamePhase: 'moving',
-          validMoves,
+          diceValues: [],
+          gamePhase: 'waiting',
+          validMoves: [],
           openingRoll: newOpeningRoll,
           moveHistory: [],
         };

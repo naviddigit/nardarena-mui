@@ -145,9 +145,15 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
   };
 
-  // Expose rollDice method via ref
+  // Expose rollDice and clearDice methods via ref
   useImperativeHandle(ref, () => ({
     rollDice,
+    clearDice: () => {
+      if (boxRef.current && boxRef.current.clear) {
+        console.log('🎲 Clearing dice...');
+        boxRef.current.clear();
+      }
+    },
   }));
 
   return (

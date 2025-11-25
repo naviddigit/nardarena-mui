@@ -69,18 +69,20 @@ export default function GameAIPage() {
   };
 
   const triggerDiceRoll = () => {
-    if (diceRollerRef.current && diceRollerRef.current.rollDice) {
-      setIsRolling(true);
-      diceRollerRef.current.rollDice();
+    if (diceRollerRef.current) {
+      // Clear previous dice before new roll
+      if (diceRollerRef.current.clearDice) {
+        diceRollerRef.current.clearDice();
+      }
+      if (diceRollerRef.current.rollDice) {
+        setIsRolling(true);
+        diceRollerRef.current.rollDice();
+      }
     }
   };
 
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
-  
-  const showDiceRoller = 
-    gameState.gamePhase === 'opening' || 
-    (gameState.gamePhase === 'waiting' && gameState.diceValues.length === 0);
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -102,7 +104,10 @@ export default function GameAIPage() {
           name="AI Opponent"
           country="Computer"
           avatarUrl={_mock.image.avatar(1)}
-          isActive={gameState.currentPlayer === 'black'}
+          isActive={
+            (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) ||
+            (gameState.currentPlayer === 'black' && gameState.gamePhase !== 'opening')
+          }
           canRoll={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) ||
             (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting')
@@ -120,17 +125,42 @@ export default function GameAIPage() {
           validDestinations={validDestinations}
           isRolling={isRolling}
           diceRoller={
-            showDiceRoller ? (
-              <DiceRoller
-                ref={diceRollerRef}
-                diceNotation={diceNotation}
-                onRollComplete={handleDiceRollComplete}
-              />
-            ) : null
+            <DiceRoller
+              ref={diceRollerRef}
+              diceNotation={diceNotation}
+              onRollComplete={handleDiceRollComplete}
+            />
           }
           dicePosition={{ top: '20%', left: '2%' }}
         />
       </Box>
+
+      {/* Game Controls */}
+      <Stack 
+        direction="row" 
+        spacing={2} 
+        justifyContent="center" 
+        sx={{ mb: 2 }}
+      >
+        <Button
+          variant="outlined"
+          size="large"
+          disabled={gameState.moveHistory.length === 0}
+          onClick={handleUndo}
+          startIcon={<Iconify icon="eva:arrow-back-fill" />}
+        >
+          Undo Move
+        </Button>
+        <Button
+          variant="contained"
+          size="large"
+          disabled={gameState.gamePhase !== 'moving' || gameState.moveHistory.length === 0}
+          onClick={handleEndTurn}
+          endIcon={<Iconify icon="eva:checkmark-fill" />}
+        >
+          Done
+        </Button>
+      </Stack>
 
       {/* Player 2 (White - Bottom) */}
       <Box>
@@ -138,7 +168,10 @@ export default function GameAIPage() {
           name="You"
           country="Iran"
           avatarUrl={_mock.image.avatar(0)}
-          isActive={gameState.currentPlayer === 'white' || gameState.gamePhase === 'opening'}
+          isActive={
+            (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
+            (gameState.currentPlayer === 'white' && gameState.gamePhase !== 'opening')
+          }
           canRoll={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
             (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting')
