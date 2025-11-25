@@ -177,7 +177,7 @@ export default function GameAIPage() {
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
   if (!mounted) {
-    return <SplashScreen />;
+    return <SplashScreen portal={false} />;
   }
 
   if (!playerColor) {
