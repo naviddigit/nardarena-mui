@@ -176,16 +176,32 @@ export default function GameAIPage() {
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
+  // Show loading screen for 800ms
   if (!showDialog) {
     return <SplashScreen portal={false} />;
   }
 
+  // Show color selection dialog
   if (!playerColor) {
     return (
-      <ColorSelectionDialog
-        open
-        onSelectColor={handleColorSelect}
-      />
+      <>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'background.default',
+            zIndex: 9999,
+          }}
+        >
+          <ColorSelectionDialog open onSelectColor={handleColorSelect} />
+        </Box>
+      </>
     );
   }
 
