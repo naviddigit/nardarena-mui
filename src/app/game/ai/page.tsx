@@ -31,17 +31,17 @@ const createInitialBoardState = (): BoardState => {
     count: 0,
   }));
 
-  // White checkers starting positions
+  // White checkers starting positions (player at bottom - near points 0-5)
   points[0] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
+  points[5] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  points[7] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
   points[11] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-  points[16] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
-  points[18] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
 
-  // Black checkers starting positions
+  // Black checkers starting positions (AI at top - near points 18-23)
   points[23] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
+  points[18] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+  points[16] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
   points[12] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-  points[7] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
-  points[5] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
 
   return {
     points,
@@ -237,7 +237,7 @@ export default function GameAIPage() {
               onRollComplete={handleDiceRollComplete}
             />
           }
-          dicePosition={{ top: 20, left: 0 }}
+          dicePosition={{ top: 200, left: 0 }}
         />
       </Box>
 

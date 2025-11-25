@@ -37,7 +37,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Responsive sizes
-  const containerSize = isMobile ? 200 : 280;
+  const containerSize = isMobile ? 150 : 150;
   const canvasWidth = isMobile ? 180 : 250;
 
   useEffect(() => {
