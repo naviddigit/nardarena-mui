@@ -77,13 +77,7 @@ export default function GameAIPage() {
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
   const [colorDialogOpen, setColorDialogOpen] = useState(true);
-  const [mounted, setMounted] = useState(false);
   const maxSets = 5;
-
-  // Load player color from localStorage on mount
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   
   const initialBoardState = useMemo(
     () => createInitialBoardState(playerColor || 'white'),
@@ -193,7 +187,7 @@ export default function GameAIPage() {
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
   // Show loading screen until color is selected
-  if (!mounted || !playerColor) {
+  if (!playerColor) {
     return (
       <>
         <SplashScreen />
