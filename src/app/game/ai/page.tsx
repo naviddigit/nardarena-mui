@@ -18,6 +18,7 @@ import { _mock } from 'src/_mock';
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
 import { DiceRoller } from 'src/components/dice-roller';
+import { SplashScreen } from 'src/components/loading-screen';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { GameResultDialog } from 'src/components/game-result-dialog';
 import { ColorSelectionDialog } from 'src/components/color-selection-dialog';
@@ -32,29 +33,18 @@ const createInitialBoardState = (playerColor: 'white' | 'black'): BoardState => 
     count: 0,
   }));
 
-  if (playerColor === 'white') {
-    // Player is white - white at bottom, black at top
-    points[23] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
-    points[12] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-    points[7] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
-    points[5] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  // Standard backgammon layout (same for both)
+  // White starts at bottom-left and moves clockwise (0→23)
+  points[0] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
+  points[11] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  points[16] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
+  points[18] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
 
-    points[0] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
-    points[11] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-    points[16] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
-    points[18] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-  } else {
-    // Player is black - black at bottom, white at top
-    points[23] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
-    points[12] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-    points[7] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
-    points[5] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-
-    points[0] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
-    points[11] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-    points[16] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
-    points[18] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-  }
+  // Black starts at top-right and moves counter-clockwise (23→0)
+  points[23] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
+  points[12] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+  points[7] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
+  points[5] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
 
   return {
     points,
@@ -81,13 +71,9 @@ export default function GameAIPage() {
 
   // Load player color from localStorage on mount
   useEffect(() => {
-    const savedColor = localStorage.getItem('playerColor') as 'white' | 'black' | null;
-    if (savedColor) {
-      setPlayerColor(savedColor);
-      setColorDialogOpen(false);
-    } else {
-      setColorDialogOpen(true);
-    }
+    // Always clear localStorage to ask for color every time
+    localStorage.removeItem('playerColor');
+    setColorDialogOpen(true);
     setMounted(true);
   }, []);
   
@@ -186,21 +172,21 @@ export default function GameAIPage() {
     setWinner(null);
     whiteTimer.setCountdown(120);
     blackTimer.setCountdown(120);
-    localStorage.removeItem('playerColor'); // Clear color selection for new game
-    window.location.reload(); // Reset game completely
+    setPlayerColor(null); // Reset color selection
+    setColorDialogOpen(true); // Show color selection dialog again
   };
 
   const handleColorSelect = (color: 'white' | 'black') => {
-    localStorage.setItem('playerColor', color);
-    window.location.reload(); // Reload to apply new board layout
+    setPlayerColor(color);
+    setColorDialogOpen(false);
   };
 
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
-  // Show nothing until mounted to prevent flash
+  // Show loading screen until mounted
   if (!mounted) {
-    return null;
+    return <SplashScreen />;
   }
 
   return (
