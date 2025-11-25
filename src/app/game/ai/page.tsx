@@ -64,14 +64,12 @@ export default function GameAIPage() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
-  const [colorDialogOpen, setColorDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const maxSets = 5;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
-      setColorDialogOpen(true);
     }, 800);
     return () => clearTimeout(timer);
   }, []);
@@ -169,12 +167,10 @@ export default function GameAIPage() {
     whiteTimer.setCountdown(120);
     blackTimer.setCountdown(120);
     setPlayerColor(null);
-    setColorDialogOpen(true);
   };
 
   const handleColorSelect = (color: 'white' | 'black') => {
     setPlayerColor(color);
-    setColorDialogOpen(false);
   };
 
   // Determine dice notation based on game phase
@@ -185,12 +181,12 @@ export default function GameAIPage() {
   }
 
   if (!playerColor) {
-    return colorDialogOpen ? (
+    return (
       <ColorSelectionDialog
-        open={colorDialogOpen}
+        open
         onSelectColor={handleColorSelect}
       />
-    ) : null;
+    );
   }
 
   return (
@@ -326,11 +322,6 @@ export default function GameAIPage() {
             Exit
           </Button>
         }
-      />
-      {/* Color Selection Dialog */}
-      <ColorSelectionDialog
-        open={colorDialogOpen}
-        onSelectColor={handleColorSelect}
       />
 
       {/* Game Result Dialog */}
