@@ -12,13 +12,23 @@ type ValidMove = {
   die: number;
 };
 
+type MoveHistory = {
+  boardState: BoardState;
+  diceValue: number;
+  from: number;
+  to: number;
+  hitChecker?: Player;
+};
+
 export type GameState = {
   boardState: BoardState;
   currentPlayer: Player;
   diceValues: number[];
   selectedPoint: number | null;
-  gamePhase: 'waiting' | 'rolling' | 'moving' | 'finished';
+  gamePhase: 'opening' | 'waiting' | 'rolling' | 'moving' | 'finished';
   validMoves: ValidMove[];
+  moveHistory: MoveHistory[];
+  openingRoll: { white: number | null; black: number | null };
 };
 
 // ----------------------------------------------------------------------
@@ -29,8 +39,10 @@ export function useGameState(initialBoardState: BoardState) {
     currentPlayer: 'white',
     diceValues: [],
     selectedPoint: null,
-    gamePhase: 'waiting',
+    gamePhase: 'opening',
     validMoves: [],
+    moveHistory: [],
+    openingRoll: { white: null, black: null },
   });
 
   // Calculate valid moves based on current board state, player, and dice
@@ -145,17 +157,63 @@ export function useGameState(initialBoardState: BoardState) {
   const handleDiceRoll = useCallback((results: { value: number }[]) => {
     console.log('handleDiceRoll called with:', results);
     setGameState((prev) => {
+      // Opening roll: each player rolls one die
+      if (prev.gamePhase === 'opening') {
+        const dieValue = results[0].value;
+        const newOpeningRoll = { ...prev.openingRoll };
+        
+        if (prev.openingRoll.white === null) {
+          newOpeningRoll.white = dieValue;
+          return {
+            ...prev,
+            openingRoll: newOpeningRoll,
+            currentPlayer: 'black',
+          };
+        }
+        
+        newOpeningRoll.black = dieValue;
+        
+        // Determine who starts (re-roll if tie)
+        if (newOpeningRoll.white === newOpeningRoll.black) {
+          return {
+            ...prev,
+            openingRoll: { white: null, black: null },
+            currentPlayer: 'white',
+          };
+        }
+        
+        const starter: Player = newOpeningRoll.white! > newOpeningRoll.black! ? 'white' : 'black';
+        const diceValues = [newOpeningRoll.white!, newOpeningRoll.black!];
+        const validMoves = calculateValidMoves(prev.boardState, starter, diceValues);
+        
+        return {
+          ...prev,
+          currentPlayer: starter,
+          diceValues,
+          gamePhase: 'moving',
+          validMoves,
+          openingRoll: newOpeningRoll,
+          moveHistory: [],
+        };
+      }
+      
+      // Normal roll
       const diceValues = results.map((r) => r.value);
-      const validMoves = calculateValidMoves(prev.boardState, prev.currentPlayer, diceValues);
+      // Handle doubles
+      const finalDiceValues = diceValues[0] === diceValues[1] 
+        ? [diceValues[0], diceValues[0], diceValues[0], diceValues[0]]
+        : diceValues;
+      const validMoves = calculateValidMoves(prev.boardState, prev.currentPlayer, finalDiceValues);
       
       console.log('Calculated valid moves:', validMoves);
-      console.log('Dice values:', diceValues);
+      console.log('Dice values:', finalDiceValues);
       
       return {
         ...prev,
-        diceValues,
-        gamePhase: 'moving',
+        diceValues: finalDiceValues,
+        gamePhase: validMoves.length > 0 ? 'moving' : 'waiting',
         validMoves,
+        moveHistory: [],
       };
     });
   }, [calculateValidMoves]);
@@ -213,6 +271,14 @@ export function useGameState(initialBoardState: BoardState) {
         if (validMove) {
           // Execute move
           setGameState((prev) => {
+            // Save current state to history
+            const historyEntry: MoveHistory = {
+              boardState: prev.boardState,
+              diceValue: validMove.die,
+              from: fromIndex,
+              to: toIndex,
+            };
+
             const newPoints = prev.boardState.points.map((point) => ({
               checkers: [...point.checkers],
               count: point.count,
@@ -226,6 +292,7 @@ export function useGameState(initialBoardState: BoardState) {
             // Handle hitting opponent checker
             if (toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer) {
               const hitColor = toPoint.checkers[0];
+              historyEntry.hitChecker = hitColor;
               toPoint.checkers = [];
               toPoint.count = 0;
               newBar = { ...newBar, [hitColor]: newBar[hitColor] + 1 };
@@ -258,21 +325,14 @@ export function useGameState(initialBoardState: BoardState) {
               newDiceValues
             );
 
-            // If no more dice or no valid moves, switch player
-            const shouldSwitchPlayer = newDiceValues.length === 0 || newValidMoves.length === 0;
-            const newPhase = shouldSwitchPlayer ? 'waiting' : 'moving';
-            const newPlayer = shouldSwitchPlayer 
-              ? (prev.currentPlayer === 'white' ? 'black' : 'white') 
-              : prev.currentPlayer;
-
             return {
               ...prev,
               boardState: newBoardState,
-              diceValues: shouldSwitchPlayer ? [] : newDiceValues,
+              diceValues: newDiceValues,
               selectedPoint: null,
-              gamePhase: newPhase as any,
-              currentPlayer: newPlayer as Player,
-              validMoves: shouldSwitchPlayer ? [] : newValidMoves,
+              gamePhase: 'moving',
+              validMoves: newValidMoves,
+              moveHistory: [...prev.moveHistory, historyEntry],
             };
           });
         } else {
@@ -287,14 +347,54 @@ export function useGameState(initialBoardState: BoardState) {
     [gameState, calculateValidMoves]
   );
 
+  const handleUndo = useCallback(() => {
+    setGameState((prev) => {
+      if (prev.moveHistory.length === 0) return prev;
+      
+      const lastMove = prev.moveHistory[prev.moveHistory.length - 1];
+      const newHistory = prev.moveHistory.slice(0, -1);
+      const newDiceValues = [...prev.diceValues, lastMove.diceValue].sort((a, b) => b - a);
+      const newValidMoves = calculateValidMoves(lastMove.boardState, prev.currentPlayer, newDiceValues);
+      
+      return {
+        ...prev,
+        boardState: lastMove.boardState,
+        diceValues: newDiceValues,
+        moveHistory: newHistory,
+        validMoves: newValidMoves,
+        selectedPoint: null,
+        gamePhase: 'moving',
+      };
+    });
+  }, [calculateValidMoves]);
+
+  const handleEndTurn = useCallback(() => {
+    setGameState((prev) => {
+      if (prev.gamePhase !== 'moving') return prev;
+      
+      const nextPlayer: Player = prev.currentPlayer === 'white' ? 'black' : 'white';
+      return {
+        ...prev,
+        currentPlayer: nextPlayer,
+        diceValues: [],
+        gamePhase: 'waiting',
+        validMoves: [],
+        moveHistory: [],
+        selectedPoint: null,
+      };
+    });
+  }, []);
+
   const resetGame = useCallback(() => {
     setGameState({
       boardState: initialBoardState,
       currentPlayer: 'white',
       diceValues: [],
       selectedPoint: null,
-      gamePhase: 'waiting',
+      gamePhase: 'opening',
       validMoves: [],
+      moveHistory: [],
+      openingRoll: { white: null, black: null },
     });
   }, [initialBoardState]);
 
@@ -302,6 +402,8 @@ export function useGameState(initialBoardState: BoardState) {
     gameState,
     handleDiceRoll,
     handlePointClick,
+    handleUndo,
+    handleEndTurn,
     resetGame,
     validDestinations,
   };

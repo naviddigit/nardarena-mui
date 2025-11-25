@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Box, Button } from '@mui/material';
+import { Box, Button, useTheme, useMediaQuery } from '@mui/material';
 
 export type DiceResult = {
   value: number;
@@ -27,6 +27,18 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   const boxRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  
+  // Responsive sizes
+  const containerSize = isMobile ? 180 : isTablet ? 220 : 280;
+  const canvasWidth = isMobile ? 160 : isTablet ? 200 : 250;
+  const buttonLeft = isMobile ? '110%' : isTablet ? '120%' : '130%';
+  const buttonTop = isMobile ? '40%' : '35%';
+  const buttonPadding = isMobile ? { px: 2, py: 1 } : { px: 3, py: 1.2 };
+  const buttonFontSize = isMobile ? '0.85rem' : '1rem';
 
   useEffect(() => {
     console.log('🎲 Starting to load scripts...');
@@ -138,14 +150,12 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   };
 
   return (
-    <Box sx={{ position: 'relative', width: 300, height: 300 }}>
+    <Box sx={{ position: 'relative', width: containerSize, height: containerSize }}>
       <Box
         ref={containerRef}
         sx={{
-          width: 250,
+          width: canvasWidth,
           height: '100%',
-        //   border: '1px solid',
-        //   bgcolor: 'background.neutral',
           borderRadius: 2,
           overflow: 'hidden',
           '& canvas': {
@@ -159,17 +169,15 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
         disabled={!isReady || isRolling}
         sx={{
           position: 'absolute',
-        //   bottom: 16,
-          left: '140%',
-          top: '35%',
+          left: buttonLeft,
+          top: buttonTop,
           transform: 'translateX(-50%)',
-          px: 4,
-          py: 1.5,
-          fontSize: '1.1rem',
+          ...buttonPadding,
+          fontSize: buttonFontSize,
           fontWeight: 600,
-          boxShadow: 4,
+          boxShadow: 3,
           '&:hover': {
-            boxShadow: 8,
+            boxShadow: 6,
             transform: 'translateX(-50%) translateY(-2px)',
           },
           '&:active': {
@@ -179,7 +187,7 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
           transition: 'all 0.2s ease-in-out',
         }}
       >
-        {!isReady ? 'Loading Dice...' : isRolling ? 'Rolling...' : 'Roll'}
+        {!isReady ? 'Loading...' : isRolling ? 'Rolling...' : 'Roll'}
       </Button>
     </Box>
   );

@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -9,6 +7,8 @@ import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useColorScheme } from '@mui/material/styles';
 
 import { useGameState } from 'src/hooks/use-game-state';
@@ -49,25 +49,50 @@ const createInitialBoardState = (): BoardState => {
 // ----------------------------------------------------------------------
 
 export default function GameAIPage() {
-  const [diceResults, setDiceResults] = useState<{ value: number; type: string }[]>([]);
   const { mode, setMode } = useColorScheme();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const initialBoardState = createInitialBoardState();
-  const { gameState, handleDiceRoll, handlePointClick, validDestinations } = useGameState(initialBoardState);
-
-  console.log('GameAIPage render:', {
-    selectedPoint: gameState.selectedPoint,
-    validDestinations,
-    diceValues: gameState.diceValues,
-    point0: gameState.boardState.points[0]?.count,
-    point1: gameState.boardState.points[1]?.count,
-  });
+  const { 
+    gameState, 
+    handleDiceRoll, 
+    handlePointClick, 
+    handleUndo, 
+    handleEndTurn, 
+    validDestinations 
+  } = useGameState(initialBoardState);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
-    console.log('Dice rolled:', results);
-    setDiceResults(results);
     handleDiceRoll(results);
-    console.log('After handleDiceRoll, gameState:', gameState);
+  };
+
+  // Determine dice notation based on game phase
+  const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
+  
+  // Show roll button only when it's time to roll
+  const showRollButton = 
+    gameState.gamePhase === 'opening' || 
+    (gameState.gamePhase === 'waiting' && gameState.diceValues.length === 0);
+  
+  // Get phase description
+  const getPhaseDescription = () => {
+    if (gameState.gamePhase === 'opening') {
+      if (gameState.openingRoll.white === null) {
+        return 'White: Roll to determine who starts';
+      }
+      if (gameState.openingRoll.black === null) {
+        return 'Black: Roll to determine who starts';
+      }
+      return 'Tie! Roll again';
+    }
+    if (gameState.gamePhase === 'waiting') {
+      return `${gameState.currentPlayer === 'white' ? 'White' : 'Black'}: Roll dice to start turn`;
+    }
+    if (gameState.gamePhase === 'moving') {
+      return `${gameState.currentPlayer === 'white' ? 'White' : 'Black'}: Make your moves`;
+    }
+    return '';
   };
 
   return (
@@ -116,57 +141,112 @@ export default function GameAIPage() {
             onPointClick={handlePointClick}
             selectedPoint={gameState.selectedPoint}
             validDestinations={validDestinations}
-            diceRoller={<DiceRoller diceNotation="2d6" onRollComplete={handleDiceRollComplete} />}
-            dicePosition={{ 
-              top: '25%',    // 👈 تغییر بده: فاصله از بالا
-              left: '0%',   // 👈 تغییر بده: فاصله از چپ
-            }}
+            diceRoller={
+              showRollButton ? (
+                <DiceRoller 
+                  diceNotation={diceNotation} 
+                  onRollComplete={handleDiceRollComplete} 
+                />
+              ) : null
+            }
+            dicePosition={
+              isMobile 
+                ? { top: '10%', left: '8%' }
+                : { top: '20%', left: '2%' }
+            }
           />
         </Box>
 
-        {/* Right Sidebar - Game Info Only */}
+        {/* Right Sidebar - Game Info */}
         <Stack spacing={3} sx={{ width: { xs: '100%', md: 400 } }}>
+          {/* Game Status */}
+          <Card>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                {getPhaseDescription()}
+              </Typography>
+              
+              {gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && (
+                <Stack spacing={1} sx={{ mt: 2 }}>
+                  <Typography variant="body2">
+                    White rolled: {gameState.openingRoll.white}
+                  </Typography>
+                  {gameState.openingRoll.black !== null && (
+                    <Typography variant="body2">
+                      Black rolled: {gameState.openingRoll.black}
+                    </Typography>
+                  )}
+                </Stack>
+              )}
+              
+              {gameState.diceValues.length > 0 && (
+                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                  <Typography variant="body1" fontWeight="bold">
+                    Dice:
+                  </Typography>
+                  {gameState.diceValues.map((die, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        borderRadius: 1,
+                        fontWeight: 'bold',
+                        fontSize: '1.2rem',
+                      }}
+                    >
+                      {die}
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+            </Box>
+          </Card>
+
+          {/* Action Buttons */}
+          <Stack direction="row" spacing={2}>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleUndo}
+              disabled={gameState.moveHistory.length === 0 || gameState.gamePhase !== 'moving'}
+              fullWidth
+              sx={{
+                py: 1.5,
+                fontWeight: 600,
+              }}
+            >
+              Undo Last Move
+            </Button>
+            
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleEndTurn}
+              disabled={gameState.gamePhase !== 'moving'}
+              fullWidth
+              sx={{
+                py: 1.5,
+                fontWeight: 600,
+              }}
+            >
+              Done (End Turn)
+            </Button>
+          </Stack>
+
           {/* Debug Info */}
           <Card>
             <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
               <Typography variant="caption" color="text.secondary">
-                Debug: Phase = {gameState.gamePhase}, Dice = [{gameState.diceValues.join(', ')}], Valid Moves = {gameState.validMoves.length}
+                Debug: Phase = {gameState.gamePhase}, Moves in history = {gameState.moveHistory.length}, Valid Moves = {gameState.validMoves.length}
               </Typography>
             </Box>
           </Card>
-
-          {/* Dice Results Display */}
-          {diceResults.length > 0 && (
-            <Card>
-              <Box sx={{ p: 2 }}>
-                <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
-                  <Typography variant="subtitle1" sx={{ mr: 1 }}>
-                    Results:
-                  </Typography>
-                  {diceResults.map((result, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: 1,
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 28,
-                        fontWeight: 'bold',
-                        boxShadow: (theme) => theme.shadows[4],
-                      }}
-                    >
-                      {result.value}
-                    </Box>
-                  ))}
-                </Stack>
-              </Box>
-            </Card>
-          )}
 
           {/* Game Info */}
           <Card>
