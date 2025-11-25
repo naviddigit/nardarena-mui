@@ -74,7 +74,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
         await loadScript('/dice.js');
         
         console.log('🎲 All scripts loaded, checking window objects...');
-        console.log('🎲 Window:', { DICE: !!window.DICE, THREE: !!window.THREE, CANNON: !!window.CANNON, $t: !!window.$t });
 
         if (!window.DICE || !containerRef.current) {
           console.error('🎲 DICE or container not available');
@@ -83,7 +82,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
 
         console.log('🎲 Creating dice_box...');
         const box = new window.DICE.dice_box(containerRef.current);
-        box.diceToRoll = diceNotation;
         boxRef.current = box;
         
         console.log('🎲 Dice box ready!');
@@ -94,7 +92,7 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
     };
 
     initializeDice();
-  }, [diceNotation]);
+  }, []);
 
   const rollDice = () => {
     if (!boxRef.current || isRolling || !isReady) {
@@ -126,8 +124,8 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
         return;
       }
 
-      // Generate vectors for dice throw - 👈 تغییر جهت پرتاب: x: -1, y: 0 = از چپ
-      const vector = { x: 1, y: 0 };
+      // Generate vectors for dice throw
+      const vector = { x: -1, y: 0 };
       const boost = 500;
       const vectors = box.generate_vectors(notation, vector, boost);
       
