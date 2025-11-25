@@ -197,7 +197,15 @@ export default function GameAIPage() {
 
   // Show loading screen until color is selected
   if (!mounted || !playerColor) {
-    return <SplashScreen />;
+    return (
+      <>
+        <SplashScreen />
+        <ColorSelectionDialog
+          open={colorDialogOpen}
+          onSelectColor={handleColorSelect}
+        />
+      </>
+    );
   }
 
   return (
