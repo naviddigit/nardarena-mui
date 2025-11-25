@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
@@ -66,6 +66,159 @@ export function BackgammonBoard({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Refs for stable ID tracking
+  const idsRef = useRef<{
+    points: string[][],
+    bar: { white: string[], black: string[] },
+    off: { white: string[], black: string[] }
+  }>({
+    points: Array(24).fill([]),
+    bar: { white: [], black: [] },
+    off: { white: [], black: [] }
+  });
+  
+  const prevBoardStateRef = useRef(boardState);
+
+  // Generate stable IDs for checkers to enable smooth transitions
+  const checkerIds = useMemo(() => {
+    const prevIds = idsRef.current;
+    const prevState = prevBoardStateRef.current;
+    const nextState = boardState;
+    
+    // Deep clone to avoid mutation
+    const newIds = JSON.parse(JSON.stringify(prevIds));
+    
+    const generateId = (player: string) => `${player}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Check if it's the first initialization (empty IDs)
+    const isInitialized = newIds.points.some((p: any[]) => p.length > 0) || 
+                          newIds.bar.white.length > 0 || 
+                          newIds.bar.black.length > 0;
+
+    if (!isInitialized) {
+      // Initial population
+      for (let i = 0; i < 24; i++) {
+        const point = nextState.points[i];
+        for (let j = 0; j < point.count; j++) {
+          newIds.points[i].push(generateId(point.checkers[j]));
+        }
+      }
+      for (let i = 0; i < nextState.bar.white; i++) newIds.bar.white.push(generateId('white'));
+      for (let i = 0; i < nextState.bar.black; i++) newIds.bar.black.push(generateId('black'));
+      for (let i = 0; i < nextState.off.white; i++) newIds.off.white.push(generateId('white'));
+      for (let i = 0; i < nextState.off.black; i++) newIds.off.black.push(generateId('black'));
+    } else {
+      // Diff and update
+      const pool: { id: string, player: string }[] = [];
+
+      // 1. Collect removed checkers (Source)
+      // Points
+      for (let i = 0; i < 24; i++) {
+        const diff = prevState.points[i].count - nextState.points[i].count;
+        if (diff > 0) {
+          const player = prevState.points[i].checkers[0];
+          for (let k = 0; k < diff; k++) {
+            const id = newIds.points[i].pop();
+            if (id) pool.push({ id, player });
+          }
+        }
+      }
+      // Bar
+      if (prevState.bar.white > nextState.bar.white) {
+        for (let k = 0; k < prevState.bar.white - nextState.bar.white; k++) {
+          const id = newIds.bar.white.pop();
+          if (id) pool.push({ id, player: 'white' });
+        }
+      }
+      if (prevState.bar.black > nextState.bar.black) {
+        for (let k = 0; k < prevState.bar.black - nextState.bar.black; k++) {
+          const id = newIds.bar.black.pop();
+          if (id) pool.push({ id, player: 'black' });
+        }
+      }
+
+      // 2. Distribute to added checkers (Destination)
+      // Points
+      for (let i = 0; i < 24; i++) {
+        const diff = nextState.points[i].count - prevState.points[i].count;
+        if (diff > 0) {
+          const player = nextState.points[i].checkers[0];
+          for (let k = 0; k < diff; k++) {
+            const poolIndex = pool.findIndex(c => c.player === player);
+            let id;
+            if (poolIndex !== -1) {
+              id = pool[poolIndex].id;
+              pool.splice(poolIndex, 1);
+            } else {
+              id = generateId(player);
+            }
+            newIds.points[i].push(id);
+          }
+        }
+      }
+      // Bar (e.g. hit)
+      if (nextState.bar.white > prevState.bar.white) {
+        for (let k = 0; k < nextState.bar.white - prevState.bar.white; k++) {
+          const poolIndex = pool.findIndex(c => c.player === 'white');
+          let id;
+          if (poolIndex !== -1) {
+            id = pool[poolIndex].id;
+            pool.splice(poolIndex, 1);
+          } else {
+            id = generateId('white');
+          }
+          newIds.bar.white.push(id);
+        }
+      }
+      if (nextState.bar.black > prevState.bar.black) {
+        for (let k = 0; k < nextState.bar.black - prevState.bar.black; k++) {
+          const poolIndex = pool.findIndex(c => c.player === 'black');
+          let id;
+          if (poolIndex !== -1) {
+            id = pool[poolIndex].id;
+            pool.splice(poolIndex, 1);
+          } else {
+            id = generateId('black');
+          }
+          newIds.bar.black.push(id);
+        }
+      }
+      // Off
+      if (nextState.off.white > prevState.off.white) {
+        for (let k = 0; k < nextState.off.white - prevState.off.white; k++) {
+          const poolIndex = pool.findIndex(c => c.player === 'white');
+          let id;
+          if (poolIndex !== -1) {
+            id = pool[poolIndex].id;
+            pool.splice(poolIndex, 1);
+          } else {
+            id = generateId('white');
+          }
+          newIds.off.white.push(id);
+        }
+      }
+      if (nextState.off.black > prevState.off.black) {
+        for (let k = 0; k < nextState.off.black - prevState.off.black; k++) {
+          const poolIndex = pool.findIndex(c => c.player === 'black');
+          let id;
+          if (poolIndex !== -1) {
+            id = pool[poolIndex].id;
+            pool.splice(poolIndex, 1);
+          } else {
+            id = generateId('black');
+          }
+          newIds.off.black.push(id);
+        }
+      }
+    }
+
+    // Update refs
+    idsRef.current = newIds;
+    prevBoardStateRef.current = nextState;
+
+    return newIds;
+  }, [boardState]);
 
   // Responsive sizing
   const boardHeight = isSmallMobile ? 450 : isMobile ? 500 : 600;
@@ -140,7 +293,9 @@ export function BackgammonBoard({
 
         {/* Render checkers - max 5 visible with count label if more */}
         {boardState.points[pointIndex]?.checkers.slice(0, 5).map((player, idx) => {
-          const checkerId = `${player}-p${pointIndex}-s${idx}`;
+          // Use stable ID from our calculated map
+          const checkerId = checkerIds.points[pointIndex][idx] || `${player}-p${pointIndex}-s${idx}`;
+          
           // استفاده از SCALE_CONFIG
           const stackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
           const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
@@ -257,11 +412,12 @@ export function BackgammonBoard({
           {Array.from({ length: boardState.bar.white }).map((_, idx) => {
             const barSize = isMobile ? SCALE_CONFIG.barChecker.mobile : SCALE_CONFIG.barChecker.desktop;
             const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+            const checkerId = checkerIds.bar.white[idx] || `white-bar-${idx}`;
             
             return (
               <Checker 
-                key={`white-bar-${idx}`} 
-                layoutId={`white-bar-${idx}`}
+                key={checkerId} 
+                layoutId={checkerId}
                 player="white" 
                 size={pointWidth * barSize}
                 yPosition={idx * (pointWidth * barStackSpacing)} 
@@ -300,11 +456,12 @@ export function BackgammonBoard({
           {Array.from({ length: boardState.bar.black }).map((_, idx) => {
             const barSize = isMobile ? SCALE_CONFIG.barChecker.mobile : SCALE_CONFIG.barChecker.desktop;
             const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+            const checkerId = checkerIds.bar.black[idx] || `black-bar-${idx}`;
             
             return (
               <Checker 
-                key={`black-bar-${idx}`} 
-                layoutId={`black-bar-${idx}`}
+                key={checkerId} 
+                layoutId={checkerId}
                 player="black" 
                 size={pointWidth * barSize}
                 yPosition={idx * (pointWidth * barStackSpacing)} 
