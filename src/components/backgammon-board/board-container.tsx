@@ -138,7 +138,8 @@ export function BackgammonBoard({
           />
         )}
 
-        {boardState.points[pointIndex]?.checkers.map((player, idx) => {
+        {/* Render checkers - max 5 visible with count label if more */}
+        {boardState.points[pointIndex]?.checkers.slice(0, 5).map((player, idx) => {
           const checkerId = `${player}-p${pointIndex}-s${idx}`;
           // استفاده از SCALE_CONFIG
           const stackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
@@ -165,6 +166,34 @@ export function BackgammonBoard({
             />
           );
         })}
+        
+        {/* Show count label if more than 5 checkers */}
+        {boardState.points[pointIndex]?.count > 5 && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: isTop ? '5px' : 'auto',
+              bottom: isTop ? 'auto' : '5px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              bgcolor: 'background.paper',
+              color: 'text.primary',
+              borderRadius: '50%',
+              width: pointWidth * 0.5,
+              height: pointWidth * 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              fontSize: pointWidth * 0.3,
+              border: (theme) => `2px solid ${theme.vars.palette.divider}`,
+              zIndex: 10,
+              pointerEvents: 'none',
+            }}
+          >
+            +{boardState.points[pointIndex].count - 5}
+          </Box>
+        )}
       </Box>
     );
   };

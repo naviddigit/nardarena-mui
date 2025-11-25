@@ -149,14 +149,26 @@ export default function GameAIPage() {
     <Container maxWidth="xl" sx={{ py: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <IconButton
-            onClick={() => setExitDialogOpen(true)}
-            sx={{ width: 40, height: 40 }}
-          >
-            <Iconify icon="eva:arrow-back-fill" width={24} />
-          </IconButton>
+        <IconButton
+          onClick={() => setExitDialogOpen(true)}
+          sx={{ width: 40, height: 40 }}
+        >
+          <Iconify icon="eva:arrow-back-fill" width={24} />
+        </IconButton>
+
+        <Stack alignItems="center" spacing={0.5}>
           <Typography variant="h4">Nard Arena</Typography>
+          <Box
+            sx={{
+              width: '100%',
+              height: 2,
+              bgcolor: 'primary.main',
+              borderRadius: 1,
+            }}
+          />
+          <Typography variant="caption" color="text.secondary">
+            Set 1 of 5
+          </Typography>
         </Stack>
 
         <IconButton
@@ -184,7 +196,7 @@ export default function GameAIPage() {
           }
           onRollDice={triggerDiceRoll}
           onDone={handleDone}
-          canDone={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
+          canDone={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0 && gameState.diceValues.length >= 0}
           onUndo={handleUndo}
           canUndo={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           timeRemaining={blackTimer.countdown}
@@ -230,7 +242,7 @@ export default function GameAIPage() {
           }
           onRollDice={triggerDiceRoll}
           onDone={handleDone}
-          canDone={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
+          canDone={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0 && gameState.diceValues.length >= 0}
           onUndo={handleUndo}
           canUndo={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           timeRemaining={whiteTimer.countdown}
