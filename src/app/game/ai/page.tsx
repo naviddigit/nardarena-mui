@@ -69,7 +69,10 @@ export default function GameAIPage() {
   const maxSets = 5;
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 800);
+    return () => clearTimeout(timer);
   }, []);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);

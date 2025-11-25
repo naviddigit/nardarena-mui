@@ -24,6 +24,13 @@ export function ColorSelectionDialog({ open, onSelectColor }: ColorSelectionDial
       maxWidth="sm"
       fullWidth
       disableEscapeKeyDown
+      slotProps={{
+        backdrop: {
+          sx: {
+            bgcolor: 'background.default',
+          },
+        },
+      }}
       PaperProps={{
         sx: {
           borderRadius: 3,
