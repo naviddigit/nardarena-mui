@@ -73,7 +73,7 @@ export function BackgammonBoard({
     bar: { white: string[], black: string[] },
     off: { white: string[], black: string[] }
   }>({
-    points: Array(24).fill([]),
+    points: Array.from({ length: 24 }, () => []),
     bar: { white: [], black: [] },
     off: { white: [], black: [] }
   });
@@ -86,9 +86,15 @@ export function BackgammonBoard({
     const prevState = prevBoardStateRef.current;
     const nextState = boardState;
     
+    // If state hasn't changed structurally, return previous IDs to prevent re-renders
+    if (JSON.stringify(prevState) === JSON.stringify(nextState)) {
+      return prevIds;
+    }
+    
     // Deep clone to avoid mutation
     const newIds = JSON.parse(JSON.stringify(prevIds));
     
+    // Use deterministic ID generation based on initial position if possible, or random if needed
     const generateId = (player: string) => `${player}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Check if it's the first initialization (empty IDs)
@@ -420,7 +426,6 @@ export function BackgammonBoard({
         checkers.push(
           <Checker
             key={checkerId}
-            layoutId={checkerId}
             player={player}
             size={checkerSize}
             x={x}
@@ -439,7 +444,6 @@ export function BackgammonBoard({
       checkers.push(
         <Checker
           key={checkerId}
-          layoutId={checkerId}
           player="white"
           size={checkerSize}
           x={x}
@@ -456,7 +460,6 @@ export function BackgammonBoard({
       checkers.push(
         <Checker
           key={checkerId}
-          layoutId={checkerId}
           player="black"
           size={checkerSize}
           x={x}

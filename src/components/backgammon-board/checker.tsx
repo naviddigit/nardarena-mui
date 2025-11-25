@@ -23,11 +23,11 @@ type CheckerProps = BoxProps & {
 
 // ----------------------------------------------------------------------
 
-export function Checker({ player, size, x, y, layoutId, isSelected, onCheckerClick, sx, ...other }: CheckerProps & { x?: number, y?: number }) {
+export function Checker({ player, size, x, y, isSelected, onCheckerClick, sx, ...other }: CheckerProps & { x?: number, y?: number }) {
   return (
     <Box
       component={m.div}
-      layoutId={layoutId}
+      initial={false}
       animate={{ 
         x, 
         y,
