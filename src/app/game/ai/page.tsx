@@ -18,7 +18,7 @@ import { _mock } from 'src/_mock';
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
 import { DiceRoller } from 'src/components/dice-roller';
-import { SplashScreen } from 'src/components/loading-screen';
+import { LoadingScreen } from 'src/components/loading-screen';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { GameResultDialog } from 'src/components/game-result-dialog';
 import { ColorSelectionDialog } from 'src/components/color-selection-dialog';
@@ -178,7 +178,7 @@ export default function GameAIPage() {
 
   if (loading) {
     return (
-      <SplashScreen 
+      <LoadingScreen 
         portal={false}
         sx={{ 
           position: 'fixed', 
@@ -186,7 +186,8 @@ export default function GameAIPage() {
           left: 0, 
           width: '100vw', 
           height: '100vh', 
-          zIndex: 9999 
+          zIndex: 9999,
+          bgcolor: 'background.default',
         }} 
       />
     );

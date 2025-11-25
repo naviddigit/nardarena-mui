@@ -1,10 +1,10 @@
-import { SplashScreen } from 'src/components/loading-screen';
+import { LoadingScreen } from 'src/components/loading-screen';
 
 // ----------------------------------------------------------------------
 
 export default function Loading() {
   return (
-    <SplashScreen 
+    <LoadingScreen 
       portal={false}
       sx={{ 
         position: 'fixed', 
@@ -12,7 +12,8 @@ export default function Loading() {
         left: 0, 
         width: '100vw', 
         height: '100vh', 
-        zIndex: 9999 
+        zIndex: 9999,
+        bgcolor: 'background.default',
       }} 
     />
   );
