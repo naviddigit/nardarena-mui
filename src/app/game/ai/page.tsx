@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -11,11 +12,13 @@ import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 
 import { useGameState } from 'src/hooks/use-game-state';
+import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { _mock } from 'src/_mock';
 
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
 import { DiceRoller } from 'src/components/dice-roller';
+import { ConfirmDialog } from 'src/components/custom-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
 
 // ----------------------------------------------------------------------
@@ -49,9 +52,11 @@ const createInitialBoardState = (): BoardState => {
 // ----------------------------------------------------------------------
 
 export default function GameAIPage() {
+  const router = useRouter();
   const { mode, setMode } = useColorScheme();
   const diceRollerRef = useRef<any>(null);
   const [isRolling, setIsRolling] = useState(false);
+  const [exitDialogOpen, setExitDialogOpen] = useState(false);
   
   const initialBoardState = createInitialBoardState();
   const { 
@@ -62,6 +67,40 @@ export default function GameAIPage() {
     handleEndTurn, 
     validDestinations 
   } = useGameState(initialBoardState);
+
+  // Timer for White player (60 seconds)
+  const whiteTimer = useCountdownSeconds(60);
+  // Timer for Black player (60 seconds)
+  const blackTimer = useCountdownSeconds(60);
+
+  // Start/stop timers based on current player
+  useEffect(() => {
+    if (gameState.gamePhase === 'opening') {
+      // During opening roll, don't run timers
+      return;
+    }
+
+    if (gameState.currentPlayer === 'white' && gameState.gamePhase !== 'waiting') {
+      if (!whiteTimer.counting && whiteTimer.countdown === 60) {
+        whiteTimer.startCountdown();
+      }
+    } else if (gameState.currentPlayer === 'black' && gameState.gamePhase !== 'waiting') {
+      if (!blackTimer.counting && blackTimer.countdown === 60) {
+        blackTimer.startCountdown();
+      }
+    }
+  }, [gameState.currentPlayer, gameState.gamePhase, whiteTimer, blackTimer]);
+
+  // Reset timer when turn ends
+  useEffect(() => {
+    if (gameState.gamePhase === 'waiting') {
+      if (gameState.currentPlayer === 'white') {
+        whiteTimer.setCountdown(60);
+      } else {
+        blackTimer.setCountdown(60);
+      }
+    }
+  }, [gameState.gamePhase, gameState.currentPlayer, whiteTimer, blackTimer]);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     handleDiceRoll(results);
@@ -88,7 +127,15 @@ export default function GameAIPage() {
     <Container maxWidth="xl" sx={{ py: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h4">Nard Arena</Typography>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <IconButton
+            onClick={() => setExitDialogOpen(true)}
+            sx={{ width: 40, height: 40 }}
+          >
+            <Iconify icon="eva:arrow-back-fill" width={24} />
+          </IconButton>
+          <Typography variant="h4">Nard Arena</Typography>
+        </Stack>
 
         <IconButton
           onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
@@ -113,6 +160,11 @@ export default function GameAIPage() {
             (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting')
           }
           onRollDice={triggerDiceRoll}
+          onDone={handleEndTurn}
+          canDone={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
+          onUndo={handleUndo}
+          canUndo={gameState.currentPlayer === 'black' && gameState.moveHistory.length > 0}
+          timeRemaining={blackTimer.countdown}
         />
       </Box>
 
@@ -135,33 +187,6 @@ export default function GameAIPage() {
         />
       </Box>
 
-      {/* Game Controls */}
-      <Stack 
-        direction="row" 
-        spacing={2} 
-        justifyContent="center" 
-        sx={{ mb: 2 }}
-      >
-        <Button
-          variant="outlined"
-          size="large"
-          disabled={gameState.moveHistory.length === 0}
-          onClick={handleUndo}
-          startIcon={<Iconify icon="eva:arrow-back-fill" />}
-        >
-          Undo Move
-        </Button>
-        <Button
-          variant="contained"
-          size="large"
-          disabled={gameState.gamePhase !== 'moving' || gameState.moveHistory.length === 0}
-          onClick={handleEndTurn}
-          endIcon={<Iconify icon="eva:checkmark-fill" />}
-        >
-          Done
-        </Button>
-      </Stack>
-
       {/* Player 2 (White - Bottom) */}
       <Box>
         <PlayerCard
@@ -177,8 +202,33 @@ export default function GameAIPage() {
             (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting')
           }
           onRollDice={triggerDiceRoll}
+          onDone={handleEndTurn}
+          canDone={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
+          onUndo={handleUndo}
+          canUndo={gameState.currentPlayer === 'white' && gameState.moveHistory.length > 0}
+          timeRemaining={whiteTimer.countdown}
         />
       </Box>
+
+      {/* Exit Confirmation Dialog */}
+      <ConfirmDialog
+        open={exitDialogOpen}
+        onClose={() => setExitDialogOpen(false)}
+        title="Exit Game?"
+        content="Are you sure you want to leave? Your game progress will be lost."
+        action={
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              setExitDialogOpen(false);
+              router.push('/');
+            }}
+          >
+            Exit
+          </Button>
+        }
+      />
     </Container>
   );
 }

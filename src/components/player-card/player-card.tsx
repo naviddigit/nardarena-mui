@@ -2,8 +2,11 @@
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 
 import { Iconify } from 'src/components/iconify';
@@ -17,6 +20,11 @@ type PlayerCardProps = {
   isActive: boolean;
   onRollDice?: () => void;
   canRoll: boolean;
+  onDone?: () => void;
+  canDone?: boolean;
+  onUndo?: () => void;
+  canUndo?: boolean;
+  timeRemaining?: number;
 };
 
 export function PlayerCard({ 
@@ -26,7 +34,16 @@ export function PlayerCard({
   isActive, 
   onRollDice, 
   canRoll,
+  onDone,
+  canDone = false,
+  onUndo,
+  canUndo = false,
+  timeRemaining = 60,
 }: PlayerCardProps) {
+  const minutes = Math.floor(timeRemaining / 60);
+  const seconds = timeRemaining % 60;
+  const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  
   return (
     <Card 
       sx={{ 
@@ -57,20 +74,65 @@ export function PlayerCard({
         }}
       />
 
-      <Button
-        size="small"
-        variant="contained"
-        color="primary"
-        disabled={!canRoll}
-        onClick={onRollDice}
-        sx={{ 
-          flexShrink: 0, 
-          ml: 1.5,
-          minWidth: 80,
+      {/* Timer Display */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 60,
+          mr: 1.5,
         }}
       >
-        Roll
-      </Button>
+        <Typography
+          variant="h6"
+          sx={{
+            fontFamily: 'monospace',
+            color: timeRemaining < 10 ? 'error.main' : 'text.primary',
+            fontWeight: 600,
+          }}
+        >
+          {timeDisplay}
+        </Typography>
+      </Box>
+
+      {/* Action Buttons */}
+      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+        <Button
+          size="small"
+          variant="contained"
+          color="primary"
+          disabled={!canRoll}
+          onClick={onRollDice}
+          sx={{ minWidth: 70 }}
+        >
+          Roll
+        </Button>
+        
+        <IconButton
+          size="small"
+          color="default"
+          disabled={!canUndo}
+          onClick={onUndo}
+          sx={{
+            bgcolor: (theme) => theme.palette.background.neutral,
+            '&:hover': { bgcolor: (theme) => theme.palette.action.hover },
+          }}
+        >
+          <Iconify icon="eva:arrow-back-fill" width={18} />
+        </IconButton>
+
+        <Button
+          size="small"
+          variant="outlined"
+          color="success"
+          disabled={!canDone}
+          onClick={onDone}
+          sx={{ minWidth: 70 }}
+        >
+          Done
+        </Button>
+      </Stack>
     </Card>
   );
 }
