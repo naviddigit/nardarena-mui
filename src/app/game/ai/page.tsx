@@ -75,7 +75,8 @@ export default function GameAIPage() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
-  const [colorDialogOpen, setColorDialogOpen] = useState(true);
+  const [colorDialogOpen, setColorDialogOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const maxSets = 5;
 
   // Load player color from localStorage on mount
@@ -84,7 +85,10 @@ export default function GameAIPage() {
     if (savedColor) {
       setPlayerColor(savedColor);
       setColorDialogOpen(false);
+    } else {
+      setColorDialogOpen(true);
     }
+    setMounted(true);
   }, []);
   
   const initialBoardState = useMemo(
@@ -182,6 +186,7 @@ export default function GameAIPage() {
     setWinner(null);
     whiteTimer.setCountdown(120);
     blackTimer.setCountdown(120);
+    localStorage.removeItem('playerColor'); // Clear color selection for new game
     window.location.reload(); // Reset game completely
   };
 
@@ -192,6 +197,11 @@ export default function GameAIPage() {
 
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
+
+  // Show nothing until mounted to prevent flash
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
