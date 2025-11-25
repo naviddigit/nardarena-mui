@@ -173,14 +173,7 @@ export default function GameAIPage() {
 
   return (
     <>
-      <Container 
-        maxWidth="xl" 
-        sx={{ 
-          py: 3,
-          transform: playerColor === 'black' ? 'rotate(180deg)' : 'none',
-          transition: 'transform 0.6s ease-in-out',
-        }}
-      >
+      <Container maxWidth="xl" sx={{ py: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <IconButton
@@ -240,7 +233,17 @@ export default function GameAIPage() {
       </Box>
 
       {/* Game Board with Dice Roller */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, position: 'relative' }}>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          mb: 2, 
+          position: 'relative',
+          transform: playerColor === 'black' ? 'rotate(180deg)' : 'none',
+          opacity: playerColor ? 1 : 0,
+          transition: 'all 0.6s ease-in-out',
+        }}
+      >
         <BackgammonBoard 
           boardState={gameState.boardState} 
           onPointClick={handlePointClick}
