@@ -56,7 +56,7 @@ export function useGameState(initialBoardState: BoardState) {
     // Check if there are checkers on the bar that need to enter first
     if (boardState.bar[currentPlayer] > 0) {
       diceValues.forEach((die) => {
-        const enterPoint = currentPlayer === 'white' ? die - 1 : 24 - die;
+        const enterPoint = currentPlayer === 'white' ? 24 - die : die - 1;
         if (isValidDestination(boardState, enterPoint, currentPlayer)) {
           moves.push({ from: -1, to: enterPoint, die });
         }
