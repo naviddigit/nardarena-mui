@@ -77,7 +77,6 @@ export default function GameAIPage() {
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
   const [colorDialogOpen, setColorDialogOpen] = useState(true);
-  const [isReady, setIsReady] = useState(false);
   const maxSets = 5;
   
   const initialBoardState = useMemo(
@@ -176,23 +175,16 @@ export default function GameAIPage() {
     whiteTimer.setCountdown(120);
     blackTimer.setCountdown(120);
     setPlayerColor(null);
-    setIsReady(false);
     setColorDialogOpen(true);
   };
 
   const handleColorSelect = (color: 'white' | 'black') => {
     setPlayerColor(color);
     setColorDialogOpen(false);
-    setIsReady(true);
   };
 
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
-
-  // Show loading screen until color is selected and ready
-  if (!isReady) {
-    return <SplashScreen />;
-  }
 
   return (
     <>
