@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import Box from '@mui/material/Box';
@@ -77,8 +77,20 @@ export default function GameAIPage() {
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
   const [colorDialogOpen, setColorDialogOpen] = useState(true);
   const maxSets = 5;
+
+  // Load player color from localStorage on mount
+  useEffect(() => {
+    const savedColor = localStorage.getItem('playerColor') as 'white' | 'black' | null;
+    if (savedColor) {
+      setPlayerColor(savedColor);
+      setColorDialogOpen(false);
+    }
+  }, []);
   
-  const initialBoardState = playerColor ? createInitialBoardState(playerColor) : createInitialBoardState('white');
+  const initialBoardState = useMemo(
+    () => createInitialBoardState(playerColor || 'white'),
+    [playerColor]
+  );
   const { 
     gameState, 
     handleDiceRoll, 
@@ -174,8 +186,8 @@ export default function GameAIPage() {
   };
 
   const handleColorSelect = (color: 'white' | 'black') => {
-    setPlayerColor(color);
-    setColorDialogOpen(false);
+    localStorage.setItem('playerColor', color);
+    window.location.reload(); // Reload to apply new board layout
   };
 
   // Determine dice notation based on game phase
