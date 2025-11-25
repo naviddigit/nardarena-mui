@@ -109,22 +109,27 @@ export default function GameAIPage() {
 
   const triggerDiceRoll = () => {
     if (diceRollerRef.current) {
-      // During opening roll, don't clear dice when:
-      // 1. Black is about to roll (White's die should stay)
-      // 2. Winner is about to roll 2d6 after opening (both opening dice should stay until cleared by 2d6 roll)
+      // During opening roll, don't clear dice when Black is about to roll
       const isBlackOpeningRoll = 
         gameState.gamePhase === 'opening' && 
         gameState.openingRoll.white !== null && 
         gameState.openingRoll.black === null;
       
+      // Don't clear dice when winner is about to roll 2d6 after opening
       const isWinnerFirstRollAfterOpening = 
         gameState.gamePhase === 'waiting' &&
         gameState.openingRoll.white !== null &&
         gameState.openingRoll.black !== null &&
         gameState.diceValues.length === 0;
       
-      // Clear dice in all cases EXCEPT during opening roll transitions
-      const shouldClearDice = !isBlackOpeningRoll && !isWinnerFirstRollAfterOpening;
+      // Only clear dice when:
+      // - NOT during opening roll (Black rolling)
+      // - NOT winner's first roll after opening
+      // - Player has already rolled this turn (diceValues exist)
+      const shouldClearDice = 
+        !isBlackOpeningRoll && 
+        !isWinnerFirstRollAfterOpening &&
+        gameState.diceValues.length > 0;
       
       // Clear previous dice before new roll
       if (shouldClearDice && diceRollerRef.current.clearDice) {

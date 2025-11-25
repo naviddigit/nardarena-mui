@@ -61,18 +61,7 @@ export function PlayerCard({
       <Badge
         overlap="circular"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        badgeContent={
-          <Box
-            sx={{
-              width: 22,
-              height: 22,
-              borderRadius: '50%',
-              bgcolor: checkerColor === 'white' ? 'common.white' : 'grey.800',
-              border: (theme) => `2px solid ${theme.palette.background.paper}`,
-              boxShadow: (theme) => theme.shadows[3],
-            }}
-          />
-        }
+        variant={checkerColor === 'white' ? 'alway' : 'busy'}
       >
         <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48, mr: 2 }} />
       </Badge>
