@@ -1,7 +1,10 @@
 'use client';
 
+import { useRef } from 'react';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -11,6 +14,7 @@ import { useGameState } from 'src/hooks/use-game-state';
 
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
+import { DiceRoller } from 'src/components/dice-roller';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
 
 // ----------------------------------------------------------------------
@@ -45,6 +49,7 @@ const createInitialBoardState = (): BoardState => {
 
 export default function GameAIPage() {
   const { mode, setMode } = useColorScheme();
+  const diceRollerRef = useRef<any>(null);
   
   const initialBoardState = createInitialBoardState();
   const { 
@@ -60,8 +65,18 @@ export default function GameAIPage() {
     handleDiceRoll(results);
   };
 
+  const triggerDiceRoll = () => {
+    if (diceRollerRef.current && diceRollerRef.current.rollDice) {
+      diceRollerRef.current.rollDice();
+    }
+  };
+
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
+  
+  const showDiceRoller = 
+    gameState.gamePhase === 'opening' || 
+    (gameState.gamePhase === 'waiting' && gameState.diceValues.length === 0);
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -88,18 +103,27 @@ export default function GameAIPage() {
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) ||
             (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting' && gameState.diceValues.length === 0)
           }
-          onRollDice={handleDiceRollComplete}
-          diceNotation={diceNotation}
+          onRollDice={triggerDiceRoll}
         />
       </Box>
 
-      {/* Game Board */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+      {/* Game Board with Dice Roller */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, position: 'relative' }}>
         <BackgammonBoard 
           boardState={gameState.boardState} 
           onPointClick={handlePointClick}
           selectedPoint={gameState.selectedPoint}
           validDestinations={validDestinations}
+          diceRoller={
+            showDiceRoller ? (
+              <DiceRoller
+                ref={diceRollerRef}
+                diceNotation={diceNotation}
+                onRollComplete={handleDiceRollComplete}
+              />
+            ) : null
+          }
+          dicePosition={{ top: '20%', left: '2%' }}
         />
       </Box>
 
@@ -114,8 +138,7 @@ export default function GameAIPage() {
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
             (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting' && gameState.diceValues.length === 0)
           }
-          onRollDice={handleDiceRollComplete}
-          diceNotation={diceNotation}
+          onRollDice={triggerDiceRoll}
         />
       </Box>
     </Container>

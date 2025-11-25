@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Box, Button, useTheme, useMediaQuery } from '@mui/material';
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 
 export type DiceResult = {
   value: number;
@@ -22,7 +22,10 @@ declare global {
   }
 }
 
-export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerProps) {
+export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerComponent(
+  { diceNotation = '2d6', onRollComplete },
+  ref
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
@@ -30,11 +33,10 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   
-  // Hidden canvas - just for dice physics
-  const containerSize = 1;
-  const canvasWidth = 1;
+  // Responsive sizes
+  const containerSize = isMobile ? 200 : 280;
+  const canvasWidth = isMobile ? 180 : 250;
 
   useEffect(() => {
     console.log('🎲 Starting to load scripts...');
@@ -143,33 +145,25 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
     }
   };
 
+  // Expose rollDice method via ref
+  useImperativeHandle(ref, () => ({
+    rollDice,
+  }));
+
   return (
-    <>
-      {/* Hidden canvas for dice physics */}
-      <Box 
+    <Box sx={{ position: 'relative', width: containerSize, height: containerSize }}>
+      <Box
         ref={containerRef}
-        sx={{ 
-          position: 'absolute',
-          width: 1,
-          height: 1,
-          opacity: 0,
-          pointerEvents: 'none',
-        }} 
-      />
-      
-      {/* Roll Button */}
-      <Button
-        size="small"
-        variant="contained"
-        color="primary"
-        onClick={rollDice}
-        disabled={!isReady || isRolling}
-        sx={{ 
-          minWidth: 80,
+        sx={{
+          width: canvasWidth,
+          height: '100%',
+          borderRadius: 2,
+          overflow: 'hidden',
+          '& canvas': {
+            display: 'block',
+          },
         }}
-      >
-        {!isReady ? 'Loading...' : isRolling ? 'Rolling...' : 'Roll'}
-      </Button>
-    </>
+      />
+    </Box>
   );
-}
+});

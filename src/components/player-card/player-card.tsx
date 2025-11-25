@@ -3,10 +3,10 @@
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import ListItemText from '@mui/material/ListItemText';
 
 import { Iconify } from 'src/components/iconify';
-import { DiceRoller } from 'src/components/dice-roller';
 
 // ----------------------------------------------------------------------
 
@@ -15,9 +15,8 @@ type PlayerCardProps = {
   country: string;
   avatarUrl: string;
   isActive: boolean;
-  onRollDice?: (results: { value: number; type: string }[]) => void;
+  onRollDice?: () => void;
   canRoll: boolean;
-  diceNotation?: string;
 };
 
 export function PlayerCard({ 
@@ -27,7 +26,6 @@ export function PlayerCard({
   isActive, 
   onRollDice, 
   canRoll,
-  diceNotation = '1d6',
 }: PlayerCardProps) {
   return (
     <Card 
@@ -59,14 +57,20 @@ export function PlayerCard({
         }}
       />
 
-      <Box sx={{ flexShrink: 0, ml: 1.5, minWidth: 80, visibility: canRoll ? 'visible' : 'hidden' }}>
-        {canRoll && onRollDice && (
-          <DiceRoller
-            diceNotation={diceNotation}
-            onRollComplete={onRollDice}
-          />
-        )}
-      </Box>
+      <Button
+        size="small"
+        variant="contained"
+        color="primary"
+        disabled={!canRoll}
+        onClick={onRollDice}
+        sx={{ 
+          flexShrink: 0, 
+          ml: 1.5,
+          minWidth: 80,
+        }}
+      >
+        Roll
+      </Button>
     </Card>
   );
 }
