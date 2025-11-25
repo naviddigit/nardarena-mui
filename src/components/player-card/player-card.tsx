@@ -3,7 +3,6 @@
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
@@ -58,13 +57,7 @@ export function PlayerCard({
         boxShadow: (theme) => isActive ? theme.shadows[8] : theme.shadows[2],
       }}
     >
-      <Badge
-        overlap="circular"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        variant={checkerColor === 'white' ? 'alway' : 'busy'}
-      >
-        <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48, mr: 2 }} />
-      </Badge>
+      <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48, mr: 2 }} />
 
       <ListItemText
         primary={name}
@@ -107,6 +100,19 @@ export function PlayerCard({
 
       {/* Action Buttons */}
       <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+        {/* Checker Color Indicator */}
+        <Box
+          sx={{
+            width: 20,
+            height: 20,
+            borderRadius: '50%',
+            bgcolor: checkerColor === 'white' ? 'common.white' : 'grey.900',
+            border: (theme) => `2px solid ${theme.palette.divider}`,
+            boxShadow: 1,
+            mr: 0.5,
+          }}
+        />
+        
         <Button
           size="small"
           variant="contained"
