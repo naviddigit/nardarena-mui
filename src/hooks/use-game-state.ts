@@ -33,7 +33,10 @@ export type GameState = {
 
 // ----------------------------------------------------------------------
 
-export function useGameState(initialBoardState: BoardState) {
+export function useGameState(
+  initialBoardState: BoardState,
+  playerColor: 'white' | 'black' = 'white'
+) {
   const [gameState, setGameState] = useState<GameState>({
     boardState: initialBoardState,
     currentPlayer: 'white',
@@ -56,7 +59,10 @@ export function useGameState(initialBoardState: BoardState) {
     // Check if there are checkers on the bar that need to enter first
     if (boardState.bar[currentPlayer] > 0) {
       diceValues.forEach((die) => {
-        const enterPoint = currentPlayer === 'white' ? 24 - die : die - 1;
+        // Player's color enters from opponent's home board (top) toward their home (bottom)
+        // So if player is at bottom (23,12,7,5), they enter from top: die-1
+        // Opponent at top (0,11,16,18), they enter from bottom: 24-die
+        const enterPoint = currentPlayer === playerColor ? die - 1 : 24 - die;
         if (isValidDestination(boardState, enterPoint, currentPlayer)) {
           moves.push({ from: -1, to: enterPoint, die });
         }
@@ -69,7 +75,9 @@ export function useGameState(initialBoardState: BoardState) {
       const point = boardState.points[from];
       if (point.count > 0 && point.checkers[0] === currentPlayer) {
         diceValues.forEach((die) => {
-          const to = currentPlayer === 'white' ? from + die : from - die;
+          // Player's color is at bottom (23,12,7,5) and moves down (from-die)
+          // Opponent is at top (0,11,16,18) and moves up (from+die)
+          const to = currentPlayer === playerColor ? from - die : from + die;
           if (to >= 0 && to < 24 && isValidDestination(boardState, to, currentPlayer)) {
             moves.push({ from, to, die });
           }
@@ -116,7 +124,8 @@ export function useGameState(initialBoardState: BoardState) {
     if (boardState.bar[currentPlayer] > 0) return false;
 
     // All checkers must be in home board
-    const homeRange = currentPlayer === 'white' ? [18, 23] : [0, 5];
+    // Player's color is at bottom (home: 18-23), opponent at top (home: 0-5)
+    const homeRange = currentPlayer === playerColor ? [18, 23] : [0, 5];
     for (let i = 0; i < 24; i += 1) {
       const point = boardState.points[i];
       if (point.count > 0 && point.checkers[0] === currentPlayer) {
@@ -133,15 +142,16 @@ export function useGameState(initialBoardState: BoardState) {
     die: number,
     currentPlayer: Player
   ): boolean => {
-    const homeBase = currentPlayer === 'white' ? 18 : 0;
-    const pointValue = currentPlayer === 'white' ? from - homeBase + 1 : from + 1;
+    // Player's color home base is 18, opponent home base is 0
+    const homeBase = currentPlayer === playerColor ? 18 : 0;
+    const pointValue = currentPlayer === playerColor ? from - homeBase + 1 : from + 1;
 
     // Exact match
     if (pointValue === die) return true;
 
     // Can bear off with higher die if no checkers on higher points
     if (die > pointValue) {
-      const range = currentPlayer === 'white' 
+      const range = currentPlayer === playerColor
         ? Array.from({ length: 24 - from - 1 }, (_, i) => from + 1 + i)
         : Array.from({ length: from }, (_, i) => i);
       

@@ -26,25 +26,36 @@ import { BackgammonBoard, type BoardState } from 'src/components/backgammon-boar
 
 // ----------------------------------------------------------------------
 
-// Initial board state (standard backgammon starting position)
+// Initial board state (mirrored based on player color)
 const createInitialBoardState = (playerColor: 'white' | 'black'): BoardState => {
   const points = Array.from({ length: 24 }, () => ({
     checkers: [] as ('white' | 'black')[],
     count: 0,
   }));
 
-  // Standard backgammon layout (same for both)
-  // White starts at bottom-left and moves clockwise (0→23)
-  points[0] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
-  points[11] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-  points[16] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
-  points[18] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  if (playerColor === 'white') {
+    // Player chose WHITE - white at bottom, black at top (MIRRORED)
+    points[23] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
+    points[12] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+    points[7] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
+    points[5] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
 
-  // Black starts at top-right and moves counter-clockwise (23→0)
-  points[23] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
-  points[12] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-  points[7] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
-  points[5] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+    points[0] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
+    points[11] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+    points[16] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
+    points[18] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+  } else {
+    // Player chose BLACK - black at bottom, white at top (STANDARD)
+    points[23] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
+    points[12] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+    points[7] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
+    points[5] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+
+    points[0] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
+    points[11] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+    points[16] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
+    points[18] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  }
 
   return {
     points,
@@ -89,7 +100,7 @@ export default function GameAIPage() {
     handleUndo, 
     handleEndTurn, 
     validDestinations 
-  } = useGameState(initialBoardState);
+  } = useGameState(initialBoardState, playerColor || 'white');
 
   // Timer for White player (120 seconds = 2 minutes)
   const whiteTimer = useCountdownSeconds(120);
@@ -184,8 +195,8 @@ export default function GameAIPage() {
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
-  // Show loading screen until mounted
-  if (!mounted) {
+  // Show loading screen until color is selected
+  if (!mounted || !playerColor) {
     return <SplashScreen />;
   }
 
