@@ -26,36 +26,24 @@ import { BackgammonBoard, type BoardState } from 'src/components/backgammon-boar
 
 // ----------------------------------------------------------------------
 
-// Initial board state (mirrored based on player color)
-const createInitialBoardState = (playerColor: 'white' | 'black'): BoardState => {
+// Initial board state (standard backgammon layout - always the same)
+const createInitialBoardState = (): BoardState => {
   const points = Array.from({ length: 24 }, () => ({
     checkers: [] as ('white' | 'black')[],
     count: 0,
   }));
 
-  if (playerColor === 'white') {
-    // Player chose WHITE - white at bottom, black at top (MIRRORED)
-    points[23] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
-    points[12] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-    points[7] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
-    points[5] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  // White pieces at bottom
+  points[23] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
+  points[12] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  points[7] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
+  points[5] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
 
-    points[0] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
-    points[11] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-    points[16] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
-    points[18] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-  } else {
-    // Player chose BLACK - black at bottom, white at top (STANDARD)
-    points[23] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
-    points[12] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-    points[7] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
-    points[5] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-
-    points[0] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
-    points[11] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-    points[16] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
-    points[18] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-  }
+  // Black pieces at top
+  points[0] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
+  points[11] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+  points[16] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
+  points[18] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
 
   return {
     points,
@@ -79,10 +67,7 @@ export default function GameAIPage() {
   const [colorDialogOpen, setColorDialogOpen] = useState(true);
   const maxSets = 5;
   
-  const initialBoardState = useMemo(
-    () => createInitialBoardState(playerColor || 'white'),
-    [playerColor]
-  );
+  const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
     gameState, 
     handleDiceRoll, 
@@ -91,7 +76,7 @@ export default function GameAIPage() {
     handleUndo, 
     handleEndTurn, 
     validDestinations 
-  } = useGameState(initialBoardState, playerColor || 'white');
+  } = useGameState(initialBoardState);
 
   // Timer for White player (120 seconds = 2 minutes)
   const whiteTimer = useCountdownSeconds(120);
@@ -188,7 +173,14 @@ export default function GameAIPage() {
 
   return (
     <>
-      <Container maxWidth="xl" sx={{ py: 3 }}>
+      <Container 
+        maxWidth="xl" 
+        sx={{ 
+          py: 3,
+          transform: playerColor === 'black' ? 'rotate(180deg)' : 'none',
+          transition: 'transform 0.6s ease-in-out',
+        }}
+      >
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <IconButton
