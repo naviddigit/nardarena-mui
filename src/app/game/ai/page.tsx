@@ -65,7 +65,12 @@ export default function GameAIPage() {
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
   const [colorDialogOpen, setColorDialogOpen] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const maxSets = 5;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
@@ -170,6 +175,10 @@ export default function GameAIPage() {
 
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
+
+  if (!mounted) {
+    return <SplashScreen />;
+  }
 
   if (!playerColor) {
     return (
