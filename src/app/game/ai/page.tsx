@@ -246,8 +246,8 @@ export default function GameAIPage() {
           <Skeleton 
             variant="rectangular" 
             sx={{ 
-              width: 800, 
-              height: 500, 
+              width: { xs: '100%', sm: 600, md: 700 }, 
+              height: { xs: 300, sm: 400, md: 450 }, 
               borderRadius: 2,
               bgcolor: 'rgba(145, 158, 171, 0.12)',
             }} 
