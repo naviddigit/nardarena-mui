@@ -1,1 +1,1 @@
-export * from './dice-roller';
+export * from './dice-roller-load';

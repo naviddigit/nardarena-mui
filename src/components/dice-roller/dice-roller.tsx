@@ -33,7 +33,11 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
   // Initialize Three.js scene and Cannon.js physics world
   useEffect(() => {
-    if (!containerRef.current) return;
+    const match = diceNotation.match(/(\d+)d(\d+)/);
+    if (!match) {
+      setIsRolling(false);
+      return;
+    }
 
     const container = containerRef.current;
     const width = container.clientWidth;
@@ -122,19 +126,19 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     const h = height / 2;
 
     createBarrier(
-      new CANNON.Vec3(0, h * 0.99, 0),
+      new CANNON.Vec3(0, h * 0.93, 0),
       new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2)
     );
     createBarrier(
-      new CANNON.Vec3(0, -h * 0.99, 0),
+      new CANNON.Vec3(0, -h * 0.93, 0),
       new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
     );
     createBarrier(
-      new CANNON.Vec3(w * 0.99, 0, 0),
+      new CANNON.Vec3(w * 0.93, 0, 0),
       new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -Math.PI / 2)
     );
     createBarrier(
-      new CANNON.Vec3(-w * 0.99, 0, 0),
+      new CANNON.Vec3(-w * 0.93, 0, 0),
       new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2)
     );
 
@@ -218,9 +222,11 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
   // Roll dice
   const rollDice = () => {
+    console.log('🎲 rollDice called!', { isRolling, hasScene: !!sceneRef.current, hasWorld: !!worldRef.current });
     if (isRolling || !sceneRef.current || !worldRef.current) return;
 
     setIsRolling(true);
+    console.log('🎲 Starting dice roll animation...');
 
     // Play dice roll sound
     const audio = new Audio('/assets/sounds/dice-roll.mp3');
@@ -275,55 +281,114 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     }
 
     // Animation loop
+    let iteration = 0;
     let lastTime = Date.now();
     const frameRate = 1 / 60;
-    let stableCounter = 0;
 
     const animate = () => {
-      if (!worldRef.current || !sceneRef.current || !rendererRef.current || !cameraRef.current)
+      console.log('🎲 animate() called');
+      if (!worldRef.current || !sceneRef.current || !rendererRef.current || !cameraRef.current) {
+        console.log('🎲 Missing refs:', { world: !!worldRef.current, scene: !!sceneRef.current, renderer: !!rendererRef.current, camera: !!cameraRef.current });
         return;
+      }
 
       const currentTime = Date.now();
       const delta = (currentTime - lastTime) / 1000;
       lastTime = currentTime;
 
+      iteration++;
       worldRef.current.step(frameRate);
 
       // Update mesh positions from physics
-      let allStable = true;
       dicesRef.current.forEach((die) => {
         die.mesh.position.copy(die.body.position as any);
         die.mesh.quaternion.copy(die.body.quaternion as any);
-
-        // Check if die is stable (same as original dice.js)
-        const e = 6;
-        const a = die.body.angularVelocity;
-        const v = die.body.velocity;
-        if (
-          Math.abs(a.x) < e &&
-          Math.abs(a.y) < e &&
-          Math.abs(a.z) < e &&
-          Math.abs(v.x) < e &&
-          Math.abs(v.y) < e &&
-          Math.abs(v.z) < e
-        ) {
-          if (!die.dice_stopped) {
-            die.dice_stopped = stableCounter;
-          } else if (stableCounter - die.dice_stopped <= 3) {
-            allStable = false;
-          }
-        } else {
-          die.dice_stopped = undefined;
-          allStable = false;
-        }
       });
 
       rendererRef.current.render(sceneRef.current, cameraRef.current);
 
-      if (allStable) {
-        stableCounter += 1;
-        if (stableCounter > 60) {
+      // Check if throw finished (matching original dice.js logic)
+      let allFinished = true;
+      const e = 6;
+      const minIterations = 10 / frameRate; // Wait at least 10/60 = 600 frames
+
+      // Log velocities every 60 frames BEFORE checking
+      if (iteration % 60 === 0) {
+        dicesRef.current.forEach((die, idx) => {
+          const a = die.body.angularVelocity;
+          const v = die.body.velocity;
+          console.log(`🎲 Die ${idx}:`, {
+            vel: `(${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)})`,
+            ang: `(${a.x.toFixed(2)}, ${a.y.toFixed(2)}, ${a.z.toFixed(2)})`,
+            pos: `(${die.mesh.position.x.toFixed(0)}, ${die.mesh.position.y.toFixed(0)}, ${die.mesh.position.z.toFixed(0)})`,
+            stopped: die.dice_stopped
+          });
+        });
+      }
+
+      // CRITICAL FIX: Check should be LESS THAN not inside the if
+      // Original code: if (this.iteration < 10 / vars.frame_rate) { check dice }
+      // This means ONLY check for first 600 frames, then ALWAYS return true!
+      if (iteration < minIterations) {
+        // Too early to finish
+        allFinished = false;
+      }
+      
+      // Always check dice stability
+      dicesRef.current.forEach((die, idx) => {
+        if (die.dice_stopped === true) return; // Already stopped
+
+        const a = die.body.angularVelocity;
+        const v = die.body.velocity;
+
+        // Check absolute values
+        const checks = {
+          ax: Math.abs(a.x) < e,
+          ay: Math.abs(a.y) < e,
+          az: Math.abs(a.z) < e,
+          vx: Math.abs(v.x) < e,
+          vy: Math.abs(v.y) < e,
+          vz: Math.abs(v.z) < e,
+        };
+
+        if (iteration % 60 === 0 && idx === 0) {
+          console.log('🎲 Stability checks:', checks, 'all:', Object.values(checks).every(Boolean));
+        }
+
+        // Check if velocities are below threshold
+        if (
+          checks.ax && checks.ay && checks.az &&
+          checks.vx && checks.vy && checks.vz
+        ) {
+          // Die is moving slowly
+          if (die.dice_stopped) {
+            // Check if stable for 3+ frames
+            if (iteration - (die.dice_stopped as number) > 3) {
+              die.dice_stopped = true; // Mark as permanently stopped
+              console.log(`🎲 Die ${idx} permanently stopped at frame`, iteration);
+            } else {
+              allFinished = false; // Still stabilizing
+            }
+          } else {
+            // First frame of stability
+            die.dice_stopped = iteration;
+            console.log(`🎲 Die ${idx} started stabilizing at frame`, iteration);
+            allFinished = false;
+          }
+        } else {
+          // Die is still moving
+          die.dice_stopped = undefined;
+          allFinished = false;
+        }
+      });
+
+      if (iteration % 30 === 0) {
+        console.log('🎲 Frame', iteration, '- allFinished:', allFinished);
+      }
+
+      if (allFinished) {
           // Dice have settled (wait longer for stability)
+          console.log('🎲 Dice settled! Reading values...');
           const results: DiceResult[] = dicesRef.current.map((die) => {
             // Determine which face is up by checking quaternion
             const upVector = new THREE.Vector3(0, 0, 1);
@@ -347,16 +412,15 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
           });
 
           setIsRolling(false);
+          console.log('🎲 Dice roll complete! Results:', results);
           onRollComplete?.(results);
           return;
         }
-      } else {
-        stableCounter = 0;
-      }
 
-      animationFrameRef.current = requestAnimationFrame(animate);
+        animationFrameRef.current = requestAnimationFrame(animate);
     };
 
+    console.log('🎲 Starting animation loop with', dicesRef.current.length, 'dice');
     animate();
   };
 

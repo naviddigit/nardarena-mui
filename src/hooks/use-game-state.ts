@@ -143,9 +143,13 @@ export function useGameState(initialBoardState: BoardState) {
   };
 
   const handleDiceRoll = useCallback((results: { value: number }[]) => {
+    console.log('handleDiceRoll called with:', results);
     setGameState((prev) => {
       const diceValues = results.map((r) => r.value);
       const validMoves = calculateValidMoves(prev.boardState, prev.currentPlayer, diceValues);
+      
+      console.log('Calculated valid moves:', validMoves);
+      console.log('Dice values:', diceValues);
       
       return {
         ...prev,
@@ -166,6 +170,13 @@ export function useGameState(initialBoardState: BoardState) {
 
   const handlePointClick = useCallback(
     (pointIndex: number) => {
+      console.log('handlePointClick called:', { 
+        pointIndex, 
+        gamePhase: gameState.gamePhase,
+        selectedPoint: gameState.selectedPoint,
+        validMoves: gameState.validMoves 
+      });
+      
       if (gameState.gamePhase !== 'moving') return;
 
       // If no point selected, try to select this point
@@ -209,15 +220,15 @@ export function useGameState(initialBoardState: BoardState) {
 
             const fromPoint = newPoints[fromIndex];
             const toPoint = newPoints[toIndex];
+            
+            let newBar = { ...prev.boardState.bar };
 
             // Handle hitting opponent checker
             if (toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer) {
               const hitColor = toPoint.checkers[0];
               toPoint.checkers = [];
               toPoint.count = 0;
-              const newBar = { ...prev.boardState.bar };
-              newBar[hitColor] += 1;
-              prev.boardState.bar = newBar;
+              newBar = { ...newBar, [hitColor]: newBar[hitColor] + 1 };
             }
 
             // Move checker
@@ -233,9 +244,16 @@ export function useGameState(initialBoardState: BoardState) {
             const diceIndex = newDiceValues.indexOf(validMove.die);
             newDiceValues.splice(diceIndex, 1);
 
+            // Create new board state
+            const newBoardState = {
+              points: newPoints,
+              bar: newBar,
+              off: { ...prev.boardState.off },
+            };
+
             // Recalculate valid moves with remaining dice
             const newValidMoves = calculateValidMoves(
-              { ...prev.boardState, points: newPoints },
+              newBoardState,
               prev.currentPlayer,
               newDiceValues
             );
@@ -249,10 +267,7 @@ export function useGameState(initialBoardState: BoardState) {
 
             return {
               ...prev,
-              boardState: {
-                ...prev.boardState,
-                points: newPoints,
-              },
+              boardState: newBoardState,
               diceValues: shouldSwitchPlayer ? [] : newDiceValues,
               selectedPoint: null,
               gamePhase: newPhase as any,

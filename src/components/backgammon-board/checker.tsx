@@ -1,41 +1,81 @@
 'use client';
 
+import type { BoxProps } from '@mui/material/Box';
+
+import { m } from 'framer-motion';
+
 import Box from '@mui/material/Box';
-import { alpha } from '@mui/material/styles';
+
+import { varAlpha } from 'src/theme/styles';
+
+import type { Player } from './types';
 
 // ----------------------------------------------------------------------
 
-type CheckerProps = {
-  player: 'white' | 'black';
+type CheckerProps = BoxProps & {
+  player: Player;
   size: number;
-  top?: number;
-  bottom?: number;
+  yPosition: number;
+  layoutId: string;
+  isSelected?: boolean;
+  onCheckerClick?: () => void;
 };
 
 // ----------------------------------------------------------------------
 
-export function Checker({ player, size, top, bottom }: CheckerProps) {
+export function Checker({ player, size, yPosition, layoutId, isSelected, onCheckerClick, sx, ...other }: CheckerProps) {
   return (
     <Box
+      component={m.div}
+      layoutId={layoutId}
+      initial={false}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ 
+        type: 'spring', 
+        stiffness: 260, 
+        damping: 20,
+        mass: 0.8
+      }}
+      onClick={(e: React.MouseEvent) => {
+        e.stopPropagation();
+        onCheckerClick?.();
+      }}
       sx={{
         width: size,
         height: size,
         borderRadius: '50%',
-        bgcolor: player === 'white' ? '#F5F5F5' : '#1A1A1A',
-        border: player === 'white' ? '2px solid #D0D0D0' : '2px solid #000000',
         position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        ...(top !== undefined && { top }),
-        ...(bottom !== undefined && { bottom }),
-        boxShadow: `0 2px 8px ${alpha('#000', 0.3)}`,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transitionProperty: 'top, bottom, left, box-shadow',
+        top: yPosition,
+        left: `calc(50% - ${size / 2}px)`,
         cursor: 'pointer',
+        transition: 'top 0.3s ease-out, left 0.3s ease-out',
+        // White checkers
+        ...(player === 'white' && {
+          background: 'linear-gradient(135deg, #FFFFFF 0%, #c7c7c7ff 50%, #E8E8E8 100%)',
+          border: isSelected ? '4px solid #1976d2' : '3px solid #a1a1a1ff',
+          boxShadow: (theme) => 
+            `0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`,
+        }),
+        // Black checkers with reflection
+        ...(player === 'black' && {
+          background: 'linear-gradient(135deg, #000000ff 0%, #424242ff 40%, #1A1A1A 70%, #000000 100%)',
+          border: isSelected ? '2px solid #f5faffff' : '2px solid #858585ff',
+          boxShadow: (theme) => 
+            `0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
+        }),
         '&:hover': {
-          boxShadow: `0 4px 12px ${alpha('#000', 0.5)}`,
+          filter: 'brightness(1.1)',
+          boxShadow: (theme) => 
+            player === 'white'
+              ? `0 6px 20px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.9)}`
+              : `0 6px 20px ${varAlpha(theme.vars.palette.common.blackChannel, 0.7)}, inset -2px -2px 10px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.2)}`,
         },
+        '&:active': {
+          filter: 'brightness(0.9)',
+        },
+        ...sx,
       }}
+      {...other}
     />
   );
 }

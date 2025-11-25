@@ -51,9 +51,19 @@ export default function GameAIPage() {
   const initialBoardState = createInitialBoardState();
   const { gameState, handleDiceRoll, handlePointClick, validDestinations } = useGameState(initialBoardState);
 
+  console.log('GameAIPage render:', {
+    selectedPoint: gameState.selectedPoint,
+    validDestinations,
+    diceValues: gameState.diceValues,
+    point0: gameState.boardState.points[0]?.count,
+    point1: gameState.boardState.points[1]?.count,
+  });
+
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
+    console.log('Dice rolled:', results);
     setDiceResults(results);
     handleDiceRoll(results);
+    console.log('After handleDiceRoll, gameState:', gameState);
   };
 
   return (
@@ -61,11 +71,23 @@ export default function GameAIPage() {
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Button
-          variant="outlined"
-          startIcon={<Iconify icon="solar:alt-arrow-right-bold" />}
+          variant="contained"
           href="/dashboard"
+          sx={{
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            boxShadow: 2,
+            border: 1,
+            borderColor: 'divider',
+            '&:hover': {
+              bgcolor: 'background.neutral',
+              boxShadow: 4,
+              transform: 'translateY(-2px)',
+            },
+            transition: 'all 0.2s ease-in-out',
+          }}
         >
-          Back to Dashboard
+          ← Back to Dashboard
         </Button>
 
         <Typography variant="h4">Play vs AI</Typography>
@@ -92,6 +114,12 @@ export default function GameAIPage() {
               🎲 Roll Dice
             </Typography>
             <DiceRoller diceNotation="2d6" onRollComplete={handleDiceRollComplete} />
+            
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                Debug: Phase = {gameState.gamePhase}, Dice = [{gameState.diceValues.join(', ')}], Valid Moves = {gameState.validMoves.length}
+              </Typography>
+            </Box>
 
             {diceResults.length > 0 && (
               <Stack direction="row" spacing={2} sx={{ mt: 3, justifyContent: 'center' }}>
