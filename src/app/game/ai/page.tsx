@@ -241,7 +241,7 @@ export default function GameAIPage() {
           position: 'relative',
           transform: playerColor === 'black' ? 'rotate(180deg)' : 'none',
           opacity: playerColor ? 1 : 0,
-          transition: 'all 0.6s ease-in-out',
+          transition: 'opacity 1.2s ease-in-out',
         }}
       >
         <BackgammonBoard 
