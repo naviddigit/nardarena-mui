@@ -171,6 +171,18 @@ export default function GameAIPage() {
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
+  if (!playerColor) {
+    return (
+      <>
+        <SplashScreen />
+        <ColorSelectionDialog
+          open={colorDialogOpen}
+          onSelectColor={handleColorSelect}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -240,8 +252,6 @@ export default function GameAIPage() {
           mb: 2, 
           position: 'relative',
           transform: playerColor === 'black' ? 'rotate(180deg)' : 'none',
-          opacity: playerColor ? 1 : 0,
-          transition: 'opacity 1.2s ease-in-out',
         }}
       >
         <BackgammonBoard 
@@ -307,7 +317,6 @@ export default function GameAIPage() {
           </Button>
         }
       />
-
       {/* Color Selection Dialog */}
       <ColorSelectionDialog
         open={colorDialogOpen}
@@ -333,12 +342,6 @@ export default function GameAIPage() {
         maxSets={maxSets}
       />
     </Container>
-
-    {/* Color Selection Dialog */}
-    <ColorSelectionDialog
-      open={colorDialogOpen}
-      onSelectColor={handleColorSelect}
-    />
     </>
   );
 }
