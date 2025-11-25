@@ -109,10 +109,21 @@ export default function GameAIPage() {
 
   const triggerDiceRoll = () => {
     if (diceRollerRef.current) {
+      // During opening roll, don't clear dice when Black is about to roll
+      // (so White's die stays visible)
+      const isBlackOpeningRoll = 
+        gameState.gamePhase === 'opening' && 
+        gameState.openingRoll.white !== null && 
+        gameState.openingRoll.black === null;
+      
+      // Clear dice in all cases EXCEPT when Black is rolling in opening
+      const shouldClearDice = !isBlackOpeningRoll;
+      
       // Clear previous dice before new roll
-      if (diceRollerRef.current.clearDice) {
+      if (shouldClearDice && diceRollerRef.current.clearDice) {
         diceRollerRef.current.clearDice();
       }
+      
       if (diceRollerRef.current.rollDice) {
         setIsRolling(true);
         diceRollerRef.current.rollDice();

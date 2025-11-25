@@ -67,23 +67,33 @@ export function useCountdownSeconds(initCountdown: number): UseCountdownSecondsR
   const [countdown, setCountdown] = useState(initCountdown);
 
   const remainingSecondsRef = useRef(countdown);
+  const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
 
   const startCountdown = useCallback(() => {
+    // Clear any existing interval
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+    }
+
     remainingSecondsRef.current = countdown;
 
-    const intervalId = setInterval(() => {
+    intervalIdRef.current = setInterval(() => {
       remainingSecondsRef.current -= 1;
 
-      if (remainingSecondsRef.current === 0) {
-        clearInterval(intervalId);
-        setCountdown(initCountdown);
+      if (remainingSecondsRef.current <= 0) {
+        remainingSecondsRef.current = 0;
+        setCountdown(0);
+        if (intervalIdRef.current) {
+          clearInterval(intervalIdRef.current);
+          intervalIdRef.current = null;
+        }
       } else {
         setCountdown(remainingSecondsRef.current);
       }
     }, 1000);
-  }, [initCountdown, countdown]);
+  }, [countdown]);
 
-  const counting = initCountdown > countdown;
+  const counting = countdown > 0 && countdown < initCountdown;
 
   return {
     counting,
