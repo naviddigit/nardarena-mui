@@ -97,12 +97,12 @@ export function PlayerCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          minWidth: 60,
+          minWidth: 50,
           mr: 1.5,
         }}
       >
         <Typography
-          variant="h6"
+          variant="body1"
           sx={{
             fontFamily: 'monospace',
             color: timeRemaining < 10 ? 'error.main' : 'text.primary',
@@ -115,16 +115,29 @@ export function PlayerCard({
 
       {/* Action Buttons */}
       <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-        <Button
-          size="small"
-          variant="contained"
-          color="primary"
-          disabled={!canRoll}
-          onClick={onRollDice}
-          sx={{ minWidth: 70 }}
-        >
-          Roll
-        </Button>
+        <Stack direction="column" spacing={0.5}>
+          <Button
+            size="small"
+            variant="contained"
+            color="primary"
+            disabled={!canRoll}
+            onClick={onRollDice}
+            sx={{ minWidth: 70, py: 0.5 }}
+          >
+            Roll
+          </Button>
+          
+          <Button
+            size="small"
+            variant="outlined"
+            color="success"
+            disabled={!canDone}
+            onClick={onDone}
+            sx={{ minWidth: 70, py: 0.5 }}
+          >
+            Done
+          </Button>
+        </Stack>
         
         <IconButton
           size="small"
@@ -138,17 +151,6 @@ export function PlayerCard({
         >
           <Iconify icon="eva:arrow-back-fill" width={18} />
         </IconButton>
-
-        <Button
-          size="small"
-          variant="outlined"
-          color="success"
-          disabled={!canDone}
-          onClick={onDone}
-          sx={{ minWidth: 70 }}
-        >
-          Done
-        </Button>
       </Stack>
     </Card>
   );
