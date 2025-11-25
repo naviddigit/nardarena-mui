@@ -113,42 +113,50 @@ export function PlayerCard({
         </Typography>
       </Box>
 
-      {/* Action Buttons */}
-      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-        <Button
-          size="small"
-          variant="contained"
-          color="primary"
-          disabled={!canRoll}
-          onClick={onRollDice}
-          sx={{ minWidth: 70 }}
-        >
-          Roll
-        </Button>
+      {/* Action Buttons - Show only relevant button based on game state */}
+      <Stack direction="column" spacing={1} sx={{ flexShrink: 0 }}>
+        {/* Roll Button - Only show when player can roll */}
+        {canRoll && (
+          <Button
+            size="small"
+            variant="contained"
+            color="primary"
+            onClick={onRollDice}
+            sx={{ minWidth: 80 }}
+          >
+            Roll
+          </Button>
+        )}
         
-        <IconButton
-          size="small"
-          color="default"
-          disabled={!canUndo}
-          onClick={onUndo}
-          sx={{
-            bgcolor: (theme) => theme.palette.background.neutral,
-            '&:hover': { bgcolor: (theme) => theme.palette.action.hover },
-          }}
-        >
-          <Iconify icon="eva:arrow-back-fill" width={18} />
-        </IconButton>
+        {/* Undo Button - Show when player has made at least one move */}
+        {canUndo && !canRoll && (
+          <IconButton
+            size="small"
+            color="default"
+            onClick={onUndo}
+            sx={{
+              bgcolor: (theme) => theme.palette.background.neutral,
+              '&:hover': { bgcolor: (theme) => theme.palette.action.hover },
+              width: 80,
+              height: 36,
+            }}
+          >
+            <Iconify icon="eva:arrow-back-fill" width={18} />
+          </IconButton>
+        )}
 
-        <Button
-          size="small"
-          variant="outlined"
-          color="success"
-          disabled={!canDone}
-          onClick={onDone}
-          sx={{ minWidth: 70 }}
-        >
-          Done
-        </Button>
+        {/* Done Button - Show when moves are complete and can finish turn */}
+        {canDone && !canRoll && (
+          <Button
+            size="small"
+            variant="outlined"
+            color="success"
+            onClick={onDone}
+            sx={{ minWidth: 80 }}
+          >
+            Done
+          </Button>
+        )}
       </Stack>
     </Card>
   );

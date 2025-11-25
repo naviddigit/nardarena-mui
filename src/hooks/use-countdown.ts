@@ -60,6 +60,7 @@ export type UseCountdownSecondsReturn = {
   counting: boolean;
   countdown: number;
   startCountdown: () => void;
+  stopCountdown: () => void;
   setCountdown: React.Dispatch<React.SetStateAction<number>>;
 };
 
@@ -93,12 +94,20 @@ export function useCountdownSeconds(initCountdown: number): UseCountdownSecondsR
     }, 1000);
   }, [countdown]);
 
+  const stopCountdown = useCallback(() => {
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+      intervalIdRef.current = null;
+    }
+  }, []);
+
   const counting = countdown > 0 && countdown < initCountdown;
 
   return {
     counting,
     countdown,
     startCountdown,
+    stopCountdown,
     setCountdown,
   };
 }

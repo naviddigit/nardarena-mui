@@ -109,15 +109,22 @@ export default function GameAIPage() {
 
   const triggerDiceRoll = () => {
     if (diceRollerRef.current) {
-      // NEVER clear dice automatically
-      // Dice should stay visible until opponent's next roll
-      // Only clear when starting a NEW roll (not when just clicking Roll button)
-      
       if (diceRollerRef.current.rollDice) {
         setIsRolling(true);
         diceRollerRef.current.rollDice();
       }
     }
+  };
+
+  const handleDone = () => {
+    // Stop current player's timer
+    if (gameState.currentPlayer === 'white') {
+      whiteTimer.stopCountdown();
+    } else {
+      blackTimer.stopCountdown();
+    }
+    
+    handleEndTurn();
   };
 
   // Determine dice notation based on game phase
@@ -161,10 +168,10 @@ export default function GameAIPage() {
             (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting')
           }
           onRollDice={triggerDiceRoll}
-          onDone={handleEndTurn}
+          onDone={handleDone}
           canDone={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           onUndo={handleUndo}
-          canUndo={gameState.currentPlayer === 'black' && gameState.moveHistory.length > 0}
+          canUndo={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           timeRemaining={blackTimer.countdown}
         />
       </Box>
@@ -184,7 +191,7 @@ export default function GameAIPage() {
               onRollComplete={handleDiceRollComplete}
             />
           }
-          dicePosition={{ top: '20%', left: '2%' }}
+          dicePosition={{ top: '20%', left: '0%' }}
         />
       </Box>
 
@@ -204,10 +211,10 @@ export default function GameAIPage() {
             (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting')
           }
           onRollDice={triggerDiceRoll}
-          onDone={handleEndTurn}
+          onDone={handleDone}
           canDone={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           onUndo={handleUndo}
-          canUndo={gameState.currentPlayer === 'white' && gameState.moveHistory.length > 0}
+          canUndo={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           timeRemaining={whiteTimer.countdown}
         />
       </Box>
