@@ -53,6 +53,8 @@ export function BackgammonBoard({
   onPointClick,
   selectedPoint,
   validDestinations = [],
+  diceRoller,
+  dicePosition = { top: 20, right: 20 },
 }: BackgammonBoardProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -294,6 +296,19 @@ export function BackgammonBoard({
           <Box sx={{ typography: 'h6' }}>{boardState.off.black}</Box>
         </Box>
       </Box>
+
+      {/* 🎲 Dice Roller - Positioned relative to board */}
+      {diceRoller && (
+        <Box
+          sx={{
+            position: 'absolute',
+            zIndex: 10,
+            ...dicePosition,
+          }}
+        >
+          {diceRoller}
+        </Box>
+      )}
     </Card>
   );
 }

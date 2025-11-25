@@ -109,32 +109,38 @@ export default function GameAIPage() {
         spacing={3} 
         alignItems="flex-start"
       >
-        {/* Game Board */}
+        {/* Game Board with Dice Roller */}
         <Box sx={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
           <BackgammonBoard 
             boardState={gameState.boardState} 
             onPointClick={handlePointClick}
             selectedPoint={gameState.selectedPoint}
             validDestinations={validDestinations}
+            diceRoller={<DiceRoller diceNotation="2d6" onRollComplete={handleDiceRollComplete} />}
+            dicePosition={{ 
+              top: '25%',    // 👈 تغییر بده: فاصله از بالا
+              left: '0%',   // 👈 تغییر بده: فاصله از چپ
+            }}
           />
         </Box>
 
-        {/* Right Sidebar */}
+        {/* Right Sidebar - Game Info Only */}
         <Stack spacing={3} sx={{ width: { xs: '100%', md: 400 } }}>
-          {/* Dice Roller */}
+          {/* Debug Info */}
           <Card>
-            <Box sx={{ p: 3 }}>
-              <DiceRoller diceNotation="2d6" onRollComplete={handleDiceRollComplete} />
-            
-              <Box sx={{ mt: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Debug: Phase = {gameState.gamePhase}, Dice = [{gameState.diceValues.join(', ')}], Valid Moves = {gameState.validMoves.length}
-                </Typography>
-              </Box>
+            <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
+              <Typography variant="caption" color="text.secondary">
+                Debug: Phase = {gameState.gamePhase}, Dice = [{gameState.diceValues.join(', ')}], Valid Moves = {gameState.validMoves.length}
+              </Typography>
+            </Box>
+          </Card>
 
-              {diceResults.length > 0 && (
-                <Stack direction="row" spacing={2} sx={{ mt: 3, justifyContent: 'center' }}>
-                  <Typography variant="subtitle1" sx={{ mr: 2 }}>
+          {/* Dice Results Display */}
+          {diceResults.length > 0 && (
+            <Card>
+              <Box sx={{ p: 2 }}>
+                <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
+                  <Typography variant="subtitle1" sx={{ mr: 1 }}>
                     Results:
                   </Typography>
                   {diceResults.map((result, index) => (
@@ -158,9 +164,9 @@ export default function GameAIPage() {
                     </Box>
                   ))}
                 </Stack>
-              )}
-            </Box>
-          </Card>
+              </Box>
+            </Card>
+          )}
 
           {/* Game Info */}
           <Card>

@@ -114,8 +114,8 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
         return;
       }
 
-      // Generate vectors for dice throw
-      const vector = { x: 0, y: 1 };
+      // Generate vectors for dice throw - 👈 تغییر جهت پرتاب: x: -1, y: 0 = از چپ
+      const vector = { x: 1, y: 0 };
       const boost = 500;
       const vectors = box.generate_vectors(notation, vector, boost);
       
@@ -138,13 +138,14 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   };
 
   return (
-    <Box sx={{ position: 'relative', width: '100%', height: 400 }}>
+    <Box sx={{ position: 'relative', width: 300, height: 300 }}>
       <Box
         ref={containerRef}
         sx={{
-          width: '100%',
+          width: 250,
           height: '100%',
-          bgcolor: 'background.neutral',
+        //   border: '1px solid',
+        //   bgcolor: 'background.neutral',
           borderRadius: 2,
           overflow: 'hidden',
           '& canvas': {
@@ -158,8 +159,9 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
         disabled={!isReady || isRolling}
         sx={{
           position: 'absolute',
-          bottom: 16,
-          left: '50%',
+        //   bottom: 16,
+          left: '140%',
+          top: '35%',
           transform: 'translateX(-50%)',
           px: 4,
           py: 1.5,
@@ -177,7 +179,7 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
           transition: 'all 0.2s ease-in-out',
         }}
       >
-        {!isReady ? 'Loading Dice...' : isRolling ? 'Rolling...' : 'Roll Dice'}
+        {!isReady ? 'Loading Dice...' : isRolling ? 'Rolling...' : 'Roll'}
       </Button>
     </Box>
   );
