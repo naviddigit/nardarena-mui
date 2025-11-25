@@ -19,6 +19,7 @@ import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
 import { DiceRoller } from 'src/components/dice-roller';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import { GameResultDialog } from 'src/components/game-result-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
 
 // ----------------------------------------------------------------------
@@ -58,6 +59,9 @@ export default function GameAIPage() {
   const [isRolling, setIsRolling] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [winner, setWinner] = useState<'white' | 'black' | null>(null);
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [scores, setScores] = useState({ white: 0, black: 0 });
+  const maxSets = 5;
   
   const initialBoardState = createInitialBoardState();
   const { 
@@ -108,10 +112,14 @@ export default function GameAIPage() {
   useEffect(() => {
     if (whiteTimer.countdown === 0 && !winner) {
       setWinner('black');
+      setScores((prev) => ({ ...prev, black: prev.black + 1 }));
+      setResultDialogOpen(true);
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
     } else if (blackTimer.countdown === 0 && !winner) {
       setWinner('white');
+      setScores((prev) => ({ ...prev, white: prev.white + 1 }));
+      setResultDialogOpen(true);
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
     }
@@ -142,6 +150,14 @@ export default function GameAIPage() {
     handleEndTurn();
   };
 
+  const handleRematch = () => {
+    setResultDialogOpen(false);
+    setWinner(null);
+    whiteTimer.setCountdown(120);
+    blackTimer.setCountdown(120);
+    window.location.reload(); // Reset game completely
+  };
+
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
@@ -167,7 +183,7 @@ export default function GameAIPage() {
             }}
           />
           <Typography variant="caption" color="text.secondary">
-            Set 1 of 5
+            {scores.white} - {scores.black} (of {maxSets})
           </Typography>
         </Stack>
 
@@ -269,6 +285,25 @@ export default function GameAIPage() {
             Exit
           </Button>
         }
+      />
+
+      {/* Game Result Dialog */}
+      <GameResultDialog
+        open={resultDialogOpen}
+        onRematch={handleRematch}
+        whitePlayer={{
+          name: 'You',
+          avatarUrl: _mock.image.avatar(0),
+          score: scores.white,
+          isWinner: winner === 'white',
+        }}
+        blackPlayer={{
+          name: 'AI Opponent',
+          avatarUrl: _mock.image.avatar(1),
+          score: scores.black,
+          isWinner: winner === 'black',
+        }}
+        maxSets={maxSets}
       />
     </Container>
   );
