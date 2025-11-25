@@ -48,18 +48,17 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, onCheck
         top: yPosition,
         left: `calc(50% - ${size / 2}px)`,
         cursor: 'pointer',
-        transition: 'top 0.3s ease-out, left 0.3s ease-out',
         // White checkers
         ...(player === 'white' && {
           background: 'linear-gradient(135deg, #FFFFFF 0%, #c7c7c7ff 50%, #E8E8E8 100%)',
-          border: isSelected ? '4px solid #1976d2' : '3px solid #a1a1a1ff',
+          border: isSelected ? '4px solid #1976d2' : '2px solid #8a8a8aff',
           boxShadow: (theme) => 
             `0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`,
         }),
         // Black checkers with reflection
         ...(player === 'black' && {
-          background: 'linear-gradient(135deg, #000000ff 0%, #424242ff 40%, #1A1A1A 70%, #000000 100%)',
-          border: isSelected ? '2px solid #f5faffff' : '2px solid #858585ff',
+          background: 'linear-gradient(135deg, #1976d2 0%, #424242ff 40%, #1A1A1A 70%, #000000 100%)',
+          border: isSelected ? '4px solid #1976d2' : '2px solid #d4d4d4ff',
           boxShadow: (theme) => 
             `0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
         }),

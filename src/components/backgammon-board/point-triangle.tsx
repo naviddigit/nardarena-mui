@@ -35,9 +35,12 @@ export function PointTriangle({
         height,
         bgcolor: color,
         clipPath: CLIP_PATHS[direction],
+        WebkitClipPath: CLIP_PATHS[direction],
         position: 'absolute',
-        top: 0,
+        top: direction === 'down' ? 0 : 'auto',
+        bottom: direction === 'up' ? 0 : 'auto',
         left: 0,
+        borderRadius: '25px',
         ...sx,
       }}
       {...other}

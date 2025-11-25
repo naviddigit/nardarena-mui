@@ -1,12 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 
 import { varAlpha } from 'src/theme/styles';
 
 import { Checker } from './checker';
+import { SplashScreen } from '../loading-screen';
 import { PointTriangle } from './point-triangle';
 
 import type { BackgammonBoardProps } from './types';
@@ -14,6 +17,34 @@ import type { BackgammonBoardProps } from './types';
 // ----------------------------------------------------------------------
 
 const BOARD_RATIO = 1.25;
+
+// ⚙️ CONTROL PANEL - تنظیمات مرکزی (فقط اینجا تغییر بده!)
+const SCALE_CONFIG = {
+  // عرض جایگاه‌ها (Point Width Scale)
+  pointWidth: {
+    desktop: 0.9,    // 100% = عادی | مثال: 1.2 = 20% بزرگتر | 0.8 = 20% کوچکتر
+    mobile: 0.85,    // نسبت به desktop
+  },
+  // اندازه مهره‌ها (Checker Size Scale)
+  checkerSize: {
+    desktop: 0.9,   // نسبت به pointWidth | 0.85 = 85% عرض جایگاه
+    mobile: 0.9,     // نسبت به pointWidth
+  },
+  // فاصله بین مهره‌ها (Stack Spacing)
+  stackSpacing: {
+    desktop: 0.9,    // نسبت به pointWidth
+    mobile: 0.9,     // نسبت به pointWidth
+  },
+  // مهره‌های bar
+  barChecker: {
+    desktop: 0.7,    // نسبت به pointWidth
+    mobile: 0.6,    // نسبت به pointWidth
+  },
+  // عرض bar وسطی (10% کوچک‌تر از pointWidth)
+  barWidth: 0.9,
+  // ارتفاع مثلث‌ها (Triangle Height)
+  // triangleHeight: 240, // px - ارتفاع ثابت مثلث‌ها
+};
 
 // ----------------------------------------------------------------------
 
@@ -24,16 +55,33 @@ export function BackgammonBoard({
   validDestinations = [],
 }: BackgammonBoardProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [mounted, setMounted] = useState(false);
 
-  const boardHeight = 600;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Responsive sizing
+  const boardHeight = isSmallMobile ? 450 : isMobile ? 500 : 600;
   const boardWidth = boardHeight * BOARD_RATIO;
-  const pointWidth = boardWidth / 14;
-  const pointHeight = (boardHeight - 40) / 2;
-
-  const darkPoint = theme.palette.mode === 'dark' ? theme.vars.palette.grey[700] : theme.vars.palette.grey[800];
-  const lightPoint = theme.palette.mode === 'dark' ? theme.vars.palette.grey[600] : theme.vars.palette.grey[300];
-  const boardBg = theme.palette.mode === 'dark' ? theme.vars.palette.grey[900] : '#8B4513';
-  const barColor = theme.palette.mode === 'dark' ? theme.vars.palette.grey[800] : '#654321';
+  const padding = isSmallMobile ? 8 : isMobile ? 12 : 16;
+  
+  // استفاده از SCALE_CONFIG برای محاسبه سایزها
+  const basePointWidth = (boardWidth - padding * 2) / 16;
+  const pointWidthScale = isMobile ? SCALE_CONFIG.pointWidth.mobile : SCALE_CONFIG.pointWidth.desktop;
+  const pointWidth = basePointWidth * pointWidthScale;
+  const pointHeight = (boardHeight - padding * 2 - 20) / 2;
+  const triangleHeight = pointHeight - (pointHeight * 0.2); // ارتفاع مثلث‌ها نسبت به ارتفاع جایگاه‌ها
+  
+  // Theme-based colors (no hardcoded values)
+  const darkPoint = theme.vars.palette.grey[700];
+  const lightPoint = theme.vars.palette.grey[500];
+  const boardBg = theme.palette.mode === 'light' 
+    ? theme.vars.palette.common.white 
+    : theme.vars.palette.grey[800];
+  const barColor = theme.vars.palette.grey[700];
 
   const isValidDestination = (pointIndex: number) => validDestinations.includes(pointIndex);
 
@@ -63,7 +111,7 @@ export function BackgammonBoard({
           color={i % 2 === 0 ? darkPoint : lightPoint}
           direction={isTop ? 'down' : 'up'}
           width={pointWidth}
-          height={pointHeight}
+          height={triangleHeight}
         />
 
         {/* Valid destination indicator */}
@@ -88,8 +136,15 @@ export function BackgammonBoard({
 
         {boardState.points[pointIndex]?.checkers.map((player, idx) => {
           const checkerId = `${player}-p${pointIndex}-s${idx}`;
-          const stackPosition = idx * (pointWidth * 0.75);
-          const absolutePosition = isTop ? stackPosition : pointHeight - stackPosition - (pointWidth * 0.85);
+          // استفاده از SCALE_CONFIG
+          const stackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+          const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
+          
+          const stackPosition = idx * (pointWidth * stackSpacing);
+          const checkerSize = pointWidth * checkerScale;
+          // Ensure checkers don't overflow
+          const maxStack = Math.min(stackPosition, pointHeight - checkerSize);
+          const absolutePosition = isTop ? maxStack : pointHeight - maxStack - checkerSize;
           const isCheckerSelected = selectedPoint === pointIndex && idx === boardState.points[pointIndex].count - 1;
           
           return (
@@ -97,7 +152,7 @@ export function BackgammonBoard({
               key={checkerId}
               layoutId={checkerId}
               player={player}
-              size={pointWidth * 0.85}
+              size={checkerSize}
               yPosition={absolutePosition}
               isSelected={isCheckerSelected}
               onCheckerClick={() => {
@@ -110,73 +165,107 @@ export function BackgammonBoard({
     );
   };
 
+  if (!mounted) {
+    return <SplashScreen />;
+  }
+
   return (
     <Card
       sx={{
-        width: boardWidth,
-        height: boardHeight,
         bgcolor: boardBg,
-        p: 2,
         position: 'relative',
-        border: `4px solid ${varAlpha(theme.vars.palette.divider, 1)}`,
+        boxSizing: 'border-box',
+        boxShadow: theme.palette.mode === 'light' 
+          ? '2px 2px 4px 0px rgb(74 74 74)' 
+          : '0 1px 2px 0 rgba(196, 197, 199, 0.16)',
+        borderRadius: 2,
+        px: '6px',
+        py: 0,
+        zIndex: 0,
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.08) 0%, transparent 50%)',
+          pointerEvents: 'none',
+          borderRadius: 1,
+        },
       }}
     >
       {/* Top half */}
-      <Box sx={{ display: 'flex', height: pointHeight, mb: 1 }}>
+      <Box sx={{ display: 'flex', height: pointHeight }}>
         {topPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
 
         <Box
           sx={{
-            width: pointWidth,
+            width: pointWidth * SCALE_CONFIG.barWidth,
             height: pointHeight,
             bgcolor: barColor,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1,
+            justifyContent: 'flex-start',
+            borderRadius: 2,
+            py: 1,
+            mx: '8px',
           }}
         >
-          {Array.from({ length: boardState.bar.white }).map((_, idx) => (
-            <Checker 
-              key={`white-bar-${idx}`} 
-              layoutId={`white-bar-${idx}`}
-              player="white" 
-              size={pointWidth * 0.7} 
-              yPosition={idx * (pointWidth * 0.75)} 
-            />
-          ))}
+          {Array.from({ length: boardState.bar.white }).map((_, idx) => {
+            const barSize = isMobile ? SCALE_CONFIG.barChecker.mobile : SCALE_CONFIG.barChecker.desktop;
+            const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+            
+            return (
+              <Checker 
+                key={`white-bar-${idx}`} 
+                layoutId={`white-bar-${idx}`}
+                player="white" 
+                size={pointWidth * barSize}
+                yPosition={idx * (pointWidth * barStackSpacing)} 
+              />
+            );
+          })}
         </Box>
 
         {topPoints.slice(6, 12).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
       </Box>
 
       {/* Bottom half */}
-      <Box sx={{ display: 'flex', height: pointHeight, mt: 1 }}>
+      <Box sx={{ display: 'flex', height: pointHeight }}>
         {/* Left side: points 11→6 */}
         {bottomPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, false))}
 
         <Box
           sx={{
-            width: pointWidth,
+            width: pointWidth * SCALE_CONFIG.barWidth,
             height: pointHeight,
             bgcolor: barColor,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1,
+            justifyContent: 'flex-start',
+            borderRadius: 2,
+            py: 1,
+            mx: '8px',
           }}
         >
-          {Array.from({ length: boardState.bar.black }).map((_, idx) => (
-            <Checker 
-              key={`black-bar-${idx}`} 
-              layoutId={`black-bar-${idx}`}
-              player="black" 
-              size={pointWidth * 0.7} 
-              yPosition={idx * (pointWidth * 0.75)} 
-            />
-          ))}
+          {Array.from({ length: boardState.bar.black }).map((_, idx) => {
+            const barSize = isMobile ? SCALE_CONFIG.barChecker.mobile : SCALE_CONFIG.barChecker.desktop;
+            const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+            
+            return (
+              <Checker 
+                key={`black-bar-${idx}`} 
+                layoutId={`black-bar-${idx}`}
+                player="black" 
+                size={pointWidth * barSize}
+                yPosition={idx * (pointWidth * barStackSpacing)} 
+              />
+            );
+          })}
         </Box>
 
         {/* Right side: points 5→0 */}
