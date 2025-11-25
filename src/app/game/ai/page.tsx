@@ -176,15 +176,16 @@ export default function GameAIPage() {
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
-  if (isLoading || !playerColor) {
+  if (isLoading) {
+    return <SplashScreen />;
+  }
+
+  if (!playerColor) {
     return (
-      <>
-        <SplashScreen />
-        <ColorSelectionDialog
-          open={colorDialogOpen}
-          onSelectColor={handleColorSelect}
-        />
-      </>
+      <ColorSelectionDialog
+        open={colorDialogOpen}
+        onSelectColor={handleColorSelect}
+      />
     );
   }
 
