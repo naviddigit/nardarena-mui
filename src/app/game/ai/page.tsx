@@ -18,7 +18,6 @@ import { _mock } from 'src/_mock';
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
 import { DiceRoller } from 'src/components/dice-roller';
-import { DiceDisplay } from 'src/components/dice-display';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
 
@@ -188,22 +187,6 @@ export default function GameAIPage() {
           dicePosition={{ top: '20%', left: '2%' }}
         />
       </Box>
-
-      {/* Opening Roll Results Display */}
-      {gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mb: 2 }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <Box sx={{ mb: 0.5, typography: 'caption', color: 'text.secondary' }}>White</Box>
-            <DiceDisplay values={[gameState.openingRoll.white]} />
-          </Box>
-          {gameState.openingRoll.black !== null && (
-            <Box sx={{ textAlign: 'center' }}>
-              <Box sx={{ mb: 0.5, typography: 'caption', color: 'text.secondary' }}>Black</Box>
-              <DiceDisplay values={[gameState.openingRoll.black]} />
-            </Box>
-          )}
-        </Box>
-      )}
 
       {/* Player 2 (White - Bottom) */}
       <Box>
