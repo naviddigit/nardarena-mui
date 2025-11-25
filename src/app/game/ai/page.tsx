@@ -185,12 +185,12 @@ export default function GameAIPage() {
   }
 
   if (!playerColor) {
-    return (
+    return colorDialogOpen ? (
       <ColorSelectionDialog
         open={colorDialogOpen}
         onSelectColor={handleColorSelect}
       />
-    );
+    ) : null;
   }
 
   return (
