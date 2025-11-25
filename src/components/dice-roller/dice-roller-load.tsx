@@ -32,13 +32,9 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   
-  // Responsive sizes
-  const containerSize = isMobile ? 180 : isTablet ? 220 : 280;
-  const canvasWidth = isMobile ? 160 : isTablet ? 200 : 250;
-  const buttonLeft = isMobile ? '110%' : isTablet ? '120%' : '130%';
-  const buttonTop = isMobile ? '40%' : '35%';
-  const buttonPadding = isMobile ? { px: 2, py: 1 } : { px: 3, py: 1.2 };
-  const buttonFontSize = isMobile ? '0.85rem' : '1rem';
+  // Hidden canvas - just for dice physics
+  const containerSize = 1;
+  const canvasWidth = 1;
 
   useEffect(() => {
     console.log('🎲 Starting to load scripts...');
@@ -148,45 +144,32 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   };
 
   return (
-    <Box sx={{ position: 'relative', width: containerSize, height: containerSize }}>
-      <Box
+    <>
+      {/* Hidden canvas for dice physics */}
+      <Box 
         ref={containerRef}
-        sx={{
-          width: canvasWidth,
-          height: '100%',
-          borderRadius: 2,
-          overflow: 'hidden',
-          '& canvas': {
-            display: 'block',
-          },
-        }}
+        sx={{ 
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          opacity: 0,
+          pointerEvents: 'none',
+        }} 
       />
+      
+      {/* Roll Button */}
       <Button
+        size="small"
         variant="contained"
+        color="primary"
         onClick={rollDice}
         disabled={!isReady || isRolling}
-        sx={{
-          position: 'absolute',
-          left: buttonLeft,
-          top: buttonTop,
-          transform: 'translateX(-50%)',
-          ...buttonPadding,
-          fontSize: buttonFontSize,
-          fontWeight: 600,
-          boxShadow: 3,
-          '&:hover': {
-            boxShadow: 6,
-            transform: 'translateX(-50%) translateY(-2px)',
-          },
-          '&:active': {
-            transform: 'translateX(-50%) translateY(0)',
-            boxShadow: 2,
-          },
-          transition: 'all 0.2s ease-in-out',
+        sx={{ 
+          minWidth: 80,
         }}
       >
         {!isReady ? 'Loading...' : isRolling ? 'Rolling...' : 'Roll'}
       </Button>
-    </Box>
+    </>
   );
 }
