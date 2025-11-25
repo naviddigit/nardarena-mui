@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Skeleton from '@mui/material/Skeleton';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -240,47 +239,27 @@ export default function GameAIPage() {
           justifyContent: 'center', 
           mb: 2, 
           position: 'relative',
+          transform: playerColor === 'black' ? 'rotate(180deg)' : 'none',
+          opacity: playerColor ? 1 : 0,
+          transition: 'opacity 1.2s ease-in-out',
         }}
       >
-        {!playerColor ? (
-          <Skeleton 
-            variant="rectangular" 
-            sx={{ 
-              width: { xs: '100%', sm: 600, md: 700 }, 
-              height: { xs: 300, sm: 400, md: 450 }, 
-              borderRadius: 2,
-              bgcolor: 'rgba(145, 158, 171, 0.12)',
-            }} 
-          />
-        ) : (
-          <Box
-            sx={{
-              transform: playerColor === 'black' ? 'rotate(180deg)' : 'none',
-              animation: 'fadeIn 1.2s ease-in-out',
-              '@keyframes fadeIn': {
-                from: { opacity: 0 },
-                to: { opacity: 1 },
-              },
-            }}
-          >
-            <BackgammonBoard 
-              boardState={gameState.boardState} 
-              onPointClick={handlePointClick}
-              onBarClick={handleBarClick}
-              selectedPoint={gameState.selectedPoint}
-              validDestinations={validDestinations}
-              isRolling={isRolling}
-              diceRoller={
-                <DiceRoller
-                  ref={diceRollerRef}
-                  diceNotation={diceNotation}
-                  onRollComplete={handleDiceRollComplete}
-                />
-              }
-              dicePosition={{ top: 200, left: 0 }}
+        <BackgammonBoard 
+          boardState={gameState.boardState} 
+          onPointClick={handlePointClick}
+          onBarClick={handleBarClick}
+          selectedPoint={gameState.selectedPoint}
+          validDestinations={validDestinations}
+          isRolling={isRolling}
+          diceRoller={
+            <DiceRoller
+              ref={diceRollerRef}
+              diceNotation={diceNotation}
+              onRollComplete={handleDiceRollComplete}
             />
-          </Box>
-        )}
+          }
+          dicePosition={{ top: 200, left: 0 }}
+        />
       </Box>
 
       {/* Player 2 (You - Bottom) */}
