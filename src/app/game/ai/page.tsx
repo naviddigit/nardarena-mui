@@ -20,30 +20,41 @@ import { PlayerCard } from 'src/components/player-card';
 import { DiceRoller } from 'src/components/dice-roller';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { GameResultDialog } from 'src/components/game-result-dialog';
+import { ColorSelectionDialog } from 'src/components/color-selection-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
 
 // ----------------------------------------------------------------------
 
 // Initial board state (standard backgammon starting position)
-const createInitialBoardState = (): BoardState => {
+const createInitialBoardState = (playerColor: 'white' | 'black'): BoardState => {
   const points = Array.from({ length: 24 }, () => ({
     checkers: [] as ('white' | 'black')[],
     count: 0,
   }));
 
-  // White checkers starting positions (player at bottom - mirrored to bottom)
-  // Original black positions mirrored: 23→0, 12→11, 7→16, 5→18
-  points[23] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
-  points[12] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-  points[7] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
-  points[5] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  if (playerColor === 'white') {
+    // Player is white - white at bottom, black at top
+    points[23] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
+    points[12] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+    points[7] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
+    points[5] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
 
-  // Black checkers starting positions (AI at top - mirrored to top)
-  // Original white positions mirrored: 0→23, 11→12, 16→7, 18→5
-  points[0] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
-  points[11] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-  points[16] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
-  points[18] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+    points[0] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
+    points[11] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+    points[16] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
+    points[18] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+  } else {
+    // Player is black - black at bottom, white at top
+    points[23] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
+    points[12] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+    points[7] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
+    points[5] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+
+    points[0] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
+    points[11] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+    points[16] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
+    points[18] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  }
 
   return {
     points,
@@ -63,9 +74,11 @@ export default function GameAIPage() {
   const [winner, setWinner] = useState<'white' | 'black' | null>(null);
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [scores, setScores] = useState({ white: 0, black: 0 });
+  const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
+  const [colorDialogOpen, setColorDialogOpen] = useState(true);
   const maxSets = 5;
   
-  const initialBoardState = createInitialBoardState();
+  const initialBoardState = playerColor ? createInitialBoardState(playerColor) : createInitialBoardState('white');
   const { 
     gameState, 
     handleDiceRoll, 
@@ -160,6 +173,11 @@ export default function GameAIPage() {
     window.location.reload(); // Reset game completely
   };
 
+  const handleColorSelect = (color: 'white' | 'black') => {
+    setPlayerColor(color);
+    setColorDialogOpen(false);
+  };
+
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
@@ -197,29 +215,29 @@ export default function GameAIPage() {
         </IconButton>
       </Stack>
 
-      {/* Player 1 (Black - Top) */}
+      {/* Player 1 (Opponent - Top) */}
       <Box sx={{ mb: 2 }}>
         <PlayerCard
           name="AI Opponent"
           country="Computer"
           avatarUrl={_mock.image.avatar(1)}
-          checkerColor="black"
+          checkerColor={playerColor === 'white' ? 'black' : 'white'}
           isActive={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) ||
-            (gameState.currentPlayer === 'black' && gameState.gamePhase !== 'opening')
+            (gameState.currentPlayer === (playerColor === 'white' ? 'black' : 'white') && gameState.gamePhase !== 'opening')
           }
           canRoll={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) ||
-            (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting')
+            (gameState.currentPlayer === (playerColor === 'white' ? 'black' : 'white') && gameState.gamePhase === 'waiting')
           }
           onRollDice={triggerDiceRoll}
           onDone={handleDone}
-          canDone={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0 && gameState.diceValues.length >= 0}
+          canDone={gameState.currentPlayer === (playerColor === 'white' ? 'black' : 'white') && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0 && gameState.diceValues.length >= 0}
           onUndo={handleUndo}
-          canUndo={gameState.currentPlayer === 'black' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
-          timeRemaining={blackTimer.countdown}
-          isWinner={winner === 'black'}
-          isLoser={winner === 'white'}
+          canUndo={gameState.currentPlayer === (playerColor === 'white' ? 'black' : 'white') && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
+          timeRemaining={playerColor === 'white' ? blackTimer.countdown : whiteTimer.countdown}
+          isWinner={winner === (playerColor === 'white' ? 'black' : 'white')}
+          isLoser={winner === playerColor}
         />
       </Box>
 
@@ -243,29 +261,29 @@ export default function GameAIPage() {
         />
       </Box>
 
-      {/* Player 2 (White - Bottom) */}
+      {/* Player 2 (You - Bottom) */}
       <Box>
         <PlayerCard
           name="You"
           country="Iran"
           avatarUrl={_mock.image.avatar(0)}
-          checkerColor="white"
+          checkerColor={playerColor || 'white'}
           isActive={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
-            (gameState.currentPlayer === 'white' && gameState.gamePhase !== 'opening')
+            (gameState.currentPlayer === playerColor && gameState.gamePhase !== 'opening')
           }
           canRoll={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
-            (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting')
+            (gameState.currentPlayer === playerColor && gameState.gamePhase === 'waiting')
           }
           onRollDice={triggerDiceRoll}
           onDone={handleDone}
-          canDone={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0 && gameState.diceValues.length >= 0}
+          canDone={gameState.currentPlayer === playerColor && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0 && gameState.diceValues.length >= 0}
           onUndo={handleUndo}
-          canUndo={gameState.currentPlayer === 'white' && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
-          timeRemaining={whiteTimer.countdown}
-          isWinner={winner === 'white'}
-          isLoser={winner === 'black'}
+          canUndo={gameState.currentPlayer === playerColor && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
+          timeRemaining={playerColor === 'white' ? whiteTimer.countdown : blackTimer.countdown}
+          isWinner={winner === playerColor}
+          isLoser={winner !== null && winner !== playerColor}
         />
       </Box>
 
@@ -289,19 +307,25 @@ export default function GameAIPage() {
         }
       />
 
+      {/* Color Selection Dialog */}
+      <ColorSelectionDialog
+        open={colorDialogOpen}
+        onSelectColor={handleColorSelect}
+      />
+
       {/* Game Result Dialog */}
       <GameResultDialog
         open={resultDialogOpen}
         onRematch={handleRematch}
         whitePlayer={{
-          name: 'You',
-          avatarUrl: _mock.image.avatar(0),
+          name: playerColor === 'white' ? 'You' : 'AI Opponent',
+          avatarUrl: playerColor === 'white' ? _mock.image.avatar(0) : _mock.image.avatar(1),
           score: scores.white,
           isWinner: winner === 'white',
         }}
         blackPlayer={{
-          name: 'AI Opponent',
-          avatarUrl: _mock.image.avatar(1),
+          name: playerColor === 'black' ? 'You' : 'AI Opponent',
+          avatarUrl: playerColor === 'black' ? _mock.image.avatar(0) : _mock.image.avatar(1),
           score: scores.black,
           isWinner: winner === 'black',
         }}
