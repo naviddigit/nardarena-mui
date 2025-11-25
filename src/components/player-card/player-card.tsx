@@ -3,6 +3,7 @@
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
@@ -25,6 +26,7 @@ type PlayerCardProps = {
   onUndo?: () => void;
   canUndo?: boolean;
   timeRemaining?: number;
+  checkerColor?: 'white' | 'black';
 };
 
 export function PlayerCard({ 
@@ -39,6 +41,7 @@ export function PlayerCard({
   onUndo,
   canUndo = false,
   timeRemaining = 60,
+  checkerColor = 'white',
 }: PlayerCardProps) {
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
@@ -55,7 +58,24 @@ export function PlayerCard({
         boxShadow: (theme) => isActive ? theme.shadows[8] : theme.shadows[2],
       }}
     >
-      <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48, mr: 2 }} />
+      <Badge
+        overlap="circular"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        badgeContent={
+          <Box
+            sx={{
+              width: 22,
+              height: 22,
+              borderRadius: '50%',
+              bgcolor: checkerColor === 'white' ? 'common.white' : 'grey.800',
+              border: (theme) => `2px solid ${theme.palette.background.paper}`,
+              boxShadow: (theme) => theme.shadows[3],
+            }}
+          />
+        }
+      >
+        <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48, mr: 2 }} />
+      </Badge>
 
       <ListItemText
         primary={name}

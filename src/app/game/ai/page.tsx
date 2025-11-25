@@ -109,15 +109,22 @@ export default function GameAIPage() {
 
   const triggerDiceRoll = () => {
     if (diceRollerRef.current) {
-      // During opening roll, don't clear dice when Black is about to roll
-      // (so White's die stays visible)
+      // During opening roll, don't clear dice when:
+      // 1. Black is about to roll (White's die should stay)
+      // 2. Winner is about to roll 2d6 after opening (both opening dice should stay until cleared by 2d6 roll)
       const isBlackOpeningRoll = 
         gameState.gamePhase === 'opening' && 
         gameState.openingRoll.white !== null && 
         gameState.openingRoll.black === null;
       
-      // Clear dice in all cases EXCEPT when Black is rolling in opening
-      const shouldClearDice = !isBlackOpeningRoll;
+      const isWinnerFirstRollAfterOpening = 
+        gameState.gamePhase === 'waiting' &&
+        gameState.openingRoll.white !== null &&
+        gameState.openingRoll.black !== null &&
+        gameState.diceValues.length === 0;
+      
+      // Clear dice in all cases EXCEPT during opening roll transitions
+      const shouldClearDice = !isBlackOpeningRoll && !isWinnerFirstRollAfterOpening;
       
       // Clear previous dice before new roll
       if (shouldClearDice && diceRollerRef.current.clearDice) {
@@ -162,6 +169,7 @@ export default function GameAIPage() {
           name="AI Opponent"
           country="Computer"
           avatarUrl={_mock.image.avatar(1)}
+          checkerColor="black"
           isActive={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) ||
             (gameState.currentPlayer === 'black' && gameState.gamePhase !== 'opening')
@@ -204,6 +212,7 @@ export default function GameAIPage() {
           name="You"
           country="Iran"
           avatarUrl={_mock.image.avatar(0)}
+          checkerColor="white"
           isActive={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
             (gameState.currentPlayer === 'white' && gameState.gamePhase !== 'opening')
