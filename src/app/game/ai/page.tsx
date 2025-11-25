@@ -77,6 +77,7 @@ export default function GameAIPage() {
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
   const [colorDialogOpen, setColorDialogOpen] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const maxSets = 5;
   
   const initialBoardState = useMemo(
@@ -174,33 +175,28 @@ export default function GameAIPage() {
     setWinner(null);
     whiteTimer.setCountdown(120);
     blackTimer.setCountdown(120);
-    setPlayerColor(null); // Reset color selection
-    setColorDialogOpen(true); // Show color selection dialog again
+    setPlayerColor(null);
+    setIsReady(false);
+    setColorDialogOpen(true);
   };
 
   const handleColorSelect = (color: 'white' | 'black') => {
     setPlayerColor(color);
     setColorDialogOpen(false);
+    setIsReady(true);
   };
 
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
-  // Show loading screen until color is selected
-  if (!playerColor) {
-    return (
-      <>
-        <SplashScreen />
-        <ColorSelectionDialog
-          open={colorDialogOpen}
-          onSelectColor={handleColorSelect}
-        />
-      </>
-    );
+  // Show loading screen until color is selected and ready
+  if (!isReady) {
+    return <SplashScreen />;
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
+    <>
+      <Container maxWidth="xl" sx={{ py: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <IconButton
@@ -350,5 +346,12 @@ export default function GameAIPage() {
         maxSets={maxSets}
       />
     </Container>
+
+    {/* Color Selection Dialog */}
+    <ColorSelectionDialog
+      open={colorDialogOpen}
+      onSelectColor={handleColorSelect}
+    />
+    </>
   );
 }
