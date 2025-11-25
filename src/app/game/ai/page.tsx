@@ -182,10 +182,13 @@ export default function GameAIPage() {
 
   if (!playerColor) {
     return (
-      <ColorSelectionDialog
-        open={colorDialogOpen}
-        onSelectColor={handleColorSelect}
-      />
+      <>
+        <SplashScreen portal={false} />
+        <ColorSelectionDialog
+          open={colorDialogOpen}
+          onSelectColor={handleColorSelect}
+        />
+      </>
     );
   }
 
