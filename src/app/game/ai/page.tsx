@@ -64,15 +64,7 @@ export default function GameAIPage() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
   const maxSets = 5;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowDialog(true);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
@@ -176,32 +168,12 @@ export default function GameAIPage() {
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
-  // Show loading screen for 800ms
-  if (!showDialog) {
-    return <SplashScreen portal={false} />;
-  }
-
-  // Show color selection dialog
   if (!playerColor) {
     return (
-      <>
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'background.default',
-            zIndex: 9999,
-          }}
-        >
-          <ColorSelectionDialog open onSelectColor={handleColorSelect} />
-        </Box>
-      </>
+      <ColorSelectionDialog
+        open
+        onSelectColor={handleColorSelect}
+      />
     );
   }
 
