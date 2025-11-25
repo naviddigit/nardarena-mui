@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 
 import { useGameState } from 'src/hooks/use-game-state';
+import { _mock } from 'src/_mock';
 
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
@@ -50,6 +51,7 @@ const createInitialBoardState = (): BoardState => {
 export default function GameAIPage() {
   const { mode, setMode } = useColorScheme();
   const diceRollerRef = useRef<any>(null);
+  const [isRolling, setIsRolling] = useState(false);
   
   const initialBoardState = createInitialBoardState();
   const { 
@@ -63,10 +65,12 @@ export default function GameAIPage() {
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     handleDiceRoll(results);
+    setIsRolling(false);
   };
 
   const triggerDiceRoll = () => {
     if (diceRollerRef.current && diceRollerRef.current.rollDice) {
+      setIsRolling(true);
       diceRollerRef.current.rollDice();
     }
   };
@@ -97,11 +101,11 @@ export default function GameAIPage() {
         <PlayerCard
           name="AI Opponent"
           country="Computer"
-          avatarUrl="/assets/images/avatar/avatar-2.webp"
-          isActive={gameState.currentPlayer === 'black' && gameState.gamePhase !== 'opening'}
+          avatarUrl={_mock.image.avatar(1)}
+          isActive={gameState.currentPlayer === 'black'}
           canRoll={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) ||
-            (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting' && gameState.diceValues.length === 0)
+            (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting')
           }
           onRollDice={triggerDiceRoll}
         />
@@ -114,6 +118,7 @@ export default function GameAIPage() {
           onPointClick={handlePointClick}
           selectedPoint={gameState.selectedPoint}
           validDestinations={validDestinations}
+          isRolling={isRolling}
           diceRoller={
             showDiceRoller ? (
               <DiceRoller
@@ -132,11 +137,11 @@ export default function GameAIPage() {
         <PlayerCard
           name="You"
           country="Iran"
-          avatarUrl="/assets/images/avatar/avatar-1.webp"
+          avatarUrl={_mock.image.avatar(0)}
           isActive={gameState.currentPlayer === 'white' || gameState.gamePhase === 'opening'}
           canRoll={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
-            (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting' && gameState.diceValues.length === 0)
+            (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting')
           }
           onRollDice={triggerDiceRoll}
         />

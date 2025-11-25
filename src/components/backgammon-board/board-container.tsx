@@ -55,6 +55,7 @@ export function BackgammonBoard({
   validDestinations = [],
   diceRoller,
   dicePosition = { top: 20, right: 20 },
+  isRolling = false,
 }: BackgammonBoardProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -180,11 +181,13 @@ export function BackgammonBoard({
         boxShadow: theme.palette.mode === 'light' 
           ? '2px 2px 4px 0px rgb(74 74 74)' 
           : '0 1px 2px 0 rgba(196, 197, 199, 0.16)',
+        border: isRolling ? `3px solid ${theme.palette.primary.main}` : '3px solid transparent',
         borderRadius: 2,
         px: '6px',
         py: 0,
         zIndex: 0,
         overflow: 'hidden',
+        transition: 'border 0.3s ease-in-out',
         '&::before': {
           content: '""',
           position: 'absolute',
