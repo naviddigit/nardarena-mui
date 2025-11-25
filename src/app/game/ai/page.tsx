@@ -287,7 +287,7 @@ export default function GameAIPage() {
               onRollComplete={handleDiceRollComplete}
             />
           }
-          dicePosition={{ top: 200, left: 0 }}
+          dicePosition={{ top: '35%', left: 0, right: 0, margin: 'auto', width: 'fit-content' }}
         />
       </Box>
 

@@ -479,6 +479,8 @@ export function BackgammonBoard({
   return (
     <Card
       sx={{
+        width: boardWidth,
+        height: boardHeight,
         bgcolor: boardBg,
         position: 'relative',
         boxSizing: 'border-box',
