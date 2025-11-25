@@ -64,13 +64,14 @@ export default function GameAIPage() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
-  const [colorDialogOpen, setColorDialogOpen] = useState(true);
+  const [colorDialogOpen, setColorDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const maxSets = 5;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
+      setColorDialogOpen(true);
     }, 800);
     return () => clearTimeout(timer);
   }, []);
