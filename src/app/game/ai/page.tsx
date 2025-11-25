@@ -31,17 +31,19 @@ const createInitialBoardState = (): BoardState => {
     count: 0,
   }));
 
-  // White checkers starting positions (player at bottom - mirrored from black)
-  points[0] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
-  points[11] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
-  points[16] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
-  points[18] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  // White checkers starting positions (player at bottom - mirrored to bottom)
+  // Original black positions mirrored: 23→0, 12→11, 7→16, 5→18
+  points[23] = { checkers: Array(2).fill('white') as ('white' | 'black')[], count: 2 };
+  points[12] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
+  points[7] = { checkers: Array(3).fill('white') as ('white' | 'black')[], count: 3 };
+  points[5] = { checkers: Array(5).fill('white') as ('white' | 'black')[], count: 5 };
 
-  // Black checkers starting positions (AI at top - mirrored from white)
-  points[23] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
-  points[12] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
-  points[7] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
-  points[5] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+  // Black checkers starting positions (AI at top - mirrored to top)
+  // Original white positions mirrored: 0→23, 11→12, 16→7, 18→5
+  points[0] = { checkers: Array(2).fill('black') as ('white' | 'black')[], count: 2 };
+  points[11] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
+  points[16] = { checkers: Array(3).fill('black') as ('white' | 'black')[], count: 3 };
+  points[18] = { checkers: Array(5).fill('black') as ('white' | 'black')[], count: 5 };
 
   return {
     points,
