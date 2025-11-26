@@ -73,21 +73,29 @@ export function GameResultDialog({
 
           {/* Players Score Display */}
           <Stack
-            direction={{ xs: 'column', sm: 'row' }}
+            direction="column"
             spacing={3}
-            alignItems="center"
-            justifyContent="center"
+            alignItems="stretch"
             sx={{ width: '100%', py: 2 }}
           >
             {/* Winner */}
-            <Stack alignItems="center" spacing={1.5} sx={{ flex: 1 }}>
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              sx={{
+                bgcolor: 'background.neutral',
+                borderRadius: 2,
+                p: 2,
+              }}
+            >
               <Box sx={{ position: 'relative' }}>
                 <Avatar
                   src={winner.avatarUrl}
                   alt={winner.name}
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: 60,
+                    height: 60,
                     border: (theme) => `4px solid ${theme.palette.success.main}`,
                     boxShadow: (theme) => theme.customShadows.success,
                   }}
@@ -95,22 +103,22 @@ export function GameResultDialog({
                 <Box
                   sx={{
                     position: 'absolute',
-                    bottom: -8,
-                    right: -8,
+                    bottom: -4,
+                    right: -4,
                     bgcolor: 'warning.main',
                     borderRadius: '50%',
-                    width: 36,
-                    height: 36,
+                    width: 28,
+                    height: 28,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     boxShadow: 3,
                   }}
                 >
-                  <Iconify icon="solar:cup-star-bold" width={24} sx={{ color: 'common.white' }} />
+                  <Iconify icon="solar:cup-star-bold" width={18} sx={{ color: 'common.white' }} />
                 </Box>
               </Box>
-              <Box sx={{ textAlign: 'center' }}>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'success.main' }}>
                   {winner.name}
                 </Typography>
@@ -118,46 +126,43 @@ export function GameResultDialog({
                   Winner
                 </Typography>
               </Box>
-            </Stack>
-
-            {/* Score */}
-            <Box
-              sx={{
-                bgcolor: 'background.neutral',
-                borderRadius: 2,
-                px: 3,
-                py: 2,
-                minWidth: 100,
-              }}
-            >
               <Typography
-                variant="h4"
+                variant="h5"
                 sx={{
-                  textAlign: 'center',
                   fontWeight: 700,
                   fontFamily: 'monospace',
+                  color: 'success.main',
                 }}
               >
-                {winner.score} - {loser.score}
+                {winner.score}
               </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', textAlign: 'center', mt: 0.5 }}
-              >
-                of {maxSets}
+            </Stack>
+
+            {/* Score Info */}
+            <Box sx={{ textAlign: 'center', py: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Best of {maxSets}
               </Typography>
             </Box>
 
             {/* Loser */}
-            <Stack alignItems="center" spacing={1.5} sx={{ flex: 1 }}>
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              sx={{
+                bgcolor: 'background.neutral',
+                borderRadius: 2,
+                p: 2,
+              }}
+            >
               <Box sx={{ position: 'relative' }}>
                 <Avatar
                   src={loser.avatarUrl}
                   alt={loser.name}
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: 60,
+                    height: 60,
                     border: (theme) => `4px solid ${theme.palette.error.main}`,
                     boxShadow: (theme) => theme.customShadows.error,
                   }}
@@ -165,12 +170,12 @@ export function GameResultDialog({
                 <Box
                   sx={{
                     position: 'absolute',
-                    bottom: -8,
-                    right: -8,
+                    bottom: -4,
+                    right: -4,
                     bgcolor: 'error.main',
                     borderRadius: '50%',
-                    width: 36,
-                    height: 36,
+                    width: 28,
+                    height: 28,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -179,12 +184,12 @@ export function GameResultDialog({
                 >
                   <Iconify
                     icon="solar:close-circle-bold"
-                    width={24}
+                    width={18}
                     sx={{ color: 'common.white' }}
                   />
                 </Box>
               </Box>
-              <Box sx={{ textAlign: 'center' }}>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'error.main' }}>
                   {loser.name}
                 </Typography>
@@ -192,6 +197,16 @@ export function GameResultDialog({
                   Defeated
                 </Typography>
               </Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  fontFamily: 'monospace',
+                  color: 'error.main',
+                }}
+              >
+                {loser.score}
+              </Typography>
             </Stack>
           </Stack>
 
