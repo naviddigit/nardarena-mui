@@ -177,13 +177,11 @@ export default function GameAIPage() {
     
     handleEndTurn();
     
-    // Start next player's timer after turn switch
+    // Start next player's timer WITHOUT resetting (continue from where it was)
     setTimeout(() => {
       if (gameState.currentPlayer === 'white') {
-        blackTimer.setCountdown(120);
         blackTimer.startCountdown();
       } else {
-        whiteTimer.setCountdown(120);
         whiteTimer.startCountdown();
       }
     }, 100);

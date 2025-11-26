@@ -114,22 +114,20 @@ export function PlayerCard({
         primary={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {name}
-            {setsWon > 0 && (
-              <Box
-                sx={{
-                  bgcolor: 'success.main',
-                  color: 'common.white',
-                  px: 0.75,
-                  py: 0.25,
-                  borderRadius: 1,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: 0.5,
-                }}
-              >
-                {setsWon} WIN{setsWon > 1 ? 'S' : ''}
-              </Box>
-            )}
+            <Box
+              sx={{
+                bgcolor: 'success.main',
+                color: 'common.white',
+                px: 0.75,
+                py: 0.25,
+                borderRadius: 1,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 0.5,
+              }}
+            >
+              {setsWon} WIN{setsWon !== 1 ? 'S' : ''}
+            </Box>
             <Box
               sx={{
                 width: 12,
