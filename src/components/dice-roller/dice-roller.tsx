@@ -174,11 +174,17 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
       const width = containerRef.current.clientWidth || 500;
       const height = diceHeight;
       
-      rendererRef.current.setSize(width, height);
+      // updateStyle=true (default) updates both canvas attributes AND CSS
+      rendererRef.current.setSize(width, height, true);
       
       if (cameraRef.current) {
         cameraRef.current.aspect = width / height;
         cameraRef.current.updateProjectionMatrix();
+      }
+      
+      // Force a re-render
+      if (sceneRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current!);
       }
     }
   }, [diceHeight]);
@@ -454,7 +460,6 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
   return (
     <Box
-      key={diceHeight}
       sx={{
         position: 'relative',
         width: 1,
