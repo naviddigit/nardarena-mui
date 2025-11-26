@@ -16,19 +16,19 @@ type CheckerProps = BoxProps & {
   player: Player;
   size: number;
   yPosition: number;
+  layoutId: string;
   isSelected?: boolean;
   onCheckerClick?: () => void;
 };
 
 // ----------------------------------------------------------------------
 
-export function Checker({ player, size, yPosition, isSelected, onCheckerClick, sx, ...other }: CheckerProps) {
+export function Checker({ player, size, yPosition, layoutId, isSelected, onCheckerClick, sx, ...other }: CheckerProps) {
   return (
     <Box
       component={m.div}
-      initial={false}
+      layoutId={layoutId}
       animate={{ 
-        y: yPosition,
         opacity: 1, 
         scale: 1 
       }}
@@ -36,7 +36,8 @@ export function Checker({ player, size, yPosition, isSelected, onCheckerClick, s
         type: 'spring', 
         stiffness: 300, 
         damping: 30,
-        mass: 1
+        mass: 1,
+        layout: { duration: 0.4 }
       }}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
@@ -47,7 +48,7 @@ export function Checker({ player, size, yPosition, isSelected, onCheckerClick, s
         height: size,
         borderRadius: '50%',
         position: 'absolute',
-        top: 0,
+        top: yPosition,
         left: `calc(50% - ${size / 2}px)`,
         cursor: 'pointer',
         // White checkers

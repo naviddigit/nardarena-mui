@@ -316,6 +316,7 @@ export function BackgammonBoard({
           return (
             <Checker
               key={checkerId}
+              layoutId={checkerId}
               player={player}
               size={checkerSize}
               yPosition={absolutePosition}
@@ -373,6 +374,7 @@ export function BackgammonBoard({
       checkers.push(
         <Checker
           key={checkerId}
+          layoutId={checkerId}
           player="white"
           size={checkerSize}
           yPosition={yPos}
@@ -390,6 +392,7 @@ export function BackgammonBoard({
       checkers.push(
         <Checker
           key={checkerId}
+          layoutId={checkerId}
           player="black"
           size={checkerSize}
           yPosition={yPos}
