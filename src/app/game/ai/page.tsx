@@ -9,7 +9,9 @@ import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import { useTheme } from '@mui/material/styles';
 import { useColorScheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { useGameState } from 'src/hooks/use-game-state';
 import { useCountdownSeconds } from 'src/hooks/use-countdown';
@@ -57,6 +59,9 @@ const createInitialBoardState = (): BoardState => {
 export default function GameAIPage() {
   const router = useRouter();
   const { mode, setMode } = useColorScheme();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const diceRollerRef = useRef<any>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
@@ -176,6 +181,13 @@ export default function GameAIPage() {
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
+  // Responsive dice position
+  const dicePosition = isSmallMobile 
+    ? { top: 180, left: 0 } 
+    : isMobile 
+      ? { top: 190, left: 0 } 
+      : { top: 200, left: 0 };
+
   if (loading) {
     return (
       <LoadingScreen 
@@ -287,7 +299,7 @@ export default function GameAIPage() {
               onRollComplete={handleDiceRollComplete}
             />
           }
-          dicePosition={{ top: 200, left: 0 }}
+          dicePosition={dicePosition}
         />
       </Box>
 
