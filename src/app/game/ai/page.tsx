@@ -71,6 +71,7 @@ export default function GameAIPage() {
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
   const [loading, setLoading] = useState(true);
   const [maxSets, setMaxSets] = useState(5);
+  const [currentSet, setCurrentSet] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -95,23 +96,7 @@ export default function GameAIPage() {
   // Timer for Black player (120 seconds = 2 minutes)
   const blackTimer = useCountdownSeconds(120);
 
-  // Start/stop timers based on current player
-  useEffect(() => {
-    if (gameState.gamePhase === 'opening') {
-      // During opening roll, don't run timers
-      return;
-    }
-
-    if (gameState.currentPlayer === 'white' && gameState.gamePhase !== 'waiting') {
-      if (!whiteTimer.counting && whiteTimer.countdown === 120) {
-        whiteTimer.startCountdown();
-      }
-    } else if (gameState.currentPlayer === 'black' && gameState.gamePhase !== 'waiting') {
-      if (!blackTimer.counting && blackTimer.countdown === 120) {
-        blackTimer.startCountdown();
-      }
-    }
-  }, [gameState.currentPlayer, gameState.gamePhase, whiteTimer, blackTimer]);
+  // Timer is now controlled by Done button, not automatically
 
   // Reset timer when turn ends
   useEffect(() => {
@@ -127,19 +112,47 @@ export default function GameAIPage() {
   // Check for time-out loss
   useEffect(() => {
     if (whiteTimer.countdown === 0 && !winner) {
-      setWinner('black');
-      setScores((prev) => ({ ...prev, black: prev.black + 1 }));
-      setResultDialogOpen(true);
+      const newBlackScore = scores.black + 1;
+      setScores((prev) => ({ ...prev, black: newBlackScore }));
+      
+      // Check if black won the match (reached winning sets)
+      const setsToWin = Math.ceil(maxSets / 2);
+      if (newBlackScore >= setsToWin) {
+        setWinner('black');
+        setResultDialogOpen(true);
+      } else {
+        // Just won a set, reset board for next set
+        setCurrentSet((prev) => prev + 1);
+        // Reset board and timers - winner starts next set
+        handleEndTurn();
+        whiteTimer.setCountdown(120);
+        blackTimer.setCountdown(120);
+        blackTimer.startCountdown();
+      }
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
     } else if (blackTimer.countdown === 0 && !winner) {
-      setWinner('white');
-      setScores((prev) => ({ ...prev, white: prev.white + 1 }));
-      setResultDialogOpen(true);
+      const newWhiteScore = scores.white + 1;
+      setScores((prev) => ({ ...prev, white: newWhiteScore }));
+      
+      // Check if white won the match
+      const setsToWin = Math.ceil(maxSets / 2);
+      if (newWhiteScore >= setsToWin) {
+        setWinner('white');
+        setResultDialogOpen(true);
+      } else {
+        // Just won a set, reset board for next set
+        setCurrentSet((prev) => prev + 1);
+        // Reset board and timers - winner starts next set
+        handleEndTurn();
+        whiteTimer.setCountdown(120);
+        blackTimer.setCountdown(120);
+        whiteTimer.startCountdown();
+      }
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
     }
-  }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer]);
+  }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer, scores, maxSets, handleEndTurn]);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     handleDiceRoll(results);
@@ -159,8 +172,14 @@ export default function GameAIPage() {
     // Stop current player's timer
     if (gameState.currentPlayer === 'white') {
       whiteTimer.stopCountdown();
+      // Start black player's timer for next turn
+      blackTimer.setCountdown(120);
+      blackTimer.startCountdown();
     } else {
       blackTimer.stopCountdown();
+      // Start white player's timer for next turn
+      whiteTimer.setCountdown(120);
+      whiteTimer.startCountdown();
     }
     
     handleEndTurn();
@@ -169,6 +188,8 @@ export default function GameAIPage() {
   const handleRematch = () => {
     setResultDialogOpen(false);
     setWinner(null);
+    setScores({ white: 0, black: 0 });
+    setCurrentSet(1);
     whiteTimer.setCountdown(120);
     blackTimer.setCountdown(120);
     setPlayerColor(null);
@@ -367,6 +388,7 @@ export default function GameAIPage() {
           isWinner: winner === 'black',
         }}
         maxSets={maxSets}
+        currentSet={currentSet}
       />
     </Container>
     </>

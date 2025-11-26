@@ -26,6 +26,7 @@ type GameResultDialogProps = {
   whitePlayer: Player;
   blackPlayer: Player;
   maxSets?: number;
+  currentSet?: number;
 };
 
 // ----------------------------------------------------------------------
@@ -36,6 +37,7 @@ export function GameResultDialog({
   whitePlayer,
   blackPlayer,
   maxSets = 5,
+  currentSet = 1,
 }: GameResultDialogProps) {
   const winner = whitePlayer.isWinner ? whitePlayer : blackPlayer;
   const loser = whitePlayer.isWinner ? blackPlayer : whitePlayer;
@@ -141,7 +143,7 @@ export function GameResultDialog({
             {/* Score Info */}
             <Box sx={{ textAlign: 'center', py: 1 }}>
               <Typography variant="body2" color="text.secondary">
-                Best of {maxSets}
+                Set {currentSet} of {maxSets}
               </Typography>
             </Box>
 
