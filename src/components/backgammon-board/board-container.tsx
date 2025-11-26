@@ -449,14 +449,10 @@ export function BackgammonBoard({
             width: pointWidth * SCALE_CONFIG.barWidth,
             height: pointHeight,
             bgcolor: barColor,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
+            position: 'relative', // CRITICAL: Needed for absolute positioned checkers
             borderRadius: 2,
             py: 1,
             mx: '8px',
-            position: 'relative', // CRITICAL: Needed for absolute positioned checkers
             cursor: boardState.bar.white > 0 ? 'pointer' : 'default',
             border: selectedPoint === -1 && boardState.bar.white > 0 ? '3px solid' : 'none',
             borderColor: theme.vars.palette.primary.main,
@@ -480,14 +476,10 @@ export function BackgammonBoard({
             width: pointWidth * SCALE_CONFIG.barWidth,
             height: pointHeight,
             bgcolor: barColor,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
+            position: 'relative', // CRITICAL: Needed for absolute positioned checkers
             borderRadius: 2,
             py: 1,
             mx: '8px',
-            position: 'relative', // CRITICAL: Needed for absolute positioned checkers
             cursor: boardState.bar.black > 0 ? 'pointer' : 'default',
             border: selectedPoint === -1 && boardState.bar.black > 0 ? '3px solid' : 'none',
             borderColor: theme.vars.palette.primary.main,
