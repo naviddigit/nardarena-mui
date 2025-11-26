@@ -96,7 +96,17 @@ export default function GameAIPage() {
   // Timer for Black player (120 seconds = 2 minutes)
   const blackTimer = useCountdownSeconds(120);
 
-  // Timer is now controlled by Done button, not automatically
+  // Start timer for first player when game begins
+  useEffect(() => {
+    if (playerColor && gameState.currentPlayer && !winner) {
+      // Start timer for current player at game start
+      if (gameState.currentPlayer === 'white' && !whiteTimer.counting) {
+        whiteTimer.startCountdown();
+      } else if (gameState.currentPlayer === 'black' && !blackTimer.counting) {
+        blackTimer.startCountdown();
+      }
+    }
+  }, [playerColor, gameState.currentPlayer, winner, whiteTimer, blackTimer]);
 
   // Reset timer when turn ends
   useEffect(() => {
@@ -111,9 +121,11 @@ export default function GameAIPage() {
 
   // Check for time-out loss
   useEffect(() => {
-    if (whiteTimer.countdown === 0 && !winner) {
+    if (whiteTimer.countdown === 0 && !winner && whiteTimer.counting) {
       const newBlackScore = scores.black + 1;
       setScores((prev) => ({ ...prev, black: newBlackScore }));
+      whiteTimer.stopCountdown();
+      blackTimer.stopCountdown();
       
       // Check if black won the match (reached winning sets)
       const setsToWin = Math.ceil(maxSets / 2);
@@ -121,19 +133,18 @@ export default function GameAIPage() {
         setWinner('black');
         setResultDialogOpen(true);
       } else {
-        // Just won a set, reset board for next set
+        // Just won a set, start new set with black (winner) going first
         setCurrentSet((prev) => prev + 1);
-        // Reset board and timers - winner starts next set
-        handleEndTurn();
         whiteTimer.setCountdown(120);
         blackTimer.setCountdown(120);
-        blackTimer.startCountdown();
+        // Reset board - will trigger timer start in useEffect above
+        handleEndTurn();
       }
-      whiteTimer.stopCountdown();
-      blackTimer.stopCountdown();
-    } else if (blackTimer.countdown === 0 && !winner) {
+    } else if (blackTimer.countdown === 0 && !winner && blackTimer.counting) {
       const newWhiteScore = scores.white + 1;
       setScores((prev) => ({ ...prev, white: newWhiteScore }));
+      whiteTimer.stopCountdown();
+      blackTimer.stopCountdown();
       
       // Check if white won the match
       const setsToWin = Math.ceil(maxSets / 2);
@@ -141,16 +152,13 @@ export default function GameAIPage() {
         setWinner('white');
         setResultDialogOpen(true);
       } else {
-        // Just won a set, reset board for next set
+        // Just won a set, start new set with white (winner) going first
         setCurrentSet((prev) => prev + 1);
-        // Reset board and timers - winner starts next set
-        handleEndTurn();
         whiteTimer.setCountdown(120);
         blackTimer.setCountdown(120);
-        whiteTimer.startCountdown();
+        // Reset board - will trigger timer start in useEffect above
+        handleEndTurn();
       }
-      whiteTimer.stopCountdown();
-      blackTimer.stopCountdown();
     }
   }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer, scores, maxSets, handleEndTurn]);
 
