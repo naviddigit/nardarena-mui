@@ -37,8 +37,7 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
   const [isRolling, setIsRolling] = useState(false);
   
-  // Responsive dimensions - calculated from media queries
-  const diceWidth = containerRef.current?.clientWidth || 500;
+  // Responsive dimensions
   const diceHeight = isSmallMobile ? 280 : isMobile ? 320 : 400;
 
   // Initialize Three.js scene and Cannon.js physics world
@@ -52,8 +51,7 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     const container = containerRef.current;
     if (!container) return;
     
-    // Use responsive dimensions directly
-    const width = diceWidth;
+    const width = container.clientWidth || 500;
     const height = diceHeight;
 
     // Scene
@@ -168,7 +166,22 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
       }
       renderer.dispose();
     };
-  }, [diceWidth, diceHeight, diceNotation]); // Re-initialize when dimensions change
+  }, [diceHeight, diceNotation]);
+
+  // Update canvas size when dimensions change
+  useEffect(() => {
+    if (rendererRef.current && containerRef.current) {
+      const width = containerRef.current.clientWidth || 500;
+      const height = diceHeight;
+      
+      rendererRef.current.setSize(width, height);
+      
+      if (cameraRef.current) {
+        cameraRef.current.aspect = width / height;
+        cameraRef.current.updateProjectionMatrix();
+      }
+    }
+  }, [diceHeight]);
 
   // Create a single d6 die
   const createDie = (scale: number, position: CANNON.Vec3, rotation: CANNON.Quaternion) => {
