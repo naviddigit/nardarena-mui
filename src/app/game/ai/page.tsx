@@ -96,28 +96,19 @@ export default function GameAIPage() {
   // Timer for Black player (120 seconds = 2 minutes)
   const blackTimer = useCountdownSeconds(120);
 
-  // Start timer for first player when game begins (after opening roll)
+  // Start timer when real game begins (after opening roll)
   useEffect(() => {
-    if (playerColor && gameState.currentPlayer && !winner && gameState.gamePhase !== 'opening') {
-      // Start timer for current player only after opening roll is done
-      if (gameState.currentPlayer === 'white' && !whiteTimer.counting) {
-        whiteTimer.startCountdown();
-      } else if (gameState.currentPlayer === 'black' && !blackTimer.counting) {
-        blackTimer.startCountdown();
-      }
+    if (!playerColor || winner || gameState.gamePhase === 'opening') {
+      return;
+    }
+
+    // Start timer for current player
+    if (gameState.currentPlayer === 'white' && whiteTimer.countdown === 120 && !whiteTimer.counting) {
+      whiteTimer.startCountdown();
+    } else if (gameState.currentPlayer === 'black' && blackTimer.countdown === 120 && !blackTimer.counting) {
+      blackTimer.startCountdown();
     }
   }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, whiteTimer, blackTimer]);
-
-  // Reset timer when turn ends
-  useEffect(() => {
-    if (gameState.gamePhase === 'waiting') {
-      if (gameState.currentPlayer === 'white') {
-        whiteTimer.setCountdown(120);
-      } else {
-        blackTimer.setCountdown(120);
-      }
-    }
-  }, [gameState.gamePhase, gameState.currentPlayer, whiteTimer, blackTimer]);
 
   // Check for time-out loss
   useEffect(() => {
@@ -177,18 +168,25 @@ export default function GameAIPage() {
   };
 
   const handleDone = () => {
-    handleEndTurn();
-    
-    // Stop current player's timer and start next player's timer
+    // Stop current player's timer
     if (gameState.currentPlayer === 'white') {
       whiteTimer.stopCountdown();
-      blackTimer.setCountdown(120);
-      blackTimer.startCountdown();
     } else {
       blackTimer.stopCountdown();
-      whiteTimer.setCountdown(120);
-      whiteTimer.startCountdown();
     }
+    
+    handleEndTurn();
+    
+    // Start next player's timer after turn switch
+    setTimeout(() => {
+      if (gameState.currentPlayer === 'white') {
+        blackTimer.setCountdown(120);
+        blackTimer.startCountdown();
+      } else {
+        whiteTimer.setCountdown(120);
+        whiteTimer.startCountdown();
+      }
+    }, 100);
   };
 
   const handleRematch = () => {
