@@ -155,7 +155,6 @@ export function useGameState(initialBoardState: BoardState) {
   };
 
   const handleDiceRoll = useCallback((results: { value: number }[]) => {
-    console.log('handleDiceRoll called with:', results);
     setGameState((prev) => {
       // Opening roll: each player rolls one die
       if (prev.gamePhase === 'opening') {
@@ -204,9 +203,6 @@ export function useGameState(initialBoardState: BoardState) {
         : diceValues;
       const validMoves = calculateValidMoves(prev.boardState, prev.currentPlayer, finalDiceValues);
       
-      console.log('Calculated valid moves:', validMoves);
-      console.log('Dice values:', finalDiceValues);
-      
       return {
         ...prev,
         diceValues: finalDiceValues,
@@ -226,7 +222,6 @@ export function useGameState(initialBoardState: BoardState) {
   }, [gameState.selectedPoint, gameState.validMoves]);
 
   const handleBarClick = useCallback(() => {
-    console.log('handleBarClick called');
     if (gameState.gamePhase !== 'moving') return;
     
     // Check if current player has checkers on bar
@@ -244,13 +239,6 @@ export function useGameState(initialBoardState: BoardState) {
 
   const handlePointClick = useCallback(
     (pointIndex: number) => {
-      console.log('handlePointClick called:', { 
-        pointIndex, 
-        gamePhase: gameState.gamePhase,
-        selectedPoint: gameState.selectedPoint,
-        validMoves: gameState.validMoves 
-      });
-      
       if (gameState.gamePhase !== 'moving') return;
 
       // If no point selected, try to select this point

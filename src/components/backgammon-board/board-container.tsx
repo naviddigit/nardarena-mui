@@ -366,11 +366,15 @@ export function BackgammonBoard({
     const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
     const checkerSize = pointWidth * checkerScale;
 
+    console.log('🔍 renderCheckers - bar.white:', boardState.bar.white, 'bar.black:', boardState.bar.black);
+
     // Bar White
     for (let i = 0; i < boardState.bar.white; i++) {
       const checkerId = checkerIds.bar.white[i] || `white-bar-${i}`;
       const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
       const yPos = i * (pointWidth * barStackSpacing);
+      
+      console.log('  ➡️ Creating white bar checker:', checkerId, 'at yPos:', yPos);
       
       checkers.push(
         <Checker
@@ -390,6 +394,8 @@ export function BackgammonBoard({
       const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
       const yPos = i * (pointWidth * barStackSpacing);
       
+      console.log('  ➡️ Creating black bar checker:', checkerId, 'at yPos:', yPos);
+      
       checkers.push(
         <Checker
           key={checkerId}
@@ -402,6 +408,7 @@ export function BackgammonBoard({
       );
     }
 
+    console.log('🔍 renderCheckers - total checkers created:', checkers.length);
     return checkers;
   };
 
