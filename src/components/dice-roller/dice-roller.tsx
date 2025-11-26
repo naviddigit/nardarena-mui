@@ -454,6 +454,7 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
   return (
     <Box
+      key={diceHeight}
       sx={{
         position: 'relative',
         width: 1,
