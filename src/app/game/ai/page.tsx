@@ -182,6 +182,45 @@ export default function GameAIPage() {
     }
   }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer, scores, maxSets, handleEndTurn, gameState.boardState.off]);
 
+  // Auto-skip turn if player can't enter from bar
+  useEffect(() => {
+    if (gameState.gamePhase !== 'moving' || winner) return;
+    
+    // Check if player has checkers on bar
+    const hasCheckersOnBar = gameState.boardState.bar[gameState.currentPlayer] > 0;
+    
+    if (hasCheckersOnBar) {
+      // Check if there are ANY valid moves from bar
+      const hasValidBarMoves = gameState.validMoves.some((m) => m.from === -1);
+      
+      if (!hasValidBarMoves) {
+        // Player has checkers on bar but can't enter - skip turn automatically
+        console.log(`🚫 ${gameState.currentPlayer} cannot enter from bar - skipping turn`);
+        
+        // Stop current player's timer
+        if (gameState.currentPlayer === 'white') {
+          whiteTimer.stopCountdown();
+        } else {
+          blackTimer.stopCountdown();
+        }
+        
+        // Wait a bit to show the situation, then end turn
+        setTimeout(() => {
+          handleEndTurn();
+          
+          // Start next player's timer
+          setTimeout(() => {
+            if (gameState.currentPlayer === 'white') {
+              blackTimer.startCountdown();
+            } else {
+              whiteTimer.startCountdown();
+            }
+          }, 100);
+        }, 1500); // 1.5 second delay so player can see they're blocked
+      }
+    }
+  }, [gameState.gamePhase, gameState.validMoves, gameState.currentPlayer, gameState.boardState.bar, winner, whiteTimer, blackTimer, handleEndTurn]);
+
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     handleDiceRoll(results);
     setIsRolling(false);

@@ -203,12 +203,20 @@ export function useGameState(initialBoardState: BoardState) {
         : diceValues;
       const validMoves = calculateValidMoves(prev.boardState, prev.currentPlayer, finalDiceValues);
       
+      // Check if player has checkers on bar
+      const hasCheckersOnBar = prev.boardState.bar[prev.currentPlayer] > 0;
+      const hasValidBarMoves = validMoves.some((m) => m.from === -1);
+      
+      // Auto-select bar if player has checkers on bar and has valid moves
+      const autoSelectedPoint = hasCheckersOnBar && hasValidBarMoves ? -1 : null;
+      
       return {
         ...prev,
         diceValues: finalDiceValues,
         gamePhase: validMoves.length > 0 ? 'moving' : 'waiting',
         validMoves,
         moveHistory: [],
+        selectedPoint: autoSelectedPoint, // Auto-select bar if needed
       };
     });
   }, [calculateValidMoves]);
