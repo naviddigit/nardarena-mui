@@ -61,7 +61,7 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, onCheck
         top: yPosition,
         left: `calc(50% - ${size / 2}px)`,
         cursor: 'pointer',
-        zIndex: 10, // Ensure checkers are above all other elements during animation
+        zIndex: 15, // Higher than count labels (10) and valid indicators (5)
         // White checkers
         ...(player === 'white' && {
           background: 'linear-gradient(135deg, #FFFFFF 0%, #c7c7c7ff 50%, #E8E8E8 100%)',
