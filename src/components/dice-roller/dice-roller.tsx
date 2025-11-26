@@ -37,10 +37,9 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
   const [isRolling, setIsRolling] = useState(false);
   
-  // Responsive height - calculated from media queries
+  // Responsive dimensions - calculated from media queries
+  const diceWidth = containerRef.current?.clientWidth || 500;
   const diceHeight = isSmallMobile ? 280 : isMobile ? 320 : 400;
-  
-  console.log('🎲 DiceRoller render:', { isSmallMobile, isMobile, diceHeight });
 
   // Initialize Three.js scene and Cannon.js physics world
   useEffect(() => {
@@ -53,8 +52,9 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     const container = containerRef.current;
     if (!container) return;
     
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    // Use responsive dimensions directly
+    const width = diceWidth;
+    const height = diceHeight;
 
     // Scene
     const scene = new THREE.Scene();
@@ -157,24 +157,9 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
     // Initial render
     renderer.render(scene, camera);
-    
-    // Handle window resize
-    const handleResize = () => {
-      if (!container || !renderer || !camera) return;
-      
-      const newWidth = container.clientWidth;
-      const newHeight = container.clientHeight;
-      
-      renderer.setSize(newWidth, newHeight);
-      camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
-    };
-    
-    window.addEventListener('resize', handleResize);
 
     // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -183,7 +168,7 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
       }
       renderer.dispose();
     };
-  }, [diceHeight, diceNotation]); // Re-initialize when height changes
+  }, [diceWidth, diceHeight, diceNotation]); // Re-initialize when dimensions change
 
   // Create a single d6 die
   const createDie = (scale: number, position: CANNON.Vec3, rotation: CANNON.Quaternion) => {
