@@ -168,8 +168,11 @@ export default function GameAIPage() {
   };
 
   const handleDone = () => {
+    // Save current player before turn ends
+    const currentPlayer = gameState.currentPlayer;
+    
     // Stop current player's timer
-    if (gameState.currentPlayer === 'white') {
+    if (currentPlayer === 'white') {
       whiteTimer.stopCountdown();
     } else {
       blackTimer.stopCountdown();
@@ -177,9 +180,9 @@ export default function GameAIPage() {
     
     handleEndTurn();
     
-    // Start next player's timer WITHOUT resetting (continue from where it was)
+    // Start next player's timer (opposite of current)
     setTimeout(() => {
-      if (gameState.currentPlayer === 'white') {
+      if (currentPlayer === 'white') {
         blackTimer.startCountdown();
       } else {
         whiteTimer.startCountdown();
