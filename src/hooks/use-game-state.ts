@@ -294,15 +294,80 @@ export function useGameState(initialBoardState: BoardState) {
             if (fromIndex === -1) {
               const toPoint = newPoints[toIndex];
               
-              // Handle hitting opponent checker
-              if (toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer) {
+              // Handle hitting opponent checker when entering from bar
+              const isHitMove = toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer;
+              
+              if (isHitMove) {
                 const hitColor = toPoint.checkers[0];
                 historyEntry.hitChecker = hitColor;
+                
+                // STEP 1: Hit the opponent checker first
                 toPoint.checkers = [];
                 toPoint.count = 0;
                 newBar = { ...newBar, [hitColor]: newBar[hitColor] + 1 };
+                
+                // Create intermediate state
+                const intermediateState = {
+                  points: newPoints,
+                  bar: newBar,
+                  off: { ...prev.boardState.off },
+                };
+                
+                // Update with hit animation first
+                setGameState({
+                  ...prev,
+                  boardState: intermediateState,
+                });
+                
+                // STEP 2: Then move our checker from bar
+                setTimeout(() => {
+                  setGameState((current) => {
+                    const updatedPoints = current.boardState.points.map((point) => ({
+                      checkers: [...point.checkers],
+                      count: point.count,
+                    }));
+                    
+                    const updatedToPoint = updatedPoints[toIndex];
+                    let updatedBar = { ...current.boardState.bar };
+                    
+                    // Move from bar to point
+                    updatedBar = { ...updatedBar, [current.currentPlayer]: updatedBar[current.currentPlayer] - 1 };
+                    updatedToPoint.checkers.push(current.currentPlayer);
+                    updatedToPoint.count += 1;
+                    
+                    // Remove used dice
+                    const newDiceValues = [...current.diceValues];
+                    const diceIndex = newDiceValues.indexOf(validMove.die);
+                    newDiceValues.splice(diceIndex, 1);
+                    
+                    const finalBoardState = {
+                      points: updatedPoints,
+                      bar: updatedBar,
+                      off: { ...current.boardState.off },
+                    };
+                    
+                    const newValidMoves = calculateValidMoves(
+                      finalBoardState,
+                      current.currentPlayer,
+                      newDiceValues
+                    );
+                    
+                    return {
+                      ...current,
+                      boardState: finalBoardState,
+                      diceValues: newDiceValues,
+                      selectedPoint: null,
+                      gamePhase: 'moving',
+                      validMoves: newValidMoves,
+                      moveHistory: [...current.moveHistory, historyEntry],
+                    };
+                  });
+                }, 250);
+                
+                return prev;
               }
               
+              // NON-HIT MOVE from bar: Normal entry without hitting
               // Move checker from bar to point
               newBar = { ...newBar, [prev.currentPlayer]: newBar[prev.currentPlayer] - 1 };
               toPoint.checkers.push(prev.currentPlayer);
@@ -312,15 +377,86 @@ export function useGameState(initialBoardState: BoardState) {
               const fromPoint = newPoints[fromIndex];
               const toPoint = newPoints[toIndex];
 
-              // Handle hitting opponent checker
-              if (toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer) {
+              // Handle hitting opponent checker - CHECK IF IT'S A HIT MOVE
+              const isHitMove = toPoint.count === 1 && toPoint.checkers[0] !== prev.currentPlayer;
+              
+              if (isHitMove) {
                 const hitColor = toPoint.checkers[0];
                 historyEntry.hitChecker = hitColor;
+                
+                // STEP 1: First move the hit checker to bar (animate this first)
                 toPoint.checkers = [];
                 toPoint.count = 0;
                 newBar = { ...newBar, [hitColor]: newBar[hitColor] + 1 };
+                
+                // Create intermediate state for hit animation
+                const intermediateState = {
+                  points: newPoints,
+                  bar: newBar,
+                  off: { ...prev.boardState.off },
+                };
+                
+                // Update state with just the hit (this triggers animation 1)
+                setGameState({
+                  ...prev,
+                  boardState: intermediateState,
+                });
+                
+                // STEP 2: After a small delay, move our checker (animate this second)
+                setTimeout(() => {
+                  setGameState((current) => {
+                    const updatedPoints = current.boardState.points.map((point) => ({
+                      checkers: [...point.checkers],
+                      count: point.count,
+                    }));
+                    
+                    const updatedFromPoint = updatedPoints[fromIndex];
+                    const updatedToPoint = updatedPoints[toIndex];
+                    
+                    // Move our checker
+                    const checker = updatedFromPoint.checkers.pop();
+                    if (checker) {
+                      updatedFromPoint.count -= 1;
+                      updatedToPoint.checkers.push(checker);
+                      updatedToPoint.count += 1;
+                    }
+                    
+                    // Remove used dice value
+                    const newDiceValues = [...current.diceValues];
+                    const diceIndex = newDiceValues.indexOf(validMove.die);
+                    newDiceValues.splice(diceIndex, 1);
+                    
+                    // Create final board state
+                    const finalBoardState = {
+                      points: updatedPoints,
+                      bar: current.boardState.bar,
+                      off: { ...current.boardState.off },
+                    };
+                    
+                    // Recalculate valid moves
+                    const newValidMoves = calculateValidMoves(
+                      finalBoardState,
+                      current.currentPlayer,
+                      newDiceValues
+                    );
+                    
+                    return {
+                      ...current,
+                      boardState: finalBoardState,
+                      diceValues: newDiceValues,
+                      selectedPoint: null,
+                      gamePhase: 'moving',
+                      validMoves: newValidMoves,
+                      moveHistory: [...current.moveHistory, historyEntry],
+                    };
+                  });
+                }, 250); // 250ms delay for hit animation to complete
+                
+                // Return current state (will be updated by setTimeout)
+                return prev;
               }
 
+              // NON-HIT MOVE: Normal move without hitting
               // Move checker
               const checker = fromPoint.checkers.pop();
               if (checker) {
