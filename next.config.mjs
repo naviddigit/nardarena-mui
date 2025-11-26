@@ -10,6 +10,7 @@ const nextConfig = {
   env: {
     BUILD_STATIC_EXPORT: isStaticExport,
   },
+  reactStrictMode: false, // Disable to prevent double execution
   modularizeImports: {
     '@mui/icons-material': {
       transform: '@mui/icons-material/{{member}}',
