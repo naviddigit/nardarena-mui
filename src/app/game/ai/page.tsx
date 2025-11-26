@@ -96,17 +96,17 @@ export default function GameAIPage() {
   // Timer for Black player (120 seconds = 2 minutes)
   const blackTimer = useCountdownSeconds(120);
 
-  // Start timer for first player when game begins
+  // Start timer for first player when game begins (after opening roll)
   useEffect(() => {
-    if (playerColor && gameState.currentPlayer && !winner) {
-      // Start timer for current player at game start
+    if (playerColor && gameState.currentPlayer && !winner && gameState.gamePhase !== 'opening') {
+      // Start timer for current player only after opening roll is done
       if (gameState.currentPlayer === 'white' && !whiteTimer.counting) {
         whiteTimer.startCountdown();
       } else if (gameState.currentPlayer === 'black' && !blackTimer.counting) {
         blackTimer.startCountdown();
       }
     }
-  }, [playerColor, gameState.currentPlayer, winner, whiteTimer, blackTimer]);
+  }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, whiteTimer, blackTimer]);
 
   // Reset timer when turn ends
   useEffect(() => {
