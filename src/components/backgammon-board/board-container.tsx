@@ -100,13 +100,11 @@ export function BackgammonBoard({
 
     if (!isInitialized) {
       // Initial population
-      console.log('🎬 Initializing checker IDs for first time');
       for (let i = 0; i < 24; i++) {
         const point = nextState.points[i];
         for (let j = 0; j < point.count; j++) {
           const id = generateId(point.checkers[j]);
           newIds.points[i].push(id);
-          console.log(`  ✅ Point ${i}: Created ID ${id} for ${point.checkers[j]}`);
         }
       }
       for (let i = 0; i < nextState.bar.white; i++) newIds.bar.white.push(generateId('white'));
@@ -115,7 +113,6 @@ export function BackgammonBoard({
       for (let i = 0; i < nextState.off.black; i++) newIds.off.black.push(generateId('black'));
     } else {
       // Diff and update
-      console.log('🔄 Updating checker IDs based on state diff');
       const pool: { id: string, player: string }[] = [];
 
       // 1. Collect removed checkers (Source)
@@ -128,7 +125,6 @@ export function BackgammonBoard({
             const id = newIds.points[i].pop();
             if (id) {
               pool.push({ id, player });
-              console.log(`  ♻️ Point ${i}: Removed ${id} (${player}) to pool`);
             }
           }
         }
@@ -139,7 +135,6 @@ export function BackgammonBoard({
           const id = newIds.bar.white.pop();
           if (id) {
             pool.push({ id, player: 'white' });
-            console.log(`  ♻️ Bar: Removed white ${id} to pool`);
           }
         }
       }
@@ -148,12 +143,9 @@ export function BackgammonBoard({
           const id = newIds.bar.black.pop();
           if (id) {
             pool.push({ id, player: 'black' });
-            console.log(`  ♻️ Bar: Removed black ${id} to pool`);
           }
         }
       }
-
-      console.log(`  🏊 Pool now has ${pool.length} IDs:`, pool.map(p => `${p.id.slice(0, 20)}...`));
 
       // 2. Distribute to added checkers (Destination)
       // Points
@@ -167,10 +159,8 @@ export function BackgammonBoard({
             if (poolIndex !== -1) {
               id = pool[poolIndex].id;
               pool.splice(poolIndex, 1);
-              console.log(`  ✅ Point ${i}: Reused ID ${id.slice(0, 20)}... for ${player}`);
             } else {
               id = generateId(player);
-              console.log(`  🆕 Point ${i}: Created new ID ${id.slice(0, 20)}... for ${player}`);
             }
             newIds.points[i].push(id);
           }
@@ -184,10 +174,8 @@ export function BackgammonBoard({
           if (poolIndex !== -1) {
             id = pool[poolIndex].id;
             pool.splice(poolIndex, 1);
-            console.log(`  ✅ Bar: Reused white ID ${id.slice(0, 20)}...`);
           } else {
             id = generateId('white');
-            console.log(`  🆕 Bar: Created new white ID ${id.slice(0, 20)}...`);
           }
           newIds.bar.white.push(id);
         }
@@ -199,10 +187,8 @@ export function BackgammonBoard({
           if (poolIndex !== -1) {
             id = pool[poolIndex].id;
             pool.splice(poolIndex, 1);
-            console.log(`  ✅ Bar: Reused black ID ${id.slice(0, 20)}...`);
           } else {
             id = generateId('black');
-            console.log(`  🆕 Bar: Created new black ID ${id.slice(0, 20)}...`);
           }
           newIds.bar.black.push(id);
         }
