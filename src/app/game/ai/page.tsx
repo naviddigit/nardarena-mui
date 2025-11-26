@@ -113,7 +113,24 @@ export default function GameAIPage() {
   // Check for time-out loss
   useEffect(() => {
     if (whiteTimer.countdown === 0 && !winner && whiteTimer.counting) {
-      const newBlackScore = scores.black + 1;
+      // White time's up - Black wins immediately with penalty points
+      // Calculate penalty based on game state
+      const whiteOffCount = gameState.boardState.off.white;
+      let penaltyPoints = 1; // Default: 1 hich
+      
+      if (whiteOffCount === 0) {
+        // White hasn't borne off any checkers = 5 hich (very bad)
+        penaltyPoints = 5;
+      } else if (whiteOffCount < 5) {
+        // White bore off less than 5 = 3 hich (bad)
+        penaltyPoints = 3;
+      } else if (whiteOffCount < 9) {
+        // White bore off 5-8 checkers = 2 hich (normal)
+        penaltyPoints = 2;
+      }
+      // else: White bore off 9+ checkers = 1 hich (minimal penalty)
+      
+      const newBlackScore = scores.black + penaltyPoints;
       setScores((prev) => ({ ...prev, black: newBlackScore }));
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
@@ -132,7 +149,19 @@ export default function GameAIPage() {
         handleEndTurn();
       }
     } else if (blackTimer.countdown === 0 && !winner && blackTimer.counting) {
-      const newWhiteScore = scores.white + 1;
+      // Black time's up - White wins immediately with penalty points
+      const blackOffCount = gameState.boardState.off.black;
+      let penaltyPoints = 1;
+      
+      if (blackOffCount === 0) {
+        penaltyPoints = 5; // 5 hich - no checkers borne off
+      } else if (blackOffCount < 5) {
+        penaltyPoints = 3; // 3 hich - less than 5 checkers
+      } else if (blackOffCount < 9) {
+        penaltyPoints = 2; // 2 hich - 5-8 checkers
+      }
+      
+      const newWhiteScore = scores.white + penaltyPoints;
       setScores((prev) => ({ ...prev, white: newWhiteScore }));
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
@@ -151,7 +180,7 @@ export default function GameAIPage() {
         handleEndTurn();
       }
     }
-  }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer, scores, maxSets, handleEndTurn]);
+  }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer, scores, maxSets, handleEndTurn, gameState.boardState.off]);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     handleDiceRoll(results);
