@@ -70,7 +70,7 @@ export default function GameAIPage() {
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
   const [loading, setLoading] = useState(true);
-  const maxSets = 5;
+  const [maxSets, setMaxSets] = useState(5);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -174,8 +174,9 @@ export default function GameAIPage() {
     setPlayerColor(null);
   };
 
-  const handleColorSelect = (color: 'white' | 'black') => {
+  const handleColorSelect = (color: 'white' | 'black', selectedMaxSets: number) => {
     setPlayerColor(color);
+    setMaxSets(selectedMaxSets);
   };
 
   // Determine dice notation based on game phase
