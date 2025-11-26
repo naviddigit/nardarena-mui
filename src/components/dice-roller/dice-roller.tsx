@@ -37,8 +37,10 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
   const [isRolling, setIsRolling] = useState(false);
   
-  // Responsive height
+  // Responsive height - calculated from media queries
   const diceHeight = isSmallMobile ? 280 : isMobile ? 320 : 400;
+  
+  console.log('🎲 DiceRoller render:', { isSmallMobile, isMobile, diceHeight });
 
   // Initialize Three.js scene and Cannon.js physics world
   useEffect(() => {
