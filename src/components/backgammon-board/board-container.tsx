@@ -5,6 +5,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import { LayoutGroup } from 'framer-motion';
 
 import { varAlpha } from 'src/theme/styles';
 
@@ -437,8 +438,9 @@ export function BackgammonBoard({
         },
       }}
     >
-      {/* Top half */}
-      <Box sx={{ display: 'flex', height: pointHeight }}>
+      <LayoutGroup>
+        {/* Top half */}
+        <Box sx={{ display: 'flex', height: pointHeight }}>
         {topPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
 
         <Box
@@ -532,6 +534,7 @@ export function BackgammonBoard({
           {diceRoller}
         </Box>
       )}
+      </LayoutGroup>
     </Card>
   );
 }
