@@ -113,74 +113,21 @@ export default function GameAIPage() {
   // Check for time-out loss
   useEffect(() => {
     if (whiteTimer.countdown === 0 && !winner && whiteTimer.counting) {
-      // White time's up - Black wins immediately with penalty points
-      // Calculate penalty based on game state
-      const whiteOffCount = gameState.boardState.off.white;
-      let penaltyPoints = 1; // Default: 1 hich
-      
-      if (whiteOffCount === 0) {
-        // White hasn't borne off any checkers = 5 hich (very bad)
-        penaltyPoints = 5;
-      } else if (whiteOffCount < 5) {
-        // White bore off less than 5 = 3 hich (bad)
-        penaltyPoints = 3;
-      } else if (whiteOffCount < 9) {
-        // White bore off 5-8 checkers = 2 hich (normal)
-        penaltyPoints = 2;
-      }
-      // else: White bore off 9+ checkers = 1 hich (minimal penalty)
-      
-      const newBlackScore = scores.black + penaltyPoints;
-      setScores((prev) => ({ ...prev, black: newBlackScore }));
+      // White time's up - Black wins the ENTIRE MATCH immediately
+      console.log('⏰ White timeout - Black wins entire match!');
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
-      
-      // Check if black won the match (reached winning sets)
-      const setsToWin = Math.ceil(maxSets / 2);
-      if (newBlackScore >= setsToWin) {
-        setWinner('black');
-        setResultDialogOpen(true);
-      } else {
-        // Just won a set, start new set with black (winner) going first
-        setCurrentSet((prev) => prev + 1);
-        whiteTimer.setCountdown(120);
-        blackTimer.setCountdown(120);
-        // Reset board - will trigger timer start in useEffect above
-        handleEndTurn();
-      }
+      setWinner('black');
+      setResultDialogOpen(true);
     } else if (blackTimer.countdown === 0 && !winner && blackTimer.counting) {
-      // Black time's up - White wins immediately with penalty points
-      const blackOffCount = gameState.boardState.off.black;
-      let penaltyPoints = 1;
-      
-      if (blackOffCount === 0) {
-        penaltyPoints = 5; // 5 hich - no checkers borne off
-      } else if (blackOffCount < 5) {
-        penaltyPoints = 3; // 3 hich - less than 5 checkers
-      } else if (blackOffCount < 9) {
-        penaltyPoints = 2; // 2 hich - 5-8 checkers
-      }
-      
-      const newWhiteScore = scores.white + penaltyPoints;
-      setScores((prev) => ({ ...prev, white: newWhiteScore }));
+      // Black time's up - White wins the ENTIRE MATCH immediately
+      console.log('⏰ Black timeout - White wins entire match!');
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
-      
-      // Check if white won the match
-      const setsToWin = Math.ceil(maxSets / 2);
-      if (newWhiteScore >= setsToWin) {
-        setWinner('white');
-        setResultDialogOpen(true);
-      } else {
-        // Just won a set, start new set with white (winner) going first
-        setCurrentSet((prev) => prev + 1);
-        whiteTimer.setCountdown(120);
-        blackTimer.setCountdown(120);
-        // Reset board - will trigger timer start in useEffect above
-        handleEndTurn();
-      }
+      setWinner('white');
+      setResultDialogOpen(true);
     }
-  }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer, scores, maxSets, handleEndTurn, gameState.boardState.off]);
+  }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer]);
 
   // Auto-skip turn if player can't enter from bar
   useEffect(() => {
