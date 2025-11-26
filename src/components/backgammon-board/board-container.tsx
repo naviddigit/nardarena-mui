@@ -381,12 +381,13 @@ export function BackgammonBoard({
     const checkers: { white: JSX.Element[], black: JSX.Element[] } = { white: [], black: [] };
     const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
     const checkerSize = pointWidth * checkerScale;
+    const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
 
-    // Bar White
+    // Bar White - position from BOTTOM of bar (so they sit at bottom)
     for (let i = 0; i < boardState.bar.white; i++) {
       const checkerId = checkerIds.bar.white[i] || `white-bar-${i}`;
-      const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
-      const yPos = i * (pointWidth * barStackSpacing);
+      // Calculate from bottom: start at (height - checkerSize) and stack upwards
+      const yPos = pointHeight - checkerSize - (i * (pointWidth * barStackSpacing));
       
       checkers.white.push(
         <Checker
@@ -400,10 +401,10 @@ export function BackgammonBoard({
       );
     }
 
-    // Bar Black
+    // Bar Black - position from TOP of bar (so they sit at top)
     for (let i = 0; i < boardState.bar.black; i++) {
       const checkerId = checkerIds.bar.black[i] || `black-bar-${i}`;
-      const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+      // Stack from top downwards
       const yPos = i * (pointWidth * barStackSpacing);
       
       checkers.black.push(
@@ -419,7 +420,7 @@ export function BackgammonBoard({
     }
 
     return checkers;
-  }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, isMobile, onBarClick]);
+  }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, pointHeight, isMobile, onBarClick]);
 
   if (!mounted) {
     return <SplashScreen />;
