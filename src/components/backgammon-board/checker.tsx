@@ -31,8 +31,7 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, onCheck
       initial={false}
       animate={{ 
         opacity: 1, 
-        scale: 1,
-        zIndex: 10 // Normal z-index
+        scale: 1 
       }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ 
@@ -49,10 +48,6 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, onCheck
           mass: 0.6,
           duration: 0.5
         }
-      }}
-      // Temporarily boost z-index during layout animation
-      whileLayoutTransition={{
-        zIndex: 100 // Much higher during animation
       }}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
