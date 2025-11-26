@@ -45,7 +45,7 @@ export function ColorSelectionDialog({ open, onSelectColor }: ColorSelectionDial
 
           {/* Color Options */}
           <Stack
-            direction="row"
+            direction={{ xs: 'column', sm: 'row' }}
             spacing={3}
             sx={{ width: '100%', justifyContent: 'center' }}
           >

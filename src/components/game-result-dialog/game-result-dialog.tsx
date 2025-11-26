@@ -73,7 +73,7 @@ export function GameResultDialog({
 
           {/* Players Score Display */}
           <Stack
-            direction="row"
+            direction={{ xs: 'column', sm: 'row' }}
             spacing={3}
             alignItems="center"
             justifyContent="center"
