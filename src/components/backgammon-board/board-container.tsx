@@ -5,7 +5,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import { LayoutGroup } from 'framer-motion';
+import { LayoutGroup, AnimatePresence } from 'framer-motion';
 
 import { varAlpha } from 'src/theme/styles';
 
@@ -366,15 +366,11 @@ export function BackgammonBoard({
     const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
     const checkerSize = pointWidth * checkerScale;
 
-    console.log('🔍 Rendering bar checkers - bar.white:', boardState.bar.white, 'bar.black:', boardState.bar.black);
-
     // Bar White
     for (let i = 0; i < boardState.bar.white; i++) {
       const checkerId = checkerIds.bar.white[i] || `white-bar-${i}`;
       const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
       const yPos = i * (pointWidth * barStackSpacing);
-      
-      console.log('  ➡️ Creating white bar checker:', checkerId, 'at yPos:', yPos);
       
       checkers.white.push(
         <Checker
@@ -394,8 +390,6 @@ export function BackgammonBoard({
       const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
       const yPos = i * (pointWidth * barStackSpacing);
       
-      console.log('  ➡️ Creating black bar checker:', checkerId, 'at yPos:', yPos);
-      
       checkers.black.push(
         <Checker
           key={checkerId}
@@ -408,7 +402,6 @@ export function BackgammonBoard({
       );
     }
 
-    console.log('🔍 Total bar checkers - white:', checkers.white.length, 'black:', checkers.black.length);
     return checkers;
   }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, isMobile, onBarClick]);
 
@@ -445,7 +438,7 @@ export function BackgammonBoard({
         },
       }}
     >
-      <LayoutGroup>
+      <LayoutGroup id="board-checkers">
         {/* Top half */}
         <Box sx={{ display: 'flex', height: pointHeight }}>
         {topPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
