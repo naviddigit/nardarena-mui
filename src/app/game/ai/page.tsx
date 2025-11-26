@@ -325,7 +325,6 @@ export default function GameAIPage() {
           justifyContent: 'center', 
           mb: 2, 
           position: 'relative',
-          transform: playerColor === 'black' ? 'rotate(180deg)' : 'none',
         }}
       >
         <BackgammonBoard 
@@ -335,6 +334,7 @@ export default function GameAIPage() {
           selectedPoint={gameState.selectedPoint}
           validDestinations={validDestinations}
           isRolling={isRolling}
+          isRotated={playerColor === 'black'}
           diceRoller={
             <DiceRoller
               ref={diceRollerRef}

@@ -18,6 +18,7 @@ type CheckerProps = BoxProps & {
   yPosition: number;
   layoutId: string;
   isSelected?: boolean;
+  isRotated?: boolean;
   onCheckerClick?: () => void;
 };
 

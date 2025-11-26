@@ -22,4 +22,5 @@ export type BackgammonBoardProps = {
   diceRoller?: React.ReactNode;
   dicePosition?: { top?: number; bottom?: number; left?: number; right?: number };
   isRolling?: boolean;
+  isRotated?: boolean;
 };

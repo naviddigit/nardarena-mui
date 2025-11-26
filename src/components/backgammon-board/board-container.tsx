@@ -5,7 +5,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import { LayoutGroup, AnimatePresence } from 'framer-motion';
+import { LayoutGroup, AnimatePresence, m } from 'framer-motion';
 
 import { varAlpha } from 'src/theme/styles';
 
@@ -58,6 +58,7 @@ export function BackgammonBoard({
   diceRoller,
   dicePosition = { top: 20, right: 20 },
   isRolling = false,
+  isRotated = false,
 }: BackgammonBoardProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -324,6 +325,7 @@ export function BackgammonBoard({
               size={checkerSize}
               yPosition={absolutePosition}
               isSelected={isCheckerSelected}
+              isRotated={isRotated}
               onCheckerClick={() => {
                 onPointClick?.(pointIndex);
               }}
@@ -413,34 +415,40 @@ export function BackgammonBoard({
   }
 
   return (
-    <Card
-      sx={{
-        bgcolor: boardBg,
-        position: 'relative',
-        boxSizing: 'border-box',
-        boxShadow: theme.palette.mode === 'light' 
-          ? '2px 2px 4px 0px rgb(74 74 74)' 
-          : '0 1px 2px 0 rgba(196, 197, 199, 0.16)',
-        border: isRolling ? `3px solid ${theme.palette.primary.main}` : '3px solid transparent',
-        borderRadius: 2,
-        px: '6px',
-        py: 0,
-        zIndex: 0,
-        overflow: 'hidden',
-        transition: 'border 0.3s ease-in-out',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.08) 0%, transparent 50%)',
-          pointerEvents: 'none',
-          borderRadius: 1,
-        },
-      }}
+    <Box
+      component={m.div}
+      animate={{ rotate: isRotated ? 180 : 0 }}
+      transition={{ type: 'spring', stiffness: 150, damping: 20, duration: 0.6 }}
+      sx={{ display: 'inline-block' }}
     >
+      <Card
+        sx={{
+          bgcolor: boardBg,
+          position: 'relative',
+          boxSizing: 'border-box',
+          boxShadow: theme.palette.mode === 'light' 
+            ? '2px 2px 4px 0px rgb(74 74 74)' 
+            : '0 1px 2px 0 rgba(196, 197, 199, 0.16)',
+          border: isRolling ? `3px solid ${theme.palette.primary.main}` : '3px solid transparent',
+          borderRadius: 2,
+          px: '6px',
+          py: 0,
+          zIndex: 0,
+          overflow: 'hidden',
+          transition: 'border 0.3s ease-in-out',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.08) 0%, transparent 50%)',
+            pointerEvents: 'none',
+            borderRadius: 1,
+          },
+        }}
+      >
       <LayoutGroup id="board-checkers">
         {/* Top half */}
         <Box sx={{ display: 'flex', height: pointHeight }}>
@@ -533,5 +541,6 @@ export function BackgammonBoard({
       )}
       </LayoutGroup>
     </Card>
+    </Box>
   );
 }
