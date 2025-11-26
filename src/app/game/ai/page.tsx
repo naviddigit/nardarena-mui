@@ -66,6 +66,7 @@ export default function GameAIPage() {
   const [isRolling, setIsRolling] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [winner, setWinner] = useState<'white' | 'black' | null>(null);
+  const [timeoutWinner, setTimeoutWinner] = useState(false);
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [scores, setScores] = useState({ white: 0, black: 0 });
   const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
@@ -87,7 +88,8 @@ export default function GameAIPage() {
     handlePointClick,
     handleBarClick,
     handleUndo, 
-    handleEndTurn, 
+    handleEndTurn,
+    resetGame,
     validDestinations 
   } = useGameState(initialBoardState);
 
@@ -112,19 +114,21 @@ export default function GameAIPage() {
 
   // Check for time-out loss
   useEffect(() => {
-    if (whiteTimer.countdown === 0 && !winner && whiteTimer.counting) {
+    if (whiteTimer.countdown <= 0 && !winner) {
       // White time's up - Black wins the ENTIRE MATCH immediately
       console.log('⏰ White timeout - Black wins entire match!');
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
       setWinner('black');
+      setTimeoutWinner(true);
       setResultDialogOpen(true);
-    } else if (blackTimer.countdown === 0 && !winner && blackTimer.counting) {
+    } else if (blackTimer.countdown <= 0 && !winner) {
       // Black time's up - White wins the ENTIRE MATCH immediately
       console.log('⏰ Black timeout - White wins entire match!');
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
       setWinner('white');
+      setTimeoutWinner(true);
       setResultDialogOpen(true);
     }
   }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer]);
@@ -208,11 +212,19 @@ export default function GameAIPage() {
   const handleRematch = () => {
     setResultDialogOpen(false);
     setWinner(null);
+    setTimeoutWinner(false);
     setScores({ white: 0, black: 0 });
     setCurrentSet(1);
     whiteTimer.setCountdown(120);
     blackTimer.setCountdown(120);
-    setPlayerColor(null);
+    whiteTimer.stopCountdown();
+    blackTimer.stopCountdown();
+    // Reset game state to initial
+    resetGame();
+  };
+
+  const handleBackToDashboard = () => {
+    router.push('/');
   };
 
   const handleColorSelect = (color: 'white' | 'black', selectedMaxSets: number) => {
@@ -309,7 +321,11 @@ export default function GameAIPage() {
           }
           onRollDice={triggerDiceRoll}
           onDone={handleDone}
-          canDone={gameState.currentPlayer === (playerColor === 'white' ? 'black' : 'white') && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0 && gameState.diceValues.length >= 0}
+          canDone={
+            gameState.currentPlayer === (playerColor === 'white' ? 'black' : 'white') && 
+            gameState.gamePhase === 'moving' && 
+            (gameState.diceValues.length === 0 || gameState.validMoves.length === 0)
+          }
           onUndo={handleUndo}
           canUndo={gameState.currentPlayer === (playerColor === 'white' ? 'black' : 'white') && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           timeRemaining={playerColor === 'white' ? blackTimer.countdown : whiteTimer.countdown}
@@ -364,7 +380,11 @@ export default function GameAIPage() {
           }
           onRollDice={triggerDiceRoll}
           onDone={handleDone}
-          canDone={gameState.currentPlayer === playerColor && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0 && gameState.diceValues.length >= 0}
+          canDone={
+            gameState.currentPlayer === playerColor && 
+            gameState.gamePhase === 'moving' && 
+            (gameState.diceValues.length === 0 || gameState.validMoves.length === 0)
+          }
           onUndo={handleUndo}
           canUndo={gameState.currentPlayer === playerColor && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
           timeRemaining={playerColor === 'white' ? whiteTimer.countdown : blackTimer.countdown}
@@ -397,6 +417,8 @@ export default function GameAIPage() {
       <GameResultDialog
         open={resultDialogOpen}
         onRematch={handleRematch}
+        onBackToDashboard={handleBackToDashboard}
+        isTimeout={timeoutWinner}
         whitePlayer={{
           name: playerColor === 'white' ? 'You' : 'AI Opponent',
           avatarUrl: playerColor === 'white' ? _mock.image.avatar(0) : _mock.image.avatar(1),

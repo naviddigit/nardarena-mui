@@ -23,10 +23,12 @@ type Player = {
 type GameResultDialogProps = {
   open: boolean;
   onRematch: () => void;
+  onBackToDashboard: () => void;
   whitePlayer: Player;
   blackPlayer: Player;
   maxSets?: number;
   currentSet?: number;
+  isTimeout?: boolean;
 };
 
 // ----------------------------------------------------------------------
@@ -34,10 +36,12 @@ type GameResultDialogProps = {
 export function GameResultDialog({
   open,
   onRematch,
+  onBackToDashboard,
   whitePlayer,
   blackPlayer,
   maxSets = 5,
   currentSet = 1,
+  isTimeout = false,
 }: GameResultDialogProps) {
   const winner = whitePlayer.isWinner ? whitePlayer : blackPlayer;
   const loser = whitePlayer.isWinner ? blackPlayer : whitePlayer;
@@ -66,10 +70,10 @@ export function GameResultDialog({
           {/* Victory Title */}
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h3" sx={{ mb: 1 }}>
-              🎉 Victory! 🎉
+              {isTimeout ? '⏰ Time Out!' : '🎉 Victory! 🎉'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Set completed
+              {isTimeout ? 'Game ended due to timeout' : 'Set completed'}
             </Typography>
           </Box>
 
@@ -125,7 +129,7 @@ export function GameResultDialog({
                   {winner.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Winner
+                  {isTimeout ? 'Winner by timeout' : 'Winner'}
                 </Typography>
               </Box>
               <Typography
@@ -196,7 +200,7 @@ export function GameResultDialog({
                   {loser.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Defeated
+                  {isTimeout ? 'Lost by timeout' : 'Defeated'}
                 </Typography>
               </Box>
               <Typography
@@ -212,21 +216,37 @@ export function GameResultDialog({
             </Stack>
           </Stack>
 
-          {/* Rematch Button */}
-          <Button
-            variant="contained"
-            size="large"
-            color="primary"
-            onClick={onRematch}
-            startIcon={<Iconify icon="solar:refresh-bold" />}
-            sx={{
-              minWidth: 200,
-              py: 1.5,
-              fontWeight: 600,
-            }}
-          >
-            Rematch
-          </Button>
+          {/* Action Buttons */}
+          <Stack spacing={2} sx={{ width: '100%' }}>
+            <Button
+              fullWidth
+              variant="contained"
+              size="large"
+              color="primary"
+              onClick={onRematch}
+              startIcon={<Iconify icon="solar:refresh-bold" />}
+              sx={{
+                py: 1.5,
+                fontWeight: 600,
+              }}
+            >
+              Play Again
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              size="large"
+              color="inherit"
+              onClick={onBackToDashboard}
+              startIcon={<Iconify icon="solar:home-2-bold" />}
+              sx={{
+                py: 1.5,
+                fontWeight: 600,
+              }}
+            >
+              Back to Dashboard
+            </Button>
+          </Stack>
         </Stack>
       </DialogContent>
     </Dialog>

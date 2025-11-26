@@ -3,14 +3,17 @@
 import { useState } from 'react';
 
 import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import DialogContent from '@mui/material/DialogContent';
 import ToggleButton from '@mui/material/ToggleButton';
+import CardActionArea from '@mui/material/CardActionArea';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+
+import { varAlpha } from 'src/theme/styles';
 
 // ----------------------------------------------------------------------
 
@@ -92,87 +95,107 @@ export function ColorSelectionDialog({ open, onSelectColor }: ColorSelectionDial
             <Typography variant="subtitle2" sx={{ mb: 2, textAlign: 'center' }}>
               Choose Your Color
             </Typography>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={3}
-              sx={{ width: '100%', maxWidth: { xs: '100%', sm: 'auto' }, justifyContent: 'center' }}
-            >
+            <Stack spacing={2}>
               {/* White Option */}
-              <Button
-                variant={selectedColor === 'white' ? 'contained' : 'outlined'}
-                onClick={() => setSelectedColor('white')}
-                sx={{
-                  flex: { xs: 'auto', sm: 1 },
-                  maxWidth: { xs: '100%', sm: 200 },
-                  py: 3,
-                  borderRadius: 2,
-                  borderWidth: 2,
-                  '&:hover': {
-                    borderWidth: 2,
-                  },
-                }}
-              >
-                <Stack spacing={2} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 60,
-                      height: 60,
-                      borderRadius: '50%',
-                      bgcolor: 'common.white',
-                      border: (theme) => `3px solid ${theme.palette.divider}`,
-                      boxShadow: 3,
-                    }}
-                  />
-                  <Typography variant="h6">White</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Play first
-                  </Typography>
-                </Stack>
-              </Button>
+              <Card>
+                <CardActionArea
+                  onClick={() => setSelectedColor('white')}
+                  sx={{
+                    p: 2,
+                    border: (theme) =>
+                      `solid 1px ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}`,
+                    ...(selectedColor === 'white' && {
+                      bgcolor: 'action.selected',
+                      borderColor: 'primary.main',
+                      borderWidth: 2,
+                    }),
+                  }}
+                >
+                  <Stack spacing={2} direction="row" alignItems="center">
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        minWidth: 48,
+                        borderRadius: '50%',
+                        bgcolor: 'common.white',
+                        border: (theme) => `2px solid ${theme.palette.divider}`,
+                        boxShadow: 2,
+                      }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          mb: 0.5,
+                          ...(selectedColor === 'white' && { fontWeight: 'fontWeightSemiBold' }),
+                        }}
+                      >
+                        White
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Play first
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </CardActionArea>
+              </Card>
 
               {/* Black Option */}
-              <Button
-                variant={selectedColor === 'black' ? 'contained' : 'outlined'}
-                onClick={() => setSelectedColor('black')}
-                sx={{
-                  flex: { xs: 'auto', sm: 1 },
-                  maxWidth: { xs: '100%', sm: 200 },
-                  py: 3,
-                  borderRadius: 2,
-                  borderWidth: 2,
-                  '&:hover': {
-                    borderWidth: 2,
-                  },
-                }}
-              >
-                <Stack spacing={2} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 60,
-                      height: 60,
-                      borderRadius: '50%',
-                      bgcolor: 'grey.900',
-                      border: (theme) => `3px solid ${theme.palette.divider}`,
-                      boxShadow: 3,
-                    }}
-                  />
-                  <Typography variant="h6">Black</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Play second
-                  </Typography>
-                </Stack>
-              </Button>
+              <Card>
+                <CardActionArea
+                  onClick={() => setSelectedColor('black')}
+                  sx={{
+                    p: 2,
+                    border: (theme) =>
+                      `solid 1px ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}`,
+                    ...(selectedColor === 'black' && {
+                      bgcolor: 'action.selected',
+                      borderColor: 'primary.main',
+                      borderWidth: 2,
+                    }),
+                  }}
+                >
+                  <Stack spacing={2} direction="row" alignItems="center">
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        minWidth: 48,
+                        borderRadius: '50%',
+                        bgcolor: 'grey.900',
+                        border: (theme) => `2px solid ${theme.palette.divider}`,
+                        boxShadow: 2,
+                      }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          mb: 0.5,
+                          ...(selectedColor === 'black' && { fontWeight: 'fontWeightSemiBold' }),
+                        }}
+                      >
+                        Black
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Play second
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </CardActionArea>
+              </Card>
             </Stack>
           </Box>
 
           {/* Start Game Button */}
           <Button
+            fullWidth
             variant="contained"
             size="large"
             onClick={handleConfirm}
             disabled={!selectedColor}
             sx={{
-              minWidth: 200,
               py: 1.5,
               fontWeight: 600,
             }}
