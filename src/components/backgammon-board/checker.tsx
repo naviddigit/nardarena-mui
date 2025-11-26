@@ -33,16 +33,20 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, onCheck
         opacity: 1, 
         scale: 1 
       }}
+      exit={{ opacity: 0, scale: 0.8 }}
       transition={{ 
         type: 'spring', 
-        stiffness: 260,
-        damping: 30,
-        mass: 0.8,
+        stiffness: 200,
+        damping: 25,
+        mass: 0.6,
+        opacity: { duration: 0.2 },
+        scale: { duration: 0.2 },
         layout: { 
           type: 'spring',
-          stiffness: 260,
-          damping: 30,
-          mass: 0.8
+          stiffness: 200,
+          damping: 25,
+          mass: 0.6,
+          duration: 0.5
         }
       }}
       onClick={(e: React.MouseEvent) => {
