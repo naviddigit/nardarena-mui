@@ -4,6 +4,8 @@ import * as CANNON from 'cannon-es';
 import * as THREE from 'three';
 
 import Box from '@mui/material/Box';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 // ----------------------------------------------------------------------
 
@@ -20,6 +22,10 @@ type DiceRollerProps = {
 // ----------------------------------------------------------------------
 
 export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -30,6 +36,9 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
   const diceMaterialRef = useRef<CANNON.Material | null>(null);
 
   const [isRolling, setIsRolling] = useState(false);
+  
+  // Responsive height
+  const diceHeight = isSmallMobile ? 280 : isMobile ? 320 : 400;
 
   // Initialize Three.js scene and Cannon.js physics world
   useEffect(() => {
@@ -153,7 +162,7 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
       renderer.dispose();
       container.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [diceHeight]); // Re-initialize when height changes
 
   // Create a single d6 die
   const createDie = (scale: number, position: CANNON.Vec3, rotation: CANNON.Quaternion) => {
@@ -429,7 +438,7 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
       sx={{
         position: 'relative',
         width: 1,
-        height: 400,
+        height: diceHeight,
         borderRadius: 2,
         overflow: 'hidden',
         bgcolor: 'background.neutral',

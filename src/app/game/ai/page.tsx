@@ -183,7 +183,7 @@ export default function GameAIPage() {
 
   // Responsive dice position
   const dicePosition = isSmallMobile 
-    ? { top: 180, left: 0 } 
+    ? { top: 130, left: 0 } 
     : isMobile 
       ? { top: 190, left: 0 } 
       : { top: 200, left: 0 };
