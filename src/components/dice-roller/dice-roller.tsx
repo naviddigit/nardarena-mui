@@ -49,6 +49,8 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     }
 
     const container = containerRef.current;
+    if (!container) return;
+    
     const width = container.clientWidth;
     const height = container.clientHeight;
 
@@ -95,7 +97,7 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
     world.gravity.set(0, 0, -9.8 * 800);
     world.broadphase = new CANNON.NaiveBroadphase();
     (world.solver as any).iterations = 16;
-    (world.solver as any).tolerance = 0.1; // Add tolerance to reduce clamping warnings
+    (world.solver as any).tolerance = 0.1;
     worldRef.current = world;
 
     // Materials
@@ -153,16 +155,33 @@ export function DiceRoller({ onRollComplete, diceNotation = '2d6' }: DiceRollerP
 
     // Initial render
     renderer.render(scene, camera);
+    
+    // Handle window resize
+    const handleResize = () => {
+      if (!container || !renderer || !camera) return;
+      
+      const newWidth = container.clientWidth;
+      const newHeight = container.clientHeight;
+      
+      renderer.setSize(newWidth, newHeight);
+      camera.aspect = newWidth / newHeight;
+      camera.updateProjectionMatrix();
+    };
+    
+    window.addEventListener('resize', handleResize);
 
     // Cleanup
     return () => {
+      window.removeEventListener('resize', handleResize);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
       renderer.dispose();
-      container.removeChild(renderer.domElement);
     };
-  }, [diceHeight]); // Re-initialize when height changes
+  }, [diceHeight, diceNotation]); // Re-initialize when height changes
 
   // Create a single d6 die
   const createDie = (scale: number, position: CANNON.Vec3, rotation: CANNON.Quaternion) => {
