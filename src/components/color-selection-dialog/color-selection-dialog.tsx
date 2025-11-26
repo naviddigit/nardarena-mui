@@ -47,15 +47,15 @@ export function ColorSelectionDialog({ open, onSelectColor }: ColorSelectionDial
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={3}
-            sx={{ width: '100%', justifyContent: 'center' }}
+            sx={{ width: '100%', maxWidth: { xs: '100%', sm: 'auto' }, justifyContent: 'center' }}
           >
             {/* White Option */}
             <Button
               variant="outlined"
               onClick={() => onSelectColor('white')}
               sx={{
-                flex: 1,
-                maxWidth: 200,
+                flex: { xs: 'auto', sm: 1 },
+                maxWidth: { xs: '100%', sm: 200 },
                 py: 3,
                 borderRadius: 2,
                 borderWidth: 2,
@@ -88,8 +88,8 @@ export function ColorSelectionDialog({ open, onSelectColor }: ColorSelectionDial
               variant="outlined"
               onClick={() => onSelectColor('black')}
               sx={{
-                flex: 1,
-                maxWidth: 200,
+                flex: { xs: 'auto', sm: 1 },
+                maxWidth: { xs: '100%', sm: 200 },
                 py: 3,
                 borderRadius: 2,
                 borderWidth: 2,
