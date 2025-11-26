@@ -28,6 +28,7 @@ type PlayerCardProps = {
   checkerColor?: 'white' | 'black';
   isWinner?: boolean;
   isLoser?: boolean;
+  setsWon?: number;
 };
 
 export function PlayerCard({ 
@@ -45,6 +46,7 @@ export function PlayerCard({
   checkerColor = 'white',
   isWinner = false,
   isLoser = false,
+  setsWon = 0,
 }: PlayerCardProps) {
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
@@ -112,6 +114,22 @@ export function PlayerCard({
         primary={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {name}
+            {setsWon > 0 && (
+              <Box
+                sx={{
+                  bgcolor: 'success.main',
+                  color: 'common.white',
+                  px: 0.75,
+                  py: 0.25,
+                  borderRadius: 1,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                }}
+              >
+                {setsWon} WIN{setsWon > 1 ? 'S' : ''}
+              </Box>
+            )}
             <Box
               sx={{
                 width: 12,

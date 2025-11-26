@@ -263,7 +263,7 @@ export default function GameAIPage() {
             }}
           />
           <Typography variant="caption" color="text.secondary">
-            {scores.white} - {scores.black} (of {maxSets})
+            Set {currentSet} of {maxSets}
           </Typography>
         </Stack>
 
@@ -282,6 +282,7 @@ export default function GameAIPage() {
           country="Computer"
           avatarUrl={_mock.image.avatar(1)}
           checkerColor={playerColor === 'white' ? 'black' : 'white'}
+          setsWon={playerColor === 'white' ? scores.black : scores.white}
           isActive={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) ||
             (gameState.currentPlayer === (playerColor === 'white' ? 'black' : 'white') && gameState.gamePhase !== 'opening')
@@ -336,6 +337,7 @@ export default function GameAIPage() {
           country="Iran"
           avatarUrl={_mock.image.avatar(0)}
           checkerColor={playerColor || 'white'}
+          setsWon={playerColor === 'white' ? scores.white : scores.black}
           isActive={
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
             (gameState.currentPlayer === playerColor && gameState.gamePhase !== 'opening')
