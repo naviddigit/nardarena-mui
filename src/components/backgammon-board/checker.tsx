@@ -2,7 +2,7 @@
 
 import type { BoxProps } from '@mui/material/Box';
 
-import { m } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 
 import Box from '@mui/material/Box';
 
@@ -28,16 +28,22 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, onCheck
     <Box
       component={m.div}
       layoutId={layoutId}
+      initial={false}
       animate={{ 
         opacity: 1, 
         scale: 1 
       }}
       transition={{ 
         type: 'spring', 
-        stiffness: 300, 
+        stiffness: 260,
         damping: 30,
-        mass: 1,
-        layout: { duration: 0.4 }
+        mass: 0.8,
+        layout: { 
+          type: 'spring',
+          stiffness: 260,
+          damping: 30,
+          mass: 0.8
+        }
       }}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
