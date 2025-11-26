@@ -360,13 +360,13 @@ export function BackgammonBoard({
     );
   };
 
-  // Render all checkers in a single layer
-  const renderCheckers = () => {
-    const checkers = [];
+  // Memoize bar checkers to prevent infinite re-renders
+  const barCheckers = useMemo(() => {
+    const checkers: { white: JSX.Element[], black: JSX.Element[] } = { white: [], black: [] };
     const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
     const checkerSize = pointWidth * checkerScale;
 
-    console.log('🔍 renderCheckers - bar.white:', boardState.bar.white, 'bar.black:', boardState.bar.black);
+    console.log('🔍 Rendering bar checkers - bar.white:', boardState.bar.white, 'bar.black:', boardState.bar.black);
 
     // Bar White
     for (let i = 0; i < boardState.bar.white; i++) {
@@ -376,7 +376,7 @@ export function BackgammonBoard({
       
       console.log('  ➡️ Creating white bar checker:', checkerId, 'at yPos:', yPos);
       
-      checkers.push(
+      checkers.white.push(
         <Checker
           key={checkerId}
           layoutId={checkerId}
@@ -396,7 +396,7 @@ export function BackgammonBoard({
       
       console.log('  ➡️ Creating black bar checker:', checkerId, 'at yPos:', yPos);
       
-      checkers.push(
+      checkers.black.push(
         <Checker
           key={checkerId}
           layoutId={checkerId}
@@ -408,9 +408,9 @@ export function BackgammonBoard({
       );
     }
 
-    console.log('🔍 renderCheckers - total checkers created:', checkers.length);
+    console.log('🔍 Total bar checkers - white:', checkers.white.length, 'black:', checkers.black.length);
     return checkers;
-  };
+  }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, isMobile, onBarClick]);
 
   if (!mounted) {
     return <SplashScreen />;
@@ -466,7 +466,7 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.white > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          {renderCheckers().filter(c => c.key?.toString().includes('white-bar'))}
+          {barCheckers.white}
         </Box>
 
         {topPoints.slice(6, 12).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
@@ -493,7 +493,7 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.black > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          {renderCheckers().filter(c => c.key?.toString().includes('black-bar'))}
+          {barCheckers.black}
         </Box>
 
         {/* Right side: points 5→0 */}
