@@ -177,20 +177,18 @@ export default function GameAIPage() {
   };
 
   const handleDone = () => {
-    // Stop current player's timer
+    handleEndTurn();
+    
+    // Stop current player's timer and start next player's timer
     if (gameState.currentPlayer === 'white') {
       whiteTimer.stopCountdown();
-      // Start black player's timer for next turn
       blackTimer.setCountdown(120);
       blackTimer.startCountdown();
     } else {
       blackTimer.stopCountdown();
-      // Start white player's timer for next turn
       whiteTimer.setCountdown(120);
       whiteTimer.startCountdown();
     }
-    
-    handleEndTurn();
   };
 
   const handleRematch = () => {
