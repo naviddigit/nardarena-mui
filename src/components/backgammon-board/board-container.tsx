@@ -272,6 +272,10 @@ export function BackgammonBoard({
   
   const { darkPoint, lightPoint, boardBg, barColor } = themeColors;
 
+  // Calculate checker size once (used in bear-off zones)
+  const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
+  const checkerSize = pointWidth * checkerScale;
+
   const isValidDestination = (pointIndex: number) => validDestinations.includes(pointIndex);
 
   // Standard backgammon board layout (matching initial setup)
@@ -677,26 +681,152 @@ export function BackgammonBoard({
         {bottomPoints.slice(6, 12).map((pointIndex, i) => renderPoint(pointIndex, i, false))}
       </Box>
 
-      {/* Off areas */}
+      {/* Bear-off zones - مهره‌های خارج شده */}
       <Box
         sx={{
           position: 'absolute',
-          right: -80,
+          right: -pointWidth * 2,
           top: '50%',
           transform: 'translateY(-50%)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 2,
+          gap: 3,
           alignItems: 'center',
+          width: pointWidth * 1.5,
         }}
       >
-        <Box sx={{ textAlign: 'center' }}>
-          <Box sx={{ typography: 'caption', color: 'text.secondary', mb: 0.5 }}>White Off</Box>
-          <Box sx={{ typography: 'h6' }}>{boardState.off.white}</Box>
+        {/* White's bear-off zone (بالا) */}
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            height: boardHeight * 0.4,
+            bgcolor: `${currentTheme.colors.lightPoint}20`,
+            border: `2px solid ${currentTheme.colors.darkPoint}80`,
+            borderRadius: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            p: 1,
+          }}
+        >
+          <Box sx={{ typography: 'caption', color: 'text.secondary', mb: 1 }}>
+            White
+          </Box>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+            }}
+          >
+            <AnimatePresence>
+              {idsRef.current.off.white.map((id, index) => (
+                <m.div
+                  key={id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: index * (checkerSize * 0.15),
+                  }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 500,
+                    damping: 30,
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                  }}
+                >
+                  <Checker
+                    player="white"
+                    size={checkerSize * 0.6}
+                    yPosition={index * (checkerSize * 0.15)}
+                    layoutId={id}
+                    isSelected={false}
+                    isPlayable={false}
+                  />
+                </m.div>
+              ))}
+            </AnimatePresence>
+          </Box>
+          <Box sx={{ typography: 'h6', mt: 'auto' }}>{boardState.off.white}</Box>
         </Box>
-        <Box sx={{ textAlign: 'center' }}>
-          <Box sx={{ typography: 'caption', color: 'text.secondary', mb: 0.5 }}>Black Off</Box>
-          <Box sx={{ typography: 'h6' }}>{boardState.off.black}</Box>
+
+        {/* Black's bear-off zone (پایین) */}
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            height: boardHeight * 0.4,
+            bgcolor: `${currentTheme.colors.darkPoint}50`,
+            border: `2px solid ${currentTheme.colors.lightPoint}80`,
+            borderRadius: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            p: 1,
+          }}
+        >
+          <Box sx={{ typography: 'caption', color: 'text.secondary', mb: 1 }}>
+            Black
+          </Box>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+            }}
+          >
+            <AnimatePresence>
+              {idsRef.current.off.black.map((id, index) => (
+                <m.div
+                  key={id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: index * (checkerSize * 0.15),
+                  }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 500,
+                    damping: 30,
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                  }}
+                >
+                  <Checker
+                    player="black"
+                    size={checkerSize * 0.6}
+                    yPosition={index * (checkerSize * 0.15)}
+                    layoutId={id}
+                    isSelected={false}
+                    isPlayable={false}
+                  />
+                </m.div>
+              ))}
+            </AnimatePresence>
+          </Box>
+          <Box sx={{ typography: 'h6', mt: 'auto' }}>{boardState.off.black}</Box>
         </Box>
       </Box>
 

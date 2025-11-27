@@ -27,4 +27,6 @@ export type GameState = {
   validMoves: ValidMove[];
   moveHistory: MoveHistory[];
   openingRoll: { white: number | null; black: number | null };
+  scores: { white: number; black: number };
+  setWinner: Player | null;
 };

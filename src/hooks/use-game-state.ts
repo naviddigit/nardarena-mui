@@ -26,6 +26,8 @@ export function useGameState(initialBoardState: BoardState) {
     validMoves: [],
     moveHistory: [],
     openingRoll: { white: null, black: null },
+    scores: { white: 0, black: 0 },
+    setWinner: null,
   });
 
   const handleDiceRoll = useCallback((results: { value: number }[]) => {
@@ -141,9 +143,31 @@ export function useGameState(initialBoardState: BoardState) {
       if (gameState.selectedPoint === null) {
         const point = gameState.boardState.points[pointIndex];
         // Check if this point has a valid move
-        const hasValidMove = gameState.validMoves.some((m) => m.from === pointIndex);
+        const validMovesFromPoint = gameState.validMoves.filter((m) => m.from === pointIndex);
         
-        if (point.checkers.length > 0 && point.checkers[0] === gameState.currentPlayer && hasValidMove) {
+        if (point.checkers.length > 0 && point.checkers[0] === gameState.currentPlayer && validMovesFromPoint.length > 0) {
+          // If only ONE valid move from this point, auto-execute it
+          if (validMovesFromPoint.length === 1) {
+            const autoMove = validMovesFromPoint[0];
+            console.log(`🚀 Auto-move: ${pointIndex} → ${autoMove.to}`);
+            
+            // Execute move immediately
+            const result = executeMove(
+              gameState,
+              pointIndex,
+              autoMove.to,
+              autoMove,
+              setGameState
+            );
+
+            if (result) {
+              setGameState(result);
+            }
+            // Don't select point, just execute move
+            return;
+          }
+          
+          // Multiple moves available, select the point
           setGameState((prev) => ({
             ...prev,
             selectedPoint: pointIndex,
@@ -243,7 +267,34 @@ export function useGameState(initialBoardState: BoardState) {
       validMoves: [],
       moveHistory: [],
       openingRoll: { white: null, black: null },
+      scores: { white: 0, black: 0 },
+      setWinner: null,
     });
+  }, [initialBoardState]);
+
+  // Check if player won the set (all checkers borne off)
+  const checkSetWin = useCallback((boardState: BoardState, player: Player) => {
+    return boardState.off[player] === 15;
+  }, []);
+
+  // Start new set after someone wins
+  const startNewSet = useCallback((winner: Player) => {
+    setGameState((prev) => ({
+      ...prev,
+      boardState: initialBoardState,
+      currentPlayer: winner, // Winner starts next set
+      diceValues: [],
+      selectedPoint: null,
+      gamePhase: 'waiting', // Skip opening roll, go straight to waiting
+      validMoves: [],
+      moveHistory: [],
+      openingRoll: { white: null, black: null },
+      scores: {
+        ...prev.scores,
+        [winner]: prev.scores[winner] + 1,
+      },
+      setWinner: winner,
+    }));
   }, [initialBoardState]);
 
   return {
@@ -254,6 +305,8 @@ export function useGameState(initialBoardState: BoardState) {
     handleUndo,
     handleEndTurn,
     resetGame,
+    startNewSet,
+    checkSetWin,
     validDestinations,
   };
 }

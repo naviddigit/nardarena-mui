@@ -6,6 +6,13 @@ import { calculateValidMoves } from './validation';
 // ----------------------------------------------------------------------
 
 /**
+ * Check if player won the set (all 15 checkers borne off)
+ */
+function checkSetWin(boardState: BoardState, player: Player): boolean {
+  return boardState.off[player] === 15;
+}
+
+/**
  * Execute a move from bar to a point
  * Returns updated game state or null for async hit moves
  */
@@ -155,6 +162,80 @@ export function executeMoveFromPoint(
   validMove: ValidMove,
   setGameState: (updater: (prev: GameState) => GameState) => void
 ): GameState | null {
+  // Handle bear-off move (toIndex === -2)
+  if (toIndex === -2) {
+    const historyEntry: MoveHistory = {
+      boardState: currentState.boardState,
+      diceValue: validMove.die,
+      from: fromIndex,
+      to: -2,
+    };
+
+    const newPoints = currentState.boardState.points.map((point) => ({
+      checkers: [...point.checkers],
+      count: point.count,
+    }));
+
+    const fromPoint = newPoints[fromIndex];
+    
+    // Remove checker from board
+    const checker = fromPoint.checkers.pop();
+    if (checker) {
+      fromPoint.count -= 1;
+    }
+
+    // Remove used dice value
+    const newDiceValues = [...currentState.diceValues];
+    const diceIndex = newDiceValues.indexOf(validMove.die);
+    newDiceValues.splice(diceIndex, 1);
+
+    // Increase off count
+    const newOff = {
+      ...currentState.boardState.off,
+      [currentState.currentPlayer]: currentState.boardState.off[currentState.currentPlayer] + 1,
+    };
+
+    // Create new board state
+    const newBoardState = {
+      points: newPoints,
+      bar: { ...currentState.boardState.bar },
+      off: newOff,
+    };
+
+    // Check if player won the set (all 15 checkers borne off)
+    const playerWon = checkSetWin(newBoardState, currentState.currentPlayer);
+
+    // If player won, set game phase to finished
+    if (playerWon) {
+      return {
+        ...currentState,
+        boardState: newBoardState,
+        diceValues: [],
+        selectedPoint: null,
+        gamePhase: 'finished',
+        validMoves: [],
+        moveHistory: [...currentState.moveHistory, historyEntry],
+      };
+    }
+
+    // Recalculate valid moves
+    const newValidMoves = calculateValidMoves(
+      newBoardState,
+      currentState.currentPlayer,
+      newDiceValues
+    );
+
+    return {
+      ...currentState,
+      boardState: newBoardState,
+      diceValues: newDiceValues,
+      selectedPoint: null,
+      gamePhase: 'moving',
+      validMoves: newValidMoves,
+      moveHistory: [...currentState.moveHistory, historyEntry],
+    };
+  }
+
   const historyEntry: MoveHistory = {
     boardState: currentState.boardState,
     diceValue: validMove.die,

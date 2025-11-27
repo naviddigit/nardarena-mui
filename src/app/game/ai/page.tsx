@@ -99,6 +99,8 @@ export default function GameAIPage() {
     handleUndo, 
     handleEndTurn,
     resetGame,
+    startNewSet,
+    checkSetWin,
     validDestinations 
   } = useGameState(initialBoardState);
 
@@ -203,6 +205,49 @@ export default function GameAIPage() {
       }
     }
   }, [gameState.gamePhase, gameState.validMoves, gameState.currentPlayer, gameState.boardState.bar, winner, whiteTimer, blackTimer, handleEndTurn]);
+
+  // Check for set winner and start new set
+  useEffect(() => {
+    if (gameState.gamePhase === 'finished' && !winner) {
+      // Determine set winner
+      const setWinner = gameState.boardState.off.white === 15 ? 'white' : 'black';
+      
+      console.log(`🎉 Set ${currentSet} winner: ${setWinner}`);
+      playSound('win');
+      
+      // Stop both timers
+      whiteTimer.stopCountdown();
+      blackTimer.stopCountdown();
+      
+      // Update scores
+      setScores((prev) => ({
+        ...prev,
+        [setWinner]: prev[setWinner] + 1,
+      }));
+      
+      // Check if match is over
+      const newScore = { ...scores, [setWinner]: scores[setWinner] + 1 };
+      if (newScore[setWinner] >= maxSets) {
+        // Match over - this player won the match
+        console.log(`🏆 Match over! ${setWinner} wins!`);
+        setWinner(setWinner);
+        setTimeoutWinner(false);
+        setResultDialogOpen(true);
+      } else {
+        // Start next set after delay
+        setTimeout(() => {
+          setCurrentSet((prev) => prev + 1);
+          startNewSet(setWinner); // Winner starts next set
+          
+          // Reset timers
+          whiteTimer.reset();
+          blackTimer.reset();
+          
+          console.log(`🎮 Starting set ${currentSet + 1}, ${setWinner} to roll first`);
+        }, 2000); // 2 second delay to show the victory
+      }
+    }
+  }, [gameState.gamePhase, gameState.boardState.off, winner, currentSet, scores, maxSets, startNewSet, whiteTimer, blackTimer, playSound]);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     handleDiceRoll(results);
