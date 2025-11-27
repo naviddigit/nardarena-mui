@@ -78,25 +78,25 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, isPlaya
           boxShadow: (theme) => 
             `0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
         }),
-        // Playable checker highlight
+        // Playable checker highlight - subtle thin ring from theme
         ...(isPlayable && {
           boxShadow: (theme) => 
             player === 'white'
-              ? `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.4)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
-              : `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.4)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
+              ? `0 0 0 2px ${theme.vars.palette.primary.main}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
+              : `0 0 0 2px ${theme.vars.palette.primary.main}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
           animation: 'pulse 2s ease-in-out infinite',
           '@keyframes pulse': {
             '0%, 100%': {
               boxShadow: (theme) => 
                 player === 'white'
-                  ? `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.4)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
-                  : `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.4)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
+                  ? `0 0 0 2px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.6)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
+                  : `0 0 0 2px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.6)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
             },
             '50%': {
               boxShadow: (theme) => 
                 player === 'white'
-                  ? `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.7)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
-                  : `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.7)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
+                  ? `0 0 0 2px ${theme.vars.palette.primary.main}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
+                  : `0 0 0 2px ${theme.vars.palette.primary.main}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
             },
           },
         }),

@@ -313,67 +313,78 @@ export function BackgammonBoard({
         )}
 
         {/* Render checkers - max 5 visible with count label if more */}
-        {boardState.points[pointIndex]?.checkers.slice(0, 5).map((player, idx) => {
-          // Use stable ID from our calculated map
-          const checkerId = checkerIds.points[pointIndex][idx] || `${player}-p${pointIndex}-s${idx}`;
+        {(() => {
+          const point = boardState.points[pointIndex];
+          if (!point) return null;
           
           // استفاده از SCALE_CONFIG
           const stackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
           const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
-          
-          const stackPosition = idx * (pointWidth * stackSpacing);
           const checkerSize = pointWidth * checkerScale;
-          // Ensure checkers don't overflow
-          const maxStack = Math.min(stackPosition, pointHeight - checkerSize);
-          const absolutePosition = isTop ? maxStack : pointHeight - maxStack - checkerSize;
-          const isCheckerSelected = selectedPoint === pointIndex && idx === boardState.points[pointIndex].count - 1;
-          const isTopChecker = idx === boardState.points[pointIndex].count - 1;
-          const isCheckerPlayable = isTopChecker && playablePoints.has(pointIndex) && player === currentPlayer;
+          
+          // Calculate last checker position for count label
+          const lastCheckerIdx = Math.min(4, point.count - 1); // Max 5 visible (0-4)
+          const lastStackPosition = lastCheckerIdx * (pointWidth * stackSpacing);
+          const maxStack = Math.min(lastStackPosition, pointHeight - checkerSize);
+          const lastCheckerPosition = isTop ? maxStack : pointHeight - maxStack - checkerSize;
           
           return (
-            <Checker
-              key={checkerId}
-              layoutId={checkerId}
-              player={player}
-              size={checkerSize}
-              yPosition={absolutePosition}
-              isSelected={isCheckerSelected}
-              isPlayable={isCheckerPlayable}
-              isRotated={isRotated}
-              onCheckerClick={() => {
-                onPointClick?.(pointIndex);
-              }}
-            />
+            <>
+              {point.checkers.slice(0, 5).map((player, idx) => {
+                const checkerId = checkerIds.points[pointIndex][idx] || `${player}-p${pointIndex}-s${idx}`;
+                const stackPosition = idx * (pointWidth * stackSpacing);
+                const maxStackPos = Math.min(stackPosition, pointHeight - checkerSize);
+                const absolutePosition = isTop ? maxStackPos : pointHeight - maxStackPos - checkerSize;
+                const isCheckerSelected = selectedPoint === pointIndex && idx === point.count - 1;
+                const isTopChecker = idx === point.count - 1;
+                const isCheckerPlayable = isTopChecker && playablePoints.has(pointIndex) && player === currentPlayer;
+                
+                return (
+                  <Checker
+                    key={checkerId}
+                    layoutId={checkerId}
+                    player={player}
+                    size={checkerSize}
+                    yPosition={absolutePosition}
+                    isSelected={isCheckerSelected}
+                    isPlayable={isCheckerPlayable}
+                    isRotated={isRotated}
+                    onCheckerClick={() => {
+                      onPointClick?.(pointIndex);
+                    }}
+                  />
+                );
+              })}
+              
+              {/* Show count label on center of last checker if more than 5 */}
+              {point.count > 5 && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: lastCheckerPosition + checkerSize / 2,
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: (theme) => theme.vars.palette.background.paper,
+                    color: (theme) => theme.vars.palette.text.primary,
+                    borderRadius: '50%',
+                    width: checkerSize * 0.55,
+                    height: checkerSize * 0.55,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: checkerSize * 0.3,
+                    border: (theme) => `2px solid ${theme.vars.palette.divider}`,
+                    zIndex: 20,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  +{point.count - 5}
+                </Box>
+              )}
+            </>
           );
-        })}
-        
-        {/* Show count label if more than 5 checkers */}
-        {boardState.points[pointIndex]?.count > 5 && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: isTop ? '5px' : 'auto',
-              bottom: isTop ? 'auto' : '5px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              bgcolor: (theme) => theme.vars.palette.background.paper,
-              color: (theme) => theme.vars.palette.text.primary,
-              borderRadius: '50%',
-              width: pointWidth * 0.5,
-              height: pointWidth * 0.5,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              fontSize: pointWidth * 0.3,
-              border: (theme) => `2px solid ${theme.vars.palette.divider}`,
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          >
-            +{boardState.points[pointIndex].count - 5}
-          </Box>
-        )}
+        })()}
       </Box>
     );
   };
