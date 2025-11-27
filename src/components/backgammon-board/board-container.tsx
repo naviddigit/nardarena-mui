@@ -322,11 +322,12 @@ export function BackgammonBoard({
           const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
           const checkerSize = pointWidth * checkerScale;
           
-          // Calculate last checker position for count label
-          const lastCheckerIdx = Math.min(4, point.count - 1); // Max 5 visible (0-4)
-          const lastStackPosition = lastCheckerIdx * (pointWidth * stackSpacing);
-          const maxStack = Math.min(lastStackPosition, pointHeight - checkerSize);
-          const lastCheckerPosition = isTop ? maxStack : pointHeight - maxStack - checkerSize;
+          // Calculate position for count label - place it after the last visible checker (in empty space)
+          const visibleCount = Math.min(5, point.count);
+          const nextPosition = visibleCount * (pointWidth * stackSpacing);
+          const maxStackForLabel = Math.min(nextPosition, pointHeight - checkerSize);
+          // Position label at the next stack position (where 6th checker would be)
+          const countLabelPosition = isTop ? maxStackForLabel : pointHeight - maxStackForLabel - checkerSize;
           
           return (
             <>
@@ -367,12 +368,12 @@ export function BackgammonBoard({
                 );
               })}
               
-              {/* Show count label on center of last checker if more than 5 */}
+              {/* Show count label at next position after last checker if more than 5 */}
               {point.count > 5 && (
                 <Box
                   sx={{
                     position: 'absolute',
-                    top: lastCheckerPosition + checkerSize / 2,
+                    top: countLabelPosition + checkerSize / 2,
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
                     bgcolor: (theme) => theme.vars.palette.background.paper,
