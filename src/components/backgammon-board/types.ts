@@ -15,7 +15,7 @@ export type BoardState = {
 
 export type BackgammonBoardProps = {
   boardState: BoardState;
-  onPointClick?: (pointIndex: number, dieValue?: number) => void;
+  onPointClick?: (pointIndex: number) => void;
   onBarClick?: () => void;
   selectedPoint?: number | null;
   validDestinations?: number[];
