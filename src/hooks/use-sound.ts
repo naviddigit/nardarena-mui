@@ -5,7 +5,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 type SoundType = 'move' | 'turn';
 
 const SOUND_PATHS = {
-  move: '/dice-main/assets/step.mp3',
+  move: '/dice-main/assets/stet.mp3',
   turn: '/dice-main/assets/select.mp3',
 };
 

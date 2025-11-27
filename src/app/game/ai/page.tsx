@@ -110,12 +110,16 @@ export default function GameAIPage() {
       return;
     }
 
-    // Play turn sound when it's player's turn (only once per turn change)
-    if (gameState.currentPlayer === playerColor && 
-        gameState.gamePhase === 'moving' && 
-        lastTurnPlayerRef.current !== gameState.currentPlayer) {
-      playSound('turn');
-      lastTurnPlayerRef.current = gameState.currentPlayer;
+    // Play turn sound when it becomes player's turn to roll dice (waiting phase)
+    if (gameState.currentPlayer === playerColor && gameState.gamePhase === 'waiting') {
+      if (lastTurnPlayerRef.current !== gameState.currentPlayer) {
+        playSound('turn');
+        lastTurnPlayerRef.current = gameState.currentPlayer;
+      }
+    }
+    // Reset when leaving waiting phase so sound plays again next time
+    else if (gameState.gamePhase !== 'waiting') {
+      lastTurnPlayerRef.current = null;
     }
 
     // Start timer for current player
