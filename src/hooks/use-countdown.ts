@@ -61,44 +61,106 @@ export type UseCountdownSecondsReturn = {
   countdown: number;
   startCountdown: () => void;
   stopCountdown: () => void;
+  resetCountdown: () => void;
   setCountdown: React.Dispatch<React.SetStateAction<number>>;
 };
+
+/**
+ * Improved countdown timer that works even when tab is minimized
+ * - Uses Date.now() for accurate time calculation
+ * - Combines RAF + setInterval for reliability
+ * - Resistant to browser throttling
+ */
 
 export function useCountdownSeconds(initCountdown: number): UseCountdownSecondsReturn {
   const [countdown, setCountdown] = useState(initCountdown);
 
-  const remainingSecondsRef = useRef(countdown);
+  // Store start time to calculate actual elapsed time (防止 minimize 时停止)
+  const startTimeRef = useRef<number | null>(null);
+  const targetTimeRef = useRef<number | null>(null);
   const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+
+  // Use requestAnimationFrame + Date.now() for accurate timing even when tab is inactive
+  const updateCountdown = useCallback(() => {
+    if (!startTimeRef.current || !targetTimeRef.current) return;
+
+    const now = Date.now();
+    const elapsed = now - startTimeRef.current;
+    const remaining = targetTimeRef.current - now;
+    const remainingSeconds = Math.ceil(remaining / 1000);
+
+    if (remainingSeconds <= 0) {
+      setCountdown(0);
+      startTimeRef.current = null;
+      targetTimeRef.current = null;
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+        intervalIdRef.current = null;
+      }
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    } else {
+      setCountdown(remainingSeconds);
+      rafIdRef.current = requestAnimationFrame(updateCountdown);
+    }
+  }, []);
 
   const startCountdown = useCallback(() => {
-    // Clear any existing interval
+    // Clear any existing timers
     if (intervalIdRef.current) {
       clearInterval(intervalIdRef.current);
+      intervalIdRef.current = null;
+    }
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
     }
 
-    remainingSecondsRef.current = countdown;
+    // Record start time and calculate target end time
+    const now = Date.now();
+    startTimeRef.current = now;
+    targetTimeRef.current = now + countdown * 1000;
 
+    // Use both RAF (for active tab) and setInterval (fallback for inactive tab)
+    rafIdRef.current = requestAnimationFrame(updateCountdown);
+    
+    // Backup interval for when RAF is throttled (minimized/inactive tab)
     intervalIdRef.current = setInterval(() => {
-      remainingSecondsRef.current -= 1;
-
-      if (remainingSecondsRef.current <= 0) {
-        remainingSecondsRef.current = 0;
-        setCountdown(0);
-        if (intervalIdRef.current) {
-          clearInterval(intervalIdRef.current);
-          intervalIdRef.current = null;
-        }
-      } else {
-        setCountdown(remainingSecondsRef.current);
+      if (!rafIdRef.current) {
+        // RAF was canceled, use interval instead
+        updateCountdown();
       }
-    }, 1000);
-  }, [countdown]);
+    }, 100); // Check every 100ms for more accuracy
+
+  }, [countdown, updateCountdown]);
 
   const stopCountdown = useCallback(() => {
     if (intervalIdRef.current) {
       clearInterval(intervalIdRef.current);
       intervalIdRef.current = null;
     }
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    startTimeRef.current = null;
+    targetTimeRef.current = null;
+  }, []);
+
+  const resetCountdown = useCallback(() => {
+    stopCountdown();
+    setCountdown(initCountdown);
+  }, [stopCountdown, initCountdown]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalIdRef.current) clearInterval(intervalIdRef.current);
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
   }, []);
 
   const counting = countdown > 0 && countdown < initCountdown;
@@ -108,6 +170,7 @@ export function useCountdownSeconds(initCountdown: number): UseCountdownSecondsR
     countdown,
     startCountdown,
     stopCountdown,
+    resetCountdown,
     setCountdown,
   };
 }
