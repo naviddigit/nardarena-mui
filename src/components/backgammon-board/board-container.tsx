@@ -331,11 +331,16 @@ export function BackgammonBoard({
           
           return (
             <>
-              {point.checkers.slice(0, 5).map((player, idx) => {
+              {point.checkers.map((player, idx) => {
                 const checkerId = checkerIds.points[pointIndex][idx] || `${player}-p${pointIndex}-s${idx}`;
-                const stackPosition = idx * (pointWidth * stackSpacing);
+                
+                // For checkers 0-4: normal stacking
+                // For checkers 5+: all sit on position 5
+                const displayIdx = Math.min(idx, 4);
+                const stackPosition = displayIdx * (pointWidth * stackSpacing);
                 const maxStackPos = Math.min(stackPosition, pointHeight - checkerSize);
                 const absolutePosition = isTop ? maxStackPos : pointHeight - maxStackPos - checkerSize;
+                
                 const isCheckerSelected = selectedPoint === pointIndex && idx === point.count - 1;
                 const isTopChecker = idx === point.count - 1;
                 const isCheckerPlayable = isTopChecker && playablePoints.has(pointIndex) && player === currentPlayer;
@@ -368,32 +373,61 @@ export function BackgammonBoard({
                 );
               })}
               
-              {/* Show count label at next position after last checker if more than 5 */}
-              {point.count > 5 && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: countLabelPosition + checkerSize / 2,
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    bgcolor: (theme) => theme.vars.palette.background.paper,
-                    color: (theme) => theme.vars.palette.text.primary,
-                    borderRadius: '50%',
-                    width: checkerSize * 0.55,
-                    height: checkerSize * 0.55,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    fontSize: checkerSize * 0.3,
-                    border: (theme) => `2px solid ${theme.vars.palette.divider}`,
-                    zIndex: 20,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  +{point.count - 5}
-                </Box>
-              )}
+              {/* Count label on empty position after last visible checker */}
+              {point.count > 5 && (() => {
+                // Get valid destinations for this checker
+                const checkerValidMoves = validMoves.filter(m => m.from === pointIndex);
+                const uniqueDestinations = new Set(checkerValidMoves.map(m => m.to));
+                const hasSingleDestination = uniqueDestinations.size === 1;
+                const isCheckerSelected = selectedPoint === pointIndex;
+                
+                // Position on NEXT empty space after 5th checker (position 6)
+                const visibleCount = 5;
+                const nextPosition = visibleCount * (pointWidth * stackSpacing);
+                const maxStackForLabel = Math.min(nextPosition, pointHeight - checkerSize);
+                const countLabelPosition = isTop ? maxStackForLabel : pointHeight - maxStackForLabel - checkerSize;
+                
+                return (
+                  <Box
+                    onClick={() => {
+                      // Make count label clickable - select point or auto-move
+                      if (isCheckerSelected && hasSingleDestination && checkerValidMoves.length > 0) {
+                        onPointClick?.(checkerValidMoves[0].to);
+                      } else {
+                        onPointClick?.(pointIndex);
+                      }
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      top: countLabelPosition + checkerSize / 2,
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      bgcolor: (theme) => varAlpha(theme.vars.palette.background.paperChannel, 0.9),
+                      color: (theme) => theme.vars.palette.text.primary,
+                      borderRadius: '50%',
+                      width: checkerSize * 0.55,
+                      height: checkerSize * 0.55,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: checkerSize * 0.3,
+                      border: (theme) => `2px solid ${theme.vars.palette.divider}`,
+                      boxShadow: (theme) => `0 2px 8px ${varAlpha(theme.vars.palette.grey['500Channel'], 0.24)}`,
+                      zIndex: 20,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        transform: 'translate(-50%, -50%) scale(1.1)',
+                        borderColor: (theme) => theme.vars.palette.primary.main,
+                        bgcolor: (theme) => varAlpha(theme.vars.palette.background.paperChannel, 0.95),
+                      },
+                    }}
+                  >
+                    +{point.count - 5}
+                  </Box>
+                );
+              })()}
             </>
           );
         })()}
