@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 import Box from '@mui/material/Box';
@@ -15,6 +15,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { useGameState } from 'src/hooks/use-game-state';
 import { useCountdownSeconds } from 'src/hooks/use-countdown';
+import { useSound } from 'src/hooks/use-sound';
 import { _mock } from 'src/_mock';
 
 import { Iconify } from 'src/components/iconify';
@@ -74,6 +75,9 @@ export default function GameAIPage() {
   const [maxSets, setMaxSets] = useState(5);
   const [currentSet, setCurrentSet] = useState(1);
 
+  // Sound hook
+  const { isMuted, playSound, toggleMute } = useSound();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -104,13 +108,18 @@ export default function GameAIPage() {
       return;
     }
 
+    // Play turn sound when it's player's turn
+    if (gameState.currentPlayer === playerColor && gameState.gamePhase !== 'opening') {
+      playSound('turn');
+    }
+
     // Start timer for current player
     if (gameState.currentPlayer === 'white' && whiteTimer.countdown === 120 && !whiteTimer.counting) {
       whiteTimer.startCountdown();
     } else if (gameState.currentPlayer === 'black' && blackTimer.countdown === 120 && !blackTimer.counting) {
       blackTimer.startCountdown();
     }
-  }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, whiteTimer, blackTimer]);
+  }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, whiteTimer, blackTimer, playSound]);
 
   // Check for time-out loss
   useEffect(() => {
@@ -186,6 +195,21 @@ export default function GameAIPage() {
     }
   };
 
+  // Wrapper for handlePointClick to play move sound
+  const handlePointClickWithSound = useCallback(
+    (pointIndex: number) => {
+      handlePointClick(pointIndex);
+      playSound('move');
+    },
+    [handlePointClick, playSound]
+  );
+
+  // Wrapper for handleBarClick to play move sound
+  const handleBarClickWithSound = useCallback(() => {
+    handleBarClick();
+    playSound('move');
+  }, [handleBarClick, playSound]);
+
   const handleDone = () => {
     // Save current player before turn ends
     const currentPlayer = gameState.currentPlayer;
@@ -209,7 +233,7 @@ export default function GameAIPage() {
     }, 100);
   };
 
-  const handleRematch = () => {
+  const handleRematch = useCallback(() => {
     setResultDialogOpen(false);
     setWinner(null);
     setTimeoutWinner(false);
@@ -220,8 +244,10 @@ export default function GameAIPage() {
     whiteTimer.stopCountdown();
     blackTimer.stopCountdown();
     // Reset game state to initial
-    resetGame();
-  };
+    if (resetGame) {
+      resetGame();
+    }
+  }, [resetGame, whiteTimer, blackTimer]);
 
   const handleBackToDashboard = () => {
     router.push('/');
@@ -295,12 +321,24 @@ export default function GameAIPage() {
           </Typography>
         </Stack>
 
-        <IconButton
-          onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
-          sx={{ width: 40, height: 40 }}
-        >
-          <Iconify icon={mode === 'light' ? 'ph:moon-duotone' : 'ph:sun-duotone'} width={24} />
-        </IconButton>
+        <Stack direction="row" spacing={1}>
+          <IconButton
+            onClick={toggleMute}
+            sx={{ width: 40, height: 40 }}
+          >
+            <Iconify 
+              icon={isMuted ? 'solar:volume-cross-bold' : 'solar:volume-loud-bold'} 
+              width={24} 
+            />
+          </IconButton>
+
+          <IconButton
+            onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
+            sx={{ width: 40, height: 40 }}
+          >
+            <Iconify icon={mode === 'light' ? 'solar:moon-bold' : 'solar:sun-bold'} width={24} />
+          </IconButton>
+        </Stack>
       </Stack>
 
       {/* Player 1 (Opponent - Top) */}
@@ -345,8 +383,8 @@ export default function GameAIPage() {
       >
         <BackgammonBoard 
           boardState={gameState.boardState} 
-          onPointClick={handlePointClick}
-          onBarClick={handleBarClick}
+          onPointClick={handlePointClickWithSound}
+          onBarClick={handleBarClickWithSound}
           selectedPoint={gameState.selectedPoint}
           validDestinations={validDestinations}
           isRolling={isRolling}
