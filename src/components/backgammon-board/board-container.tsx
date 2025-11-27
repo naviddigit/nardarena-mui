@@ -339,6 +339,9 @@ export function BackgammonBoard({
                 const isTopChecker = idx === point.count - 1;
                 const isCheckerPlayable = isTopChecker && playablePoints.has(pointIndex) && player === currentPlayer;
                 
+                // Get valid destinations for this checker
+                const checkerValidMoves = validMoves.filter(m => m.from === pointIndex);
+                
                 return (
                   <Checker
                     key={checkerId}
@@ -350,7 +353,12 @@ export function BackgammonBoard({
                     isPlayable={isCheckerPlayable}
                     isRotated={isRotated}
                     onCheckerClick={() => {
-                      onPointClick?.(pointIndex);
+                      // If already selected and has only one valid move, auto-move
+                      if (isCheckerSelected && checkerValidMoves.length === 1) {
+                        onPointClick?.(checkerValidMoves[0].to);
+                      } else {
+                        onPointClick?.(pointIndex);
+                      }
                     }}
                   />
                 );
@@ -396,6 +404,8 @@ export function BackgammonBoard({
     const checkerSize = pointWidth * checkerScale;
     const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
     const isBarPlayable = playablePoints.has(-1);
+    const barValidMoves = validMoves.filter(m => m.from === -1);
+    const isBarSelected = selectedPoint === -1;
 
     // Bar White - position from BOTTOM of bar (so they sit at bottom)
     for (let i = 0; i < boardState.bar.white; i++) {
@@ -404,6 +414,7 @@ export function BackgammonBoard({
       const yPos = pointHeight - checkerSize - (i * (pointWidth * barStackSpacing));
       const isTopChecker = i === boardState.bar.white - 1;
       const isCheckerPlayable = isTopChecker && isBarPlayable && currentPlayer === 'white';
+      const isCheckerSelected = isBarSelected && isTopChecker && currentPlayer === 'white';
       
       checkers.white.push(
         <Checker
@@ -413,7 +424,15 @@ export function BackgammonBoard({
           size={checkerSize}
           yPosition={yPos}
           isPlayable={isCheckerPlayable}
-          onCheckerClick={() => onBarClick?.()}
+          isSelected={isCheckerSelected}
+          onCheckerClick={() => {
+            // If already selected and has only one valid move, auto-move
+            if (isCheckerSelected && barValidMoves.length === 1) {
+              onPointClick?.(barValidMoves[0].to);
+            } else {
+              onBarClick?.();
+            }
+          }}
         />
       );
     }
@@ -425,6 +444,7 @@ export function BackgammonBoard({
       const yPos = i * (pointWidth * barStackSpacing);
       const isTopChecker = i === boardState.bar.black - 1;
       const isCheckerPlayable = isTopChecker && isBarPlayable && currentPlayer === 'black';
+      const isCheckerSelected = isBarSelected && isTopChecker && currentPlayer === 'black';
       
       checkers.black.push(
         <Checker
@@ -434,13 +454,21 @@ export function BackgammonBoard({
           size={checkerSize}
           yPosition={yPos}
           isPlayable={isCheckerPlayable}
-          onCheckerClick={() => onBarClick?.()}
+          isSelected={isCheckerSelected}
+          onCheckerClick={() => {
+            // If already selected and has only one valid move, auto-move
+            if (isCheckerSelected && barValidMoves.length === 1) {
+              onPointClick?.(barValidMoves[0].to);
+            } else {
+              onBarClick?.();
+            }
+          }}
         />
       );
     }
 
     return checkers;
-  }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, pointHeight, isMobile, onBarClick, playablePoints, currentPlayer]);
+  }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, pointHeight, isMobile, onBarClick, playablePoints, currentPlayer, validMoves, selectedPoint, onPointClick]);
 
   if (!mounted) {
     return <SplashScreen />;
