@@ -33,7 +33,8 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, isPlaya
       initial={false}
       animate={{ 
         opacity: 1, 
-        scale: 1 
+        scale: 1,
+        y: isSelected ? [0, -8, 0] : 0,
       }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ 
@@ -43,6 +44,11 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, isPlaya
         mass: 0.6,
         opacity: { duration: 0.2 },
         scale: { duration: 0.2 },
+        y: isSelected ? {
+          repeat: Infinity,
+          duration: 1,
+          ease: 'easeInOut',
+        } : { duration: 0.2 },
         layout: { 
           type: 'spring',
           stiffness: 200,
@@ -91,25 +97,6 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, isPlaya
         ...sx,
       }}
       {...other}
-    >
-      {/* Selected indicator - central dot */}
-      {isSelected && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: size * 0.25,
-            height: size * 0.25,
-            borderRadius: '50%',
-            bgcolor: (theme) => theme.vars.palette.primary.main,
-            zIndex: 1,
-            pointerEvents: 'none',
-            boxShadow: (theme) => `0 2px 8px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.6)}`,
-          }}
-        />
-      )}
-    </Box>
+    />
   );
 }
