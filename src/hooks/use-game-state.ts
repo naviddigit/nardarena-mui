@@ -246,7 +246,7 @@ export function useGameState(initialBoardState: BoardState) {
   }, [gameState]);
 
   const handlePointClick = useCallback(
-    (pointIndex: number) => {
+    (pointIndex: number, dieValue?: number) => {
       if (gameState.gamePhase !== 'moving') return;
 
       // If no point selected, try to select this point
@@ -275,10 +275,10 @@ export function useGameState(initialBoardState: BoardState) {
         const fromIndex = gameState.selectedPoint;
         const toIndex = pointIndex;
 
-        // Find matching valid move
-        const validMove = gameState.validMoves.find(
-          (m) => m.from === fromIndex && m.to === toIndex
-        );
+        // Find matching valid move - prefer specific die value if provided
+        let validMove = dieValue 
+          ? gameState.validMoves.find((m) => m.from === fromIndex && m.to === toIndex && m.die === dieValue)
+          : gameState.validMoves.find((m) => m.from === fromIndex && m.to === toIndex);
 
         if (validMove) {
           // Execute move

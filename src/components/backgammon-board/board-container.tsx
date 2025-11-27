@@ -292,25 +292,71 @@ export function BackgammonBoard({
           height={triangleHeight}
         />
 
-        {/* Valid destination indicator */}
-        {isValid && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: pointWidth * 0.4,
-              height: pointWidth * 0.4,
-              borderRadius: '50%',
-              border: '3px solid',
-              borderColor: theme.vars.palette.success.main,
-              bgcolor: varAlpha(theme.vars.palette.success.mainChannel, 0.1),
-              zIndex: 5,
-              pointerEvents: 'none',
-            }}
-          />
-        )}
+        {/* Valid destination indicators with dice values */}
+        {(() => {
+          // Get all validMoves that lead to this point
+          const movesToThisPoint = validMoves.filter((m: { from: number; to: number; die: number }) => m.to === pointIndex);
+          if (movesToThisPoint.length === 0) return null;
+          
+          // Position multiple dice indicators in a circle pattern
+          return movesToThisPoint.map((move: { from: number; to: number; die: number }, idx: number) => {
+            const totalMoves = movesToThisPoint.length;
+            // Calculate angle for circular positioning (if multiple moves)
+            const angle = totalMoves > 1 ? (idx * (2 * Math.PI / totalMoves)) : 0;
+            const radius = totalMoves > 1 ? pointWidth * 0.15 : 0;
+            const offsetX = Math.cos(angle) * radius;
+            const offsetY = Math.sin(angle) * radius;
+            
+            return (
+              <Box
+                key={`${move.from}-${move.to}-${move.die}-${idx}`}
+                component={m.div}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20, delay: idx * 0.05 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Move with this specific die value
+                  onPointClick?.(pointIndex, move.die);
+                }}
+                sx={{
+                  position: 'absolute',
+                  top: `calc(50% + ${offsetY}px)`,
+                  left: `calc(50% + ${offsetX}px)`,
+                  transform: 'translate(-50%, -50%)',
+                  width: pointWidth * 0.35,
+                  height: pointWidth * 0.35,
+                  borderRadius: '50%',
+                  border: '3px solid',
+                  borderColor: theme.vars.palette.success.main,
+                  bgcolor: varAlpha(theme.vars.palette.success.mainChannel, 0.15),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  fontSize: pointWidth * 0.18,
+                  color: theme.vars.palette.success.dark,
+                  zIndex: 6,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: `0 2px 8px ${varAlpha(theme.vars.palette.success.mainChannel, 0.3)}`,
+                  '&:hover': {
+                    transform: 'translate(-50%, -50%) scale(1.15)',
+                    borderColor: theme.vars.palette.success.dark,
+                    bgcolor: varAlpha(theme.vars.palette.success.mainChannel, 0.25),
+                    boxShadow: `0 4px 12px ${varAlpha(theme.vars.palette.success.mainChannel, 0.5)}`,
+                  },
+                  '&:active': {
+                    transform: 'translate(-50%, -50%) scale(0.95)',
+                  },
+                }}
+              >
+                {move.die}
+              </Box>
+            );
+          });
+        })()}
 
         {/* Render checkers - max 5 visible with count label if more */}
         {(() => {
