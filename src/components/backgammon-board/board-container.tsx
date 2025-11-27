@@ -341,6 +341,9 @@ export function BackgammonBoard({
                 
                 // Get valid destinations for this checker
                 const checkerValidMoves = validMoves.filter(m => m.from === pointIndex);
+                // Check if all moves go to the same destination (important for doubles like 3-3)
+                const uniqueDestinations = new Set(checkerValidMoves.map(m => m.to));
+                const hasSingleDestination = uniqueDestinations.size === 1;
                 
                 return (
                   <Checker
@@ -353,8 +356,8 @@ export function BackgammonBoard({
                     isPlayable={isCheckerPlayable}
                     isRotated={isRotated}
                     onCheckerClick={() => {
-                      // If already selected and has only one valid move, auto-move
-                      if (isCheckerSelected && checkerValidMoves.length === 1) {
+                      // If already selected and all moves go to same destination, auto-move
+                      if (isCheckerSelected && hasSingleDestination && checkerValidMoves.length > 0) {
                         onPointClick?.(checkerValidMoves[0].to);
                       } else {
                         onPointClick?.(pointIndex);
@@ -405,6 +408,8 @@ export function BackgammonBoard({
     const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
     const isBarPlayable = playablePoints.has(-1);
     const barValidMoves = validMoves.filter(m => m.from === -1);
+    const uniqueBarDestinations = new Set(barValidMoves.map(m => m.to));
+    const hasBarSingleDestination = uniqueBarDestinations.size === 1;
     const isBarSelected = selectedPoint === -1;
 
     // Bar White - position from BOTTOM of bar (so they sit at bottom)
@@ -426,8 +431,8 @@ export function BackgammonBoard({
           isPlayable={isCheckerPlayable}
           isSelected={isCheckerSelected}
           onCheckerClick={() => {
-            // If already selected and has only one valid move, auto-move
-            if (isCheckerSelected && barValidMoves.length === 1) {
+            // If already selected and all moves go to same destination, auto-move
+            if (isCheckerSelected && hasBarSingleDestination && barValidMoves.length > 0) {
               onPointClick?.(barValidMoves[0].to);
             } else {
               onBarClick?.();
@@ -456,8 +461,8 @@ export function BackgammonBoard({
           isPlayable={isCheckerPlayable}
           isSelected={isCheckerSelected}
           onCheckerClick={() => {
-            // If already selected and has only one valid move, auto-move
-            if (isCheckerSelected && barValidMoves.length === 1) {
+            // If already selected and all moves go to same destination, auto-move
+            if (isCheckerSelected && hasBarSingleDestination && barValidMoves.length > 0) {
               onPointClick?.(barValidMoves[0].to);
             } else {
               onBarClick?.();
