@@ -77,6 +77,8 @@ export default function GameAIPage() {
 
   // Sound hook
   const { isMuted, playSound, toggleMute } = useSound();
+  const lastTurnPlayerRef = useRef<'white' | 'black' | null>(null);
+  const lastMoveCountRef = useRef(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -108,9 +110,12 @@ export default function GameAIPage() {
       return;
     }
 
-    // Play turn sound when it's player's turn
-    if (gameState.currentPlayer === playerColor && gameState.gamePhase !== 'opening') {
+    // Play turn sound when it's player's turn (only once per turn change)
+    if (gameState.currentPlayer === playerColor && 
+        gameState.gamePhase === 'moving' && 
+        lastTurnPlayerRef.current !== gameState.currentPlayer) {
       playSound('turn');
+      lastTurnPlayerRef.current = gameState.currentPlayer;
     }
 
     // Start timer for current player
@@ -120,6 +125,17 @@ export default function GameAIPage() {
       blackTimer.startCountdown();
     }
   }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, whiteTimer, blackTimer, playSound]);
+
+  // Play move sound when move history changes
+  useEffect(() => {
+    if (gameState.moveHistory.length > lastMoveCountRef.current) {
+      playSound('move');
+      lastMoveCountRef.current = gameState.moveHistory.length;
+    } else if (gameState.moveHistory.length === 0) {
+      // Reset counter when game resets
+      lastMoveCountRef.current = 0;
+    }
+  }, [gameState.moveHistory.length, playSound]);
 
   // Check for time-out loss
   useEffect(() => {
@@ -194,21 +210,6 @@ export default function GameAIPage() {
       }
     }
   };
-
-  // Wrapper for handlePointClick to play move sound
-  const handlePointClickWithSound = useCallback(
-    (pointIndex: number) => {
-      handlePointClick(pointIndex);
-      playSound('move');
-    },
-    [handlePointClick, playSound]
-  );
-
-  // Wrapper for handleBarClick to play move sound
-  const handleBarClickWithSound = useCallback(() => {
-    handleBarClick();
-    playSound('move');
-  }, [handleBarClick, playSound]);
 
   const handleDone = () => {
     // Save current player before turn ends
@@ -383,8 +384,8 @@ export default function GameAIPage() {
       >
         <BackgammonBoard 
           boardState={gameState.boardState} 
-          onPointClick={handlePointClickWithSound}
-          onBarClick={handleBarClickWithSound}
+          onPointClick={handlePointClick}
+          onBarClick={handleBarClick}
           selectedPoint={gameState.selectedPoint}
           validDestinations={validDestinations}
           isRolling={isRolling}
