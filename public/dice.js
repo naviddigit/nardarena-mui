@@ -31,13 +31,13 @@ const DICE = (function() {
         scale: 100, //dice size
         
         material_options: {
-            specular: 0x172022,
-            color: 0xf0f0f0,
-            shininess: 40,
+            specular: 0x0a0a0a, //کاهش reflection برای واقعی‌تر شدن
+            color: 0xf0f0f0, //رنگ اصلی تاس - روشن
+            shininess: 25, //کاهش براقیت برای مات‌تر شدن
             shading: THREE.FlatShading,
         },
-        label_color: '#aaaaaa', //numbers on dice
-        dice_color: '#202020',
+        label_color: '#aaaaaa', //رنگ نقاط - خاکستری
+        dice_color: '#202020', //رنگ پس‌زمینه تاس
         ambient_light_color: 0xf0f0f0,
         spot_light_color: 0xefefef,
         desk_color: '#101010', //canvas background
