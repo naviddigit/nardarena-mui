@@ -33,8 +33,7 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, isPlaya
       initial={false}
       animate={{ 
         opacity: 1, 
-        scale: 1,
-        y: isSelected ? [0, -8, 0] : 0,
+        scale: isSelected ? [1, 1.1, 1] : 1,
       }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ 
@@ -43,10 +42,9 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, isPlaya
         damping: 25,
         mass: 0.6,
         opacity: { duration: 0.2 },
-        scale: { duration: 0.2 },
-        y: isSelected ? {
+        scale: isSelected ? {
           repeat: Infinity,
-          duration: 1,
+          duration: 0.8,
           ease: 'easeInOut',
         } : { duration: 0.2 },
         layout: { 
