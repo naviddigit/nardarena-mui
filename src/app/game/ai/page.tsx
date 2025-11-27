@@ -17,6 +17,7 @@ import { useGameState } from 'src/hooks/use-game-state';
 import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { useSound } from 'src/hooks/use-sound';
 import { _mock } from 'src/_mock';
+import { BoardThemeProvider } from 'src/contexts/board-theme-context';
 
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
@@ -26,6 +27,7 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 import { GameResultDialog } from 'src/components/game-result-dialog';
 import { ColorSelectionDialog } from 'src/components/color-selection-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
+import { ThemeSwitcher } from 'src/components/backgammon-board/theme-switcher';
 
 // ----------------------------------------------------------------------
 
@@ -300,7 +302,10 @@ export default function GameAIPage() {
   }
 
   return (
-    <>
+    <BoardThemeProvider useApi={false}>
+      {/* Theme Switcher - پایین وسط صفحه */}
+      <ThemeSwitcher />
+      
       <Container maxWidth="xl" sx={{ py: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
@@ -480,6 +485,6 @@ export default function GameAIPage() {
         currentSet={currentSet}
       />
     </Container>
-    </>
+    </BoardThemeProvider>
   );
 }

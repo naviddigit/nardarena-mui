@@ -8,6 +8,7 @@ import Card from '@mui/material/Card';
 import { LayoutGroup, AnimatePresence, m } from 'framer-motion';
 
 import { varAlpha } from 'src/theme/styles';
+import { useBoardTheme } from 'src/contexts/board-theme-context';
 
 import { Checker } from './checker';
 import { SplashScreen } from '../loading-screen';
@@ -63,6 +64,14 @@ export function BackgammonBoard({
   isRotated = false,
 }: BackgammonBoardProps) {
   const theme = useTheme();
+  
+  // استفاده از Board Theme Context
+  const { currentTheme } = useBoardTheme();
+  
+  // چک کردن doubles (جفت): اگه همه تاس‌ها یکسان باشن
+  const diceValues = validMoves.map(m => m.die);
+  const uniqueDiceValues = new Set(diceValues);
+  const isDoubles = uniqueDiceValues.size === 1 && diceValues.length > 1;
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [mounted, setMounted] = useState(false);
@@ -74,7 +83,7 @@ export function BackgammonBoard({
       points.add(move.from);
     });
     return points;
-  }, [validMoves]);
+  }, [validMoves, isDoubles]);
 
   useEffect(() => {
     setMounted(true);
@@ -253,13 +262,15 @@ export function BackgammonBoard({
   const pointHeight = (boardHeight - padding * 2 - 20) / 2;
   const triangleHeight = pointHeight - (pointHeight * 0.2); // ارتفاع مثلث‌ها نسبت به ارتفاع جایگاه‌ها
   
-  // Theme-based colors (no hardcoded values)
-  const darkPoint = theme.vars.palette.grey[700];
-  const lightPoint = theme.vars.palette.grey[500];
-  const boardBg = theme.palette.mode === 'light' 
-    ? theme.vars.palette.common.white 
-    : theme.vars.palette.grey[800];
-  const barColor = theme.vars.palette.grey[700];
+  // استفاده از رنگ‌های تم - با useMemo برای رفرش خودکار
+  const themeColors = useMemo(() => ({
+    darkPoint: currentTheme.colors.darkPoint,
+    lightPoint: currentTheme.colors.lightPoint,
+    boardBg: currentTheme.colors.background,
+    barColor: currentTheme.colors.barBackground,
+  }), [currentTheme]);
+  
+  const { darkPoint, lightPoint, boardBg, barColor } = themeColors;
 
   const isValidDestination = (pointIndex: number) => validDestinations.includes(pointIndex);
 
@@ -282,7 +293,9 @@ export function BackgammonBoard({
           height: pointHeight,
           position: 'relative',
           cursor: 'pointer',
-          '&:hover': { opacity: 0.8 },
+          '&:hover': { 
+            opacity: isSelected ? 1 : 0.8, // غیرفعال کردن hover برای جایگاه سلکت شده
+          },
         }}
       >
         <PointTriangle
@@ -292,71 +305,25 @@ export function BackgammonBoard({
           height={triangleHeight}
         />
 
-        {/* Valid destination indicators with dice values */}
-        {(() => {
-          // Get all validMoves that lead to this point
-          const movesToThisPoint = validMoves.filter((m: { from: number; to: number; die: number }) => m.to === pointIndex);
-          if (movesToThisPoint.length === 0) return null;
-          
-          // Position multiple dice indicators in a circle pattern
-          return movesToThisPoint.map((move: { from: number; to: number; die: number }, idx: number) => {
-            const totalMoves = movesToThisPoint.length;
-            // Calculate angle for circular positioning (if multiple moves)
-            const angle = totalMoves > 1 ? (idx * (2 * Math.PI / totalMoves)) : 0;
-            const radius = totalMoves > 1 ? pointWidth * 0.15 : 0;
-            const offsetX = Math.cos(angle) * radius;
-            const offsetY = Math.sin(angle) * radius;
-            
-            return (
-              <Box
-                key={`${move.from}-${move.to}-${move.die}-${idx}`}
-                component={m.div}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20, delay: idx * 0.05 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Move with this specific die value
-                  onPointClick?.(pointIndex, move.die);
-                }}
-                sx={{
-                  position: 'absolute',
-                  top: `calc(50% + ${offsetY}px)`,
-                  left: `calc(50% + ${offsetX}px)`,
-                  transform: 'translate(-50%, -50%)',
-                  width: pointWidth * 0.35,
-                  height: pointWidth * 0.35,
-                  borderRadius: '50%',
-                  border: '3px solid',
-                  borderColor: theme.vars.palette.success.main,
-                  bgcolor: varAlpha(theme.vars.palette.success.mainChannel, 0.15),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: pointWidth * 0.18,
-                  color: theme.vars.palette.success.dark,
-                  zIndex: 6,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: `0 2px 8px ${varAlpha(theme.vars.palette.success.mainChannel, 0.3)}`,
-                  '&:hover': {
-                    transform: 'translate(-50%, -50%) scale(1.15)',
-                    borderColor: theme.vars.palette.success.dark,
-                    bgcolor: varAlpha(theme.vars.palette.success.mainChannel, 0.25),
-                    boxShadow: `0 4px 12px ${varAlpha(theme.vars.palette.success.mainChannel, 0.5)}`,
-                  },
-                  '&:active': {
-                    transform: 'translate(-50%, -50%) scale(0.95)',
-                  },
-                }}
-              >
-                {move.die}
-              </Box>
-            );
-          });
-        })()}
+        {/* Valid destination indicator */}
+        {isValid && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: pointWidth * 0.4,
+              height: pointWidth * 0.4,
+              borderRadius: '50%',
+              border: '3px solid',
+              borderColor: theme.vars.palette.success.main,
+              bgcolor: varAlpha(theme.vars.palette.success.mainChannel, 0.1),
+              zIndex: 5,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
 
         {/* Render checkers - max 5 visible with count label if more */}
         {(() => {
@@ -397,6 +364,11 @@ export function BackgammonBoard({
                 const uniqueDestinations = new Set(checkerValidMoves.map(m => m.to));
                 const hasSingleDestination = uniqueDestinations.size === 1;
                 
+                // نمایش dice indicators فقط وقتی مهره سلکت شده و بیش از یک حرکت داره (و جفت نیست)
+                const availableDice = (isCheckerSelected && checkerValidMoves.length > 1 && !isDoubles) 
+                  ? checkerValidMoves.map(m => ({ die: m.die, to: m.to })) 
+                  : [];
+                
                 return (
                   <Checker
                     key={checkerId}
@@ -407,6 +379,12 @@ export function BackgammonBoard({
                     isSelected={isCheckerSelected}
                     isPlayable={isCheckerPlayable}
                     isRotated={isRotated}
+                    isTopPoint={isTop}
+                    availableDice={availableDice}
+                    onDiceClick={(die, to) => {
+                      // Move to specific destination with specific die
+                      onPointClick?.(to);
+                    }}
                     onCheckerClick={() => {
                       // If already selected and all moves go to same destination, auto-move
                       if (isCheckerSelected && hasSingleDestination && checkerValidMoves.length > 0) {
@@ -502,6 +480,11 @@ export function BackgammonBoard({
       const isCheckerPlayable = isTopChecker && isBarPlayable && currentPlayer === 'white';
       const isCheckerSelected = isBarSelected && isTopChecker && currentPlayer === 'white';
       
+      // نمایش dice indicators فقط وقتی سلکت شده و بیش از یک حرکت داره
+      const availableDice = (isCheckerSelected && barValidMoves.length > 1 && !isDoubles) 
+        ? barValidMoves.map(m => ({ die: m.die, to: m.to })) 
+        : [];
+      
       checkers.white.push(
         <Checker
           key={checkerId}
@@ -511,6 +494,11 @@ export function BackgammonBoard({
           yPosition={yPos}
           isPlayable={isCheckerPlayable}
           isSelected={isCheckerSelected}
+          isTopPoint={false}
+          availableDice={availableDice}
+          onDiceClick={(die, to) => {
+            onPointClick?.(to);
+          }}
           onCheckerClick={() => {
             // If already selected and all moves go to same destination, auto-move
             if (isCheckerSelected && hasBarSingleDestination && barValidMoves.length > 0) {
@@ -532,6 +520,11 @@ export function BackgammonBoard({
       const isCheckerPlayable = isTopChecker && isBarPlayable && currentPlayer === 'black';
       const isCheckerSelected = isBarSelected && isTopChecker && currentPlayer === 'black';
       
+      // نمایش dice indicators فقط وقتی سلکت شده و بیش از یک حرکت داره
+      const availableDice = (isCheckerSelected && barValidMoves.length > 1 && !isDoubles) 
+        ? barValidMoves.map(m => ({ die: m.die, to: m.to })) 
+        : [];
+      
       checkers.black.push(
         <Checker
           key={checkerId}
@@ -541,6 +534,11 @@ export function BackgammonBoard({
           yPosition={yPos}
           isPlayable={isCheckerPlayable}
           isSelected={isCheckerSelected}
+          isTopPoint={true}
+          availableDice={availableDice}
+          onDiceClick={(die, to) => {
+            onPointClick?.(to);
+          }}
           onCheckerClick={() => {
             // If already selected and all moves go to same destination, auto-move
             if (isCheckerSelected && hasBarSingleDestination && barValidMoves.length > 0) {
@@ -582,6 +580,8 @@ export function BackgammonBoard({
           zIndex: 0,
           overflow: 'hidden',
           transition: 'border 0.3s ease-in-out',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
           '&::before': {
             content: '""',
             position: 'absolute',
