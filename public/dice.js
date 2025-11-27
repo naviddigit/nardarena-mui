@@ -554,16 +554,37 @@ const DICE = (function() {
             var context = canvas.getContext("2d");
             var ts = calc_texture_size(size + size * 2 * margin) * 2;
             canvas.width = canvas.height = ts;
-            context.font = ts / (1 + 2 * margin) + "pt Arial";
             context.fillStyle = back_color;
             context.fillRect(0, 0, canvas.width, canvas.height);
-            context.textAlign = "center";
-            context.textBaseline = "middle";
             context.fillStyle = color;
-            context.fillText(text, canvas.width / 2, canvas.height / 2);
-            if (text == '6' || text == '9') {
-                context.fillText('  .', canvas.width / 2, canvas.height / 2);
+            
+            // رسم نقاط بجای اعداد (Dice dots pattern) با padding
+            var num = parseInt(text);
+            var padding = ts * 0.15; // 15% padding from edges
+            var dotRadius = ts / 14; // کمی کوچکتر برای padding بیشتر
+            var positions = {
+                1: [[0.5, 0.5]],
+                2: [[0.3, 0.3], [0.7, 0.7]],
+                3: [[0.3, 0.3], [0.5, 0.5], [0.7, 0.7]],
+                4: [[0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]],
+                5: [[0.3, 0.3], [0.7, 0.3], [0.5, 0.5], [0.3, 0.7], [0.7, 0.7]],
+                6: [[0.3, 0.3], [0.7, 0.3], [0.3, 0.5], [0.7, 0.5], [0.3, 0.7], [0.7, 0.7]]
+            };
+            
+            if (positions[num]) {
+                positions[num].forEach(function(pos) {
+                    context.beginPath();
+                    context.arc(pos[0] * ts, pos[1] * ts, dotRadius, 0, Math.PI * 2);
+                    context.fill();
+                });
+            } else {
+                // Fallback for other numbers (like 0, 9, 10, etc.) - show as text
+                context.font = ts / (1 + 2 * margin) + "pt Arial";
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.fillText(text, canvas.width / 2, canvas.height / 2);
             }
+            
             var texture = new THREE.Texture(canvas);
             texture.needsUpdate = true;
             return texture;
