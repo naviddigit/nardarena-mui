@@ -561,8 +561,15 @@ export function BackgammonBoard({
   return (
     <Box
       component={m.div}
-      animate={{ rotate: isRotated ? 180 : 0 }}
-      transition={{ type: 'spring', stiffness: 150, damping: 20, duration: 0.6 }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ 
+        opacity: 1, 
+        scale: 1
+      }}
+      transition={{ 
+        opacity: { duration: 0.3 },
+        scale: { duration: 0.3 }
+      }}
       sx={{ display: 'inline-block' }}
     >
       <Card
@@ -597,7 +604,17 @@ export function BackgammonBoard({
       >
       <LayoutGroup id="board-checkers">
         {/* Top half */}
-        <Box sx={{ display: 'flex', height: pointHeight }}>
+        <Box 
+          component={m.div}
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ 
+            duration: 0.5, 
+            delay: 0.1,
+            ease: "easeOut" 
+          }}
+          sx={{ display: 'flex', height: pointHeight }}
+        >
         {topPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
 
         <Box
@@ -623,7 +640,17 @@ export function BackgammonBoard({
       </Box>
 
       {/* Bottom half */}
-      <Box sx={{ display: 'flex', height: pointHeight }}>
+      <Box 
+        component={m.div}
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ 
+          duration: 0.5, 
+          delay: 0.1,
+          ease: "easeOut" 
+        }}
+        sx={{ display: 'flex', height: pointHeight }}
+      >
         {/* Left side: points 11→6 */}
         {bottomPoints.slice(0, 6).map((pointIndex, i) => renderPoint(pointIndex, i, false))}
 

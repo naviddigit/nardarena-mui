@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { m } from 'framer-motion';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -352,7 +353,17 @@ export default function GameAIPage() {
       </Stack>
 
       {/* Player 1 (Opponent - Top) */}
-      <Box sx={{ mb: 2 }}>
+      <Box 
+        component={m.div}
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ 
+          duration: 0.6, 
+          delay: 0.2,
+          ease: "easeOut" 
+        }}
+        sx={{ mb: 2 }}
+      >
         <PlayerCard
           name="AI Opponent"
           country="Computer"
@@ -413,7 +424,16 @@ export default function GameAIPage() {
       </Box>
 
       {/* Player 2 (You - Bottom) */}
-      <Box>
+      <Box
+        component={m.div}
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ 
+          duration: 0.6, 
+          delay: 0.2,
+          ease: "easeOut" 
+        }}
+      >
         <PlayerCard
           name="You"
           country="Iran"

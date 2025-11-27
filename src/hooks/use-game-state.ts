@@ -84,10 +84,24 @@ export function useGameState(initialBoardState: BoardState) {
       // Auto-select bar if player has checkers on bar and has valid moves
       const autoSelectedPoint = hasCheckersOnBar && hasValidBarMoves ? -1 : null;
       
+      // If no valid moves available, skip turn automatically
+      if (validMoves.length === 0) {
+        const nextPlayer: Player = prev.currentPlayer === 'white' ? 'black' : 'white';
+        return {
+          ...prev,
+          currentPlayer: nextPlayer,
+          diceValues: [],
+          gamePhase: 'waiting',
+          validMoves: [],
+          moveHistory: [],
+          selectedPoint: null,
+        };
+      }
+      
       return {
         ...prev,
         diceValues: finalDiceValues,
-        gamePhase: validMoves.length > 0 ? 'moving' : 'waiting',
+        gamePhase: 'moving',
         validMoves,
         moveHistory: [],
         selectedPoint: autoSelectedPoint, // Auto-select bar if needed
