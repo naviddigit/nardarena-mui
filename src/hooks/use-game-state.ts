@@ -146,10 +146,13 @@ export function useGameState(initialBoardState: BoardState) {
         const validMovesFromPoint = gameState.validMoves.filter((m) => m.from === pointIndex);
         
         if (point.checkers.length > 0 && point.checkers[0] === gameState.currentPlayer && validMovesFromPoint.length > 0) {
-          // If only ONE valid move from this point, auto-execute it
-          if (validMovesFromPoint.length === 1) {
+          // Check unique destinations (important for doubles)
+          const uniqueDestinations = new Set(validMovesFromPoint.map((m) => m.to));
+          
+          // If only ONE unique destination, auto-execute first move
+          if (uniqueDestinations.size === 1) {
             const autoMove = validMovesFromPoint[0];
-            console.log(`🚀 Auto-move: ${pointIndex} → ${autoMove.to}`);
+            console.log(`🚀 Auto-move (${validMovesFromPoint.length} dice): ${pointIndex} → ${autoMove.to}`);
             
             // Execute move immediately
             const result = executeMove(
@@ -167,7 +170,7 @@ export function useGameState(initialBoardState: BoardState) {
             return;
           }
           
-          // Multiple moves available, select the point
+          // Multiple destinations available, select the point
           setGameState((prev) => ({
             ...prev,
             selectedPoint: pointIndex,
