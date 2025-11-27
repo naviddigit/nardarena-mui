@@ -19,6 +19,8 @@ export type BackgammonBoardProps = {
   onBarClick?: () => void;
   selectedPoint?: number | null;
   validDestinations?: number[];
+  currentPlayer?: Player;
+  validMoves?: Array<{ from: number; to: number; die: number }>;
   diceRoller?: React.ReactNode;
   dicePosition?: { top?: number; bottom?: number; left?: number; right?: number };
   isRolling?: boolean;

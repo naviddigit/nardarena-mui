@@ -55,6 +55,8 @@ export function BackgammonBoard({
   onBarClick,
   selectedPoint,
   validDestinations = [],
+  currentPlayer,
+  validMoves = [],
   diceRoller,
   dicePosition = { top: 20, right: 20 },
   isRolling = false,
@@ -64,6 +66,15 @@ export function BackgammonBoard({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [mounted, setMounted] = useState(false);
+
+  // Calculate playable points (points with checkers that can move)
+  const playablePoints = useMemo(() => {
+    const points = new Set<number>();
+    validMoves.forEach(move => {
+      points.add(move.from);
+    });
+    return points;
+  }, [validMoves]);
 
   useEffect(() => {
     setMounted(true);
@@ -316,6 +327,8 @@ export function BackgammonBoard({
           const maxStack = Math.min(stackPosition, pointHeight - checkerSize);
           const absolutePosition = isTop ? maxStack : pointHeight - maxStack - checkerSize;
           const isCheckerSelected = selectedPoint === pointIndex && idx === boardState.points[pointIndex].count - 1;
+          const isTopChecker = idx === boardState.points[pointIndex].count - 1;
+          const isCheckerPlayable = isTopChecker && playablePoints.has(pointIndex) && player === currentPlayer;
           
           return (
             <Checker
@@ -325,6 +338,7 @@ export function BackgammonBoard({
               size={checkerSize}
               yPosition={absolutePosition}
               isSelected={isCheckerSelected}
+              isPlayable={isCheckerPlayable}
               isRotated={isRotated}
               onCheckerClick={() => {
                 onPointClick?.(pointIndex);
@@ -342,8 +356,8 @@ export function BackgammonBoard({
               bottom: isTop ? 'auto' : '5px',
               left: '50%',
               transform: 'translateX(-50%)',
-              bgcolor: 'background.paper',
-              color: 'text.primary',
+              bgcolor: (theme) => theme.vars.palette.background.paper,
+              color: (theme) => theme.vars.palette.text.primary,
               borderRadius: '50%',
               width: pointWidth * 0.5,
               height: pointWidth * 0.5,
@@ -370,12 +384,15 @@ export function BackgammonBoard({
     const checkerScale = isMobile ? SCALE_CONFIG.checkerSize.mobile : SCALE_CONFIG.checkerSize.desktop;
     const checkerSize = pointWidth * checkerScale;
     const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
+    const isBarPlayable = playablePoints.has(-1);
 
     // Bar White - position from BOTTOM of bar (so they sit at bottom)
     for (let i = 0; i < boardState.bar.white; i++) {
       const checkerId = checkerIds.bar.white[i] || `white-bar-${i}`;
       // Calculate from bottom: start at (height - checkerSize) and stack upwards
       const yPos = pointHeight - checkerSize - (i * (pointWidth * barStackSpacing));
+      const isTopChecker = i === boardState.bar.white - 1;
+      const isCheckerPlayable = isTopChecker && isBarPlayable && currentPlayer === 'white';
       
       checkers.white.push(
         <Checker
@@ -384,6 +401,7 @@ export function BackgammonBoard({
           player="white"
           size={checkerSize}
           yPosition={yPos}
+          isPlayable={isCheckerPlayable}
           onCheckerClick={() => onBarClick?.()}
         />
       );
@@ -394,6 +412,8 @@ export function BackgammonBoard({
       const checkerId = checkerIds.bar.black[i] || `black-bar-${i}`;
       // Stack from top downwards
       const yPos = i * (pointWidth * barStackSpacing);
+      const isTopChecker = i === boardState.bar.black - 1;
+      const isCheckerPlayable = isTopChecker && isBarPlayable && currentPlayer === 'black';
       
       checkers.black.push(
         <Checker
@@ -402,13 +422,14 @@ export function BackgammonBoard({
           player="black"
           size={checkerSize}
           yPosition={yPos}
+          isPlayable={isCheckerPlayable}
           onCheckerClick={() => onBarClick?.()}
         />
       );
     }
 
     return checkers;
-  }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, pointHeight, isMobile, onBarClick]);
+  }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, pointHeight, isMobile, onBarClick, playablePoints, currentPlayer]);
 
   if (!mounted) {
     return <SplashScreen />;

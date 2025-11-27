@@ -18,13 +18,14 @@ type CheckerProps = BoxProps & {
   yPosition: number;
   layoutId: string;
   isSelected?: boolean;
+  isPlayable?: boolean;
   isRotated?: boolean;
   onCheckerClick?: () => void;
 };
 
 // ----------------------------------------------------------------------
 
-export function Checker({ player, size, yPosition, layoutId, isSelected, onCheckerClick, sx, ...other }: CheckerProps) {
+export function Checker({ player, size, yPosition, layoutId, isSelected, isPlayable, onCheckerClick, sx, ...other }: CheckerProps) {
   return (
     <Box
       component={m.div}
@@ -66,16 +67,38 @@ export function Checker({ player, size, yPosition, layoutId, isSelected, onCheck
         // White checkers
         ...(player === 'white' && {
           background: 'linear-gradient(135deg, #FFFFFF 0%, #c7c7c7ff 50%, #E8E8E8 100%)',
-          border: isSelected ? '4px solid #1976d2' : '2px solid #8a8a8aff',
+          border: (theme) => isSelected ? `4px solid ${theme.vars.palette.primary.main}` : '2px solid #8a8a8aff',
           boxShadow: (theme) => 
             `0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`,
         }),
         // Black checkers with reflection
         ...(player === 'black' && {
           background: 'linear-gradient(135deg, #1976d2 0%, #424242ff 40%, #1A1A1A 70%, #000000 100%)',
-          border: isSelected ? '4px solid #1976d2' : '2px solid #d4d4d4ff',
+          border: (theme) => isSelected ? `4px solid ${theme.vars.palette.primary.main}` : '2px solid #d4d4d4ff',
           boxShadow: (theme) => 
             `0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
+        }),
+        // Playable checker highlight
+        ...(isPlayable && {
+          boxShadow: (theme) => 
+            player === 'white'
+              ? `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.4)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
+              : `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.4)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
+          animation: 'pulse 2s ease-in-out infinite',
+          '@keyframes pulse': {
+            '0%, 100%': {
+              boxShadow: (theme) => 
+                player === 'white'
+                  ? `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.4)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
+                  : `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.4)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
+            },
+            '50%': {
+              boxShadow: (theme) => 
+                player === 'white'
+                  ? `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.7)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.2)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.8)}`
+                  : `0 0 0 3px ${varAlpha(theme.vars.palette.warning.mainChannel, 0.7)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
+            },
+          },
         }),
         '&:hover': {
           filter: 'brightness(1.1)',

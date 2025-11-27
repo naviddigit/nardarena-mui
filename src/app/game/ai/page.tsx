@@ -392,6 +392,8 @@ export default function GameAIPage() {
           onBarClick={handleBarClick}
           selectedPoint={gameState.selectedPoint}
           validDestinations={validDestinations}
+          currentPlayer={gameState.currentPlayer}
+          validMoves={gameState.validMoves}
           isRolling={isRolling}
           isRotated={playerColor === 'black'}
           diceRoller={
