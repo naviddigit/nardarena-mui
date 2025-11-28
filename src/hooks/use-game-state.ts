@@ -136,9 +136,36 @@ export function useGameState(initialBoardState: BoardState) {
   }, [gameState]);
 
   const handlePointClick = useCallback(
-    (pointIndex: number) => {
+    (pointIndex: number, targetIndex?: number) => {
       if (gameState.gamePhase !== 'moving') return;
 
+      // If targetIndex is provided (e.g., from bear-off zone click), try to execute move directly
+      if (targetIndex !== undefined) {
+        const fromIndex = gameState.selectedPoint;
+        if (fromIndex === null || fromIndex < 0) return;
+
+        const validMove = gameState.validMoves.find(
+          (m) => m.from === fromIndex && m.to === targetIndex
+        );
+
+        if (validMove) {
+          console.log(`🎯 Executing move: ${fromIndex} → ${targetIndex}`);
+          const result = executeMove(
+            gameState,
+            fromIndex,
+            targetIndex,
+            validMove,
+            setGameState
+          );
+
+          if (result) {
+            setGameState(result);
+          }
+        }
+        return;
+      }
+
+      // Normal point click logic (when targetIndex is not provided)
       // If no point selected, try to select this point
       if (gameState.selectedPoint === null) {
         const point = gameState.boardState.points[pointIndex];
@@ -152,7 +179,6 @@ export function useGameState(initialBoardState: BoardState) {
           // If only ONE unique destination, auto-execute first move
           if (uniqueDestinations.size === 1) {
             const autoMove = validMovesFromPoint[0];
-            console.log(`🚀 Auto-move (${validMovesFromPoint.length} dice): ${pointIndex} → ${autoMove.to}`);
             
             // Execute move immediately
             const result = executeMove(
@@ -177,7 +203,9 @@ export function useGameState(initialBoardState: BoardState) {
           }));
         }
       } else {
-        // Deselect if clicking same point
+        // Already have a point selected
+        
+        // Check if clicking same point again - deselect it
         if (pointIndex === gameState.selectedPoint) {
           setGameState((prev) => ({
             ...prev,
@@ -282,9 +310,19 @@ export function useGameState(initialBoardState: BoardState) {
 
   // Start new set after someone wins
   const startNewSet = useCallback((winner: Player) => {
+    // Create a fresh board state (not reusing initialBoardState reference)
+    const freshBoardState = {
+      points: initialBoardState.points.map(p => ({
+        checkers: [...p.checkers],
+        count: p.count,
+      })),
+      bar: { ...initialBoardState.bar },
+      off: { white: 0, black: 0 }, // Reset off counts
+    };
+    
     setGameState((prev) => ({
       ...prev,
-      boardState: initialBoardState,
+      boardState: freshBoardState,
       currentPlayer: winner, // Winner starts next set
       diceValues: [],
       selectedPoint: null,

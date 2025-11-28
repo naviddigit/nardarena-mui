@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { m } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -29,6 +29,119 @@ import { GameResultDialog } from 'src/components/game-result-dialog';
 import { ColorSelectionDialog } from 'src/components/color-selection-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
 import { ThemeSwitcher } from 'src/components/backgammon-board/theme-switcher';
+
+// AnimateText component variants and classes
+import { useInView, useAnimation } from 'framer-motion';
+
+const animateTextClasses = {
+  root: 'animate-text-root',
+  lines: 'animate-text-lines',
+  line: 'animate-text-line',
+  word: 'animate-text-word',
+  char: 'animate-text-char',
+  space: 'animate-text-space',
+  srOnly: 'sr-only',
+};
+
+const varTranEnter = { duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] };
+const varTranExit = { duration: 0.2, ease: [0.43, 0.13, 0.23, 0.96] };
+
+const varFade = () => ({
+  in: {
+    initial: { opacity: 0 },
+    animate: { opacity: 1, transition: varTranEnter },
+    exit: { opacity: 0, transition: varTranExit },
+  },
+  inRight: {
+    initial: { x: 120, opacity: 0 },
+    animate: { x: 0, opacity: 1, transition: varTranEnter },
+    exit: { x: -120, opacity: 0, transition: varTranExit },
+  },
+});
+
+const varContainer = () => ({
+  animate: {
+    transition: { staggerChildren: 0.03, delayChildren: 0.05 },
+  },
+  exit: {
+    transition: { staggerChildren: 0.02, staggerDirection: -1 },
+  },
+});
+
+function AnimateText({ text, sx, variants, once = false, ...other }: any) {
+  const ref = useRef(null);
+  const controls = useAnimation();
+  const textArray = Array.isArray(text) ? text : [text];
+  const isInView = useInView(ref, { once, amount: 0.3 });
+
+  useEffect(() => {
+    if (isInView) {
+      controls.start('animate');
+    } else {
+      controls.start('initial');
+    }
+  }, [controls, isInView]);
+
+  return (
+    <Typography
+      className={animateTextClasses.root}
+      sx={{ p: 0, m: 0, ...sx }}
+      {...other}
+    >
+      <Box
+        component={m.span}
+        ref={ref}
+        initial="initial"
+        animate={controls}
+        exit="exit"
+        variants={varContainer()}
+        className={animateTextClasses.lines}
+      >
+        {textArray.map((line: string, lineIndex: number) => (
+          <Box
+            component="span"
+            key={`${line}-${lineIndex}`}
+            className={animateTextClasses.line}
+            sx={{ display: 'block' }}
+          >
+            {line.split(' ').map((word: string, wordIndex: number) => {
+              const lastWordInline = line.split(' ')[line.split(' ').length - 1];
+              return (
+                <Box
+                  component="span"
+                  key={`${word}-${wordIndex}`}
+                  className={animateTextClasses.word}
+                  sx={{ display: 'inline-block' }}
+                >
+                  {word.split('').map((char: string, charIndex: number) => (
+                    <Box
+                      component={m.span}
+                      key={`${char}-${charIndex}`}
+                      variants={variants ?? varFade().inRight}
+                      className={animateTextClasses.char}
+                      sx={{ display: 'inline-block' }}
+                    >
+                      {char}
+                    </Box>
+                  ))}
+                  {lastWordInline !== word && (
+                    <Box
+                      component="span"
+                      className={animateTextClasses.space}
+                      sx={{ display: 'inline-block' }}
+                    >
+                      &nbsp;
+                    </Box>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+        ))}
+      </Box>
+    </Typography>
+  );
+}
 
 // ----------------------------------------------------------------------
 
@@ -77,11 +190,23 @@ export default function GameAIPage() {
   const [loading, setLoading] = useState(true);
   const [maxSets, setMaxSets] = useState(5);
   const [currentSet, setCurrentSet] = useState(1);
+  const [showWinText, setShowWinText] = useState(false);
+  const [winTextMessage, setWinTextMessage] = useState('');
 
   // Sound hook
   const { isMuted, playSound, toggleMute } = useSound();
   const lastTurnPlayerRef = useRef<'white' | 'black' | null>(null);
   const lastMoveCountRef = useRef(0);
+  const setWinnerProcessedRef = useRef(false); // Track if we've processed this set winner
+
+  // Win text display function
+  const showWinMessage = (message: string) => {
+    setWinTextMessage(message);
+    setShowWinText(true);
+    setTimeout(() => {
+      setShowWinText(false);
+    }, 4000);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -104,10 +229,10 @@ export default function GameAIPage() {
     validDestinations 
   } = useGameState(initialBoardState);
 
-  // Timer for White player (120 seconds = 2 minutes)
-  const whiteTimer = useCountdownSeconds(120);
-  // Timer for Black player (120 seconds = 2 minutes)
-  const blackTimer = useCountdownSeconds(120);
+  // Timer for White player (1800 seconds = 30 minutes)
+  const whiteTimer = useCountdownSeconds(1800);
+  // Timer for Black player (1800 seconds = 30 minutes)
+  const blackTimer = useCountdownSeconds(1800);
 
   // Start timer when real game begins (after opening roll)
   useEffect(() => {
@@ -128,9 +253,9 @@ export default function GameAIPage() {
     }
 
     // Start timer for current player
-    if (gameState.currentPlayer === 'white' && whiteTimer.countdown === 120 && !whiteTimer.counting) {
+    if (gameState.currentPlayer === 'white' && whiteTimer.countdown === 1800 && !whiteTimer.counting) {
       whiteTimer.startCountdown();
-    } else if (gameState.currentPlayer === 'black' && blackTimer.countdown === 120 && !blackTimer.counting) {
+    } else if (gameState.currentPlayer === 'black' && blackTimer.countdown === 1800 && !blackTimer.counting) {
       blackTimer.startCountdown();
     }
   }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, whiteTimer, blackTimer, playSound]);
@@ -208,46 +333,74 @@ export default function GameAIPage() {
 
   // Check for set winner and start new set
   useEffect(() => {
-    if (gameState.gamePhase === 'finished' && !winner) {
-      // Determine set winner
-      const setWinner = gameState.boardState.off.white === 15 ? 'white' : 'black';
+    if (gameState.gamePhase === 'finished' && !winner && !setWinnerProcessedRef.current) {
+      // Mark as processed to prevent double execution
+      setWinnerProcessedRef.current = true;
       
-      console.log(`🎉 Set ${currentSet} winner: ${setWinner}`);
-      playSound('win');
+      // Determine set winner
+      const currentSetWinner = gameState.boardState.off.white === 15 ? 'white' : 'black';
+      
+      console.log(`🎉 Set ${currentSet} winner: ${currentSetWinner}`);
+      playSound('move');
       
       // Stop both timers
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
       
       // Update scores
-      setScores((prev) => ({
-        ...prev,
-        [setWinner]: prev[setWinner] + 1,
-      }));
-      
-      // Check if match is over
-      const newScore = { ...scores, [setWinner]: scores[setWinner] + 1 };
-      if (newScore[setWinner] >= maxSets) {
-        // Match over - this player won the match
-        console.log(`🏆 Match over! ${setWinner} wins!`);
-        setWinner(setWinner);
-        setTimeoutWinner(false);
-        setResultDialogOpen(true);
-      } else {
-        // Start next set after delay
-        setTimeout(() => {
-          setCurrentSet((prev) => prev + 1);
-          startNewSet(setWinner); // Winner starts next set
+      setScores((prev) => {
+        const newScore = {
+          ...prev,
+          [currentSetWinner]: prev[currentSetWinner] + 1,
+        };
+        
+        const setsToWin = Math.ceil(maxSets / 2); // For 3 sets: need 2, for 5: need 3, for 9: need 5
+        
+        if (newScore[currentSetWinner] >= setsToWin) {
+          // Match over - this player won the match
+          console.log(`🏆 Match over! ${currentSetWinner} wins ${newScore[currentSetWinner]}-${newScore[currentSetWinner === 'white' ? 'black' : 'white']}!`);
+          setWinner(currentSetWinner); // Set the winner state
+          setTimeoutWinner(false);
+          setResultDialogOpen(true);
+          playSound('move');
+        } else {
+          // Start next set after delay
+          console.log(`🏏 Set ${currentSet} complete. ${currentSetWinner} wins! Score: White ${newScore.white}-${newScore.black} Black`);
           
-          // Reset timers
-          whiteTimer.reset();
-          blackTimer.reset();
+          // Show win text for set winner
+          setShowWinText(true);
+          setWinTextMessage(currentSetWinner === 'white' ? 'You Win This Set!' : 'AI Wins This Set!');
           
-          console.log(`🎮 Starting set ${currentSet + 1}, ${setWinner} to roll first`);
-        }, 2000); // 2 second delay to show the victory
-      }
+          setTimeout(() => {
+            setShowWinText(false);
+          }, 4000);
+          
+          setTimeout(() => {
+            setCurrentSet((prev) => prev + 1);
+            startNewSet(currentSetWinner); // Winner starts next set
+            
+            // Reset both timers to initial time
+            whiteTimer.resetCountdown();
+            blackTimer.resetCountdown();
+            
+            // Start timer for the winner (who will move first)
+            if (currentSetWinner === 'white') {
+              whiteTimer.startCountdown();
+            } else {
+              blackTimer.startCountdown();
+            }
+            
+            // Reset the processed flag for next set
+            setWinnerProcessedRef.current = false;
+            
+            console.log(`🎮 Starting set ${currentSet + 1} of ${maxSets}, ${currentSetWinner} to move first`);
+          }, 2000); // 2 second delay to show the victory
+        }
+        
+        return newScore;
+      });
     }
-  }, [gameState.gamePhase, gameState.boardState.off, winner, currentSet, scores, maxSets, startNewSet, whiteTimer, blackTimer, playSound]);
+  }, [gameState.gamePhase, gameState.boardState.off, winner, currentSet, maxSets, startNewSet, whiteTimer, blackTimer, playSound]);
 
   const handleDiceRollComplete = (results: { value: number; type: string }[]) => {
     handleDiceRoll(results);
@@ -292,8 +445,8 @@ export default function GameAIPage() {
     setTimeoutWinner(false);
     setScores({ white: 0, black: 0 });
     setCurrentSet(1);
-    whiteTimer.setCountdown(120);
-    blackTimer.setCountdown(120);
+    whiteTimer.setCountdown(1800);
+    blackTimer.setCountdown(1800);
     whiteTimer.stopCountdown();
     blackTimer.stopCountdown();
     // Reset game state to initial
@@ -435,6 +588,11 @@ export default function GameAIPage() {
           timeRemaining={playerColor === 'white' ? blackTimer.countdown : whiteTimer.countdown}
           isWinner={winner === (playerColor === 'white' ? 'black' : 'white')}
           isLoser={winner === playerColor}
+          onAvatarClick={(event) => {
+            if (event.shiftKey) {
+              showWinMessage('AI Wins This Test!');
+            }
+          }}
         />
       </Box>
 
@@ -505,6 +663,11 @@ export default function GameAIPage() {
           timeRemaining={playerColor === 'white' ? whiteTimer.countdown : blackTimer.countdown}
           isWinner={winner === playerColor}
           isLoser={winner !== null && winner !== playerColor}
+          onAvatarClick={(event) => {
+            if (event.shiftKey) {
+              showWinMessage('You Win This Test!');
+            }
+          }}
         />
       </Box>
 
@@ -546,10 +709,42 @@ export default function GameAIPage() {
           score: scores.black,
           isWinner: winner === 'black',
         }}
-        maxSets={maxSets}
-        currentSet={currentSet}
-      />
-    </Container>
-    </BoardThemeProvider>
-  );
-}
+          maxSets={maxSets}
+          currentSet={currentSet}
+        />
+
+        {/* Win Text Overlay */}
+        <AnimatePresence>
+          {showWinText && (
+            <Box
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999,
+                pointerEvents: 'none',
+              }}
+            >
+              <AnimateText
+                text={winTextMessage}
+                variants={varFade().inRight}
+                sx={{
+                  color: 'primary.main',
+                  fontWeight: 'bold',
+                  textShadow: '0 0 20px rgba(0,0,0,0.5)',
+                  fontSize: { xs: '3rem', md: '4rem' },
+                  textAlign: 'center',
+                }}
+              />
+            </Box>
+          )}
+        </AnimatePresence>
+      </Container>
+      </BoardThemeProvider>
+    );
+  }

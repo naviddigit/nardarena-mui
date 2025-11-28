@@ -83,7 +83,7 @@ export function BackgammonBoard({
       points.add(move.from);
     });
     return points;
-  }, [validMoves, isDoubles]);
+  }, [validMoves, isDoubles, currentPlayer]);
 
   useEffect(() => {
     setMounted(true);
@@ -162,6 +162,23 @@ export function BackgammonBoard({
       if (prevState.bar.black > nextState.bar.black) {
         for (let k = 0; k < prevState.bar.black - nextState.bar.black; k++) {
           const id = newIds.bar.black.pop();
+          if (id) {
+            pool.push({ id, player: 'black' });
+          }
+        }
+      }
+      // Off zones - handle removal (reset)
+      if (prevState.off.white > nextState.off.white) {
+        for (let k = 0; k < prevState.off.white - nextState.off.white; k++) {
+          const id = newIds.off.white.pop();
+          if (id) {
+            pool.push({ id, player: 'white' });
+          }
+        }
+      }
+      if (prevState.off.black > nextState.off.black) {
+        for (let k = 0; k < prevState.off.black - nextState.off.black; k++) {
+          const id = newIds.off.black.pop();
           if (id) {
             pool.push({ id, player: 'black' });
           }
@@ -607,6 +624,98 @@ export function BackgammonBoard({
         }}
       >
       <LayoutGroup id="board-checkers">
+        {/* Black's bear-off zone - بالای تخته */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            mb: 1,
+            px: 2,
+          }}
+        >
+          <Box
+            onClick={() => {
+              // Handle bear-off zone click for BLACK
+              if (selectedPoint !== null && selectedPoint !== undefined && selectedPoint >= 0 && currentPlayer === 'black') {
+                onPointClick?.(selectedPoint, -2);
+              }
+            }}
+            sx={{
+              width: '80%',
+              height: checkerSize * 1.5,
+              bgcolor: selectedPoint !== null && currentPlayer === 'black' && validMoves.some(m => m.from === selectedPoint && m.to === -2)
+                ? `${currentTheme.colors.darkPoint}70`
+                : `${currentTheme.colors.darkPoint}50`,
+              border: selectedPoint !== null && currentPlayer === 'black' && validMoves.some(m => m.from === selectedPoint && m.to === -2)
+                ? `3px solid ${currentTheme.colors.lightPoint}`
+                : `2px solid ${currentTheme.colors.lightPoint}80`,
+              borderRadius: 1,
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              p: 1,
+              cursor: selectedPoint !== null && currentPlayer === 'black' ? 'pointer' : 'default',
+              transition: 'all 0.2s',
+              '&:hover': selectedPoint !== null && currentPlayer === 'black' && validMoves.some(m => m.from === selectedPoint && m.to === -2) ? {
+                bgcolor: `${currentTheme.colors.darkPoint}90`,
+                borderColor: currentTheme.colors.lightPoint,
+                transform: 'scale(1.02)',
+              } : {},
+            }}
+          >
+            <Box sx={{ typography: 'caption', color: 'text.secondary', fontSize: '0.7rem' }}>
+              Black Off
+            </Box>
+            <Box
+              sx={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                minWidth: checkerSize,
+                height: '100%',
+              }}
+            >
+              <AnimatePresence>
+                {idsRef.current.off.black.slice(0, 15).map((id, index) => (
+                  <m.div
+                    key={id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{
+                      opacity: 1,
+                      scale: 1,
+                    }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 500,
+                      damping: 30,
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: index * (checkerSize * 0.15),
+                    }}
+                  >
+                    <Checker
+                      player="black"
+                      size={checkerSize * 0.6}
+                      yPosition={0}
+                      layoutId={id}
+                      isSelected={false}
+                      isPlayable={false}
+                    />
+                  </m.div>
+                ))}
+              </AnimatePresence>
+            </Box>
+            <Box sx={{ typography: 'h6', fontWeight: 'bold', minWidth: 24 }}>
+              {boardState.off.white}
+            </Box>
+          </Box>
+        </Box>
+
         {/* Top half */}
         <Box 
           component={m.div}
@@ -681,52 +790,61 @@ export function BackgammonBoard({
         {bottomPoints.slice(6, 12).map((pointIndex, i) => renderPoint(pointIndex, i, false))}
       </Box>
 
-      {/* Bear-off zones - مهره‌های خارج شده */}
+      {/* White's bear-off zone - زیر تخته */}
       <Box
         sx={{
-          position: 'absolute',
-          right: -pointWidth * 2,
-          top: '50%',
-          transform: 'translateY(-50%)',
           display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-          alignItems: 'center',
-          width: pointWidth * 1.5,
+          justifyContent: 'center',
+          mt: 1,
+          px: 2,
         }}
       >
-        {/* White's bear-off zone (بالا) */}
         <Box
+          onClick={() => {
+            // Handle bear-off zone click for WHITE
+            if (selectedPoint !== null && selectedPoint !== undefined && selectedPoint >= 0 && currentPlayer === 'white') {
+              onPointClick?.(selectedPoint, -2);
+            }
+          }}
           sx={{
-            position: 'relative',
-            width: '100%',
-            height: boardHeight * 0.4,
-            bgcolor: `${currentTheme.colors.lightPoint}20`,
-            border: `2px solid ${currentTheme.colors.darkPoint}80`,
+            width: '80%',
+            height: checkerSize * 1.5,
+            bgcolor: selectedPoint !== null && currentPlayer === 'white' && validMoves.some(m => m.from === selectedPoint && m.to === -2)
+              ? `${currentTheme.colors.lightPoint}60`
+              : `${currentTheme.colors.lightPoint}20`,
+            border: selectedPoint !== null && currentPlayer === 'white' && validMoves.some(m => m.from === selectedPoint && m.to === -2)
+              ? `3px solid ${currentTheme.colors.darkPoint}`
+              : `2px solid ${currentTheme.colors.darkPoint}80`,
             borderRadius: 1,
+            position: 'relative',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'flex-start',
+            justifyContent: 'center',
+            gap: 1,
             p: 1,
+            cursor: selectedPoint !== null && currentPlayer === 'white' ? 'pointer' : 'default',
+            transition: 'all 0.2s',
+            '&:hover': selectedPoint !== null && currentPlayer === 'white' && validMoves.some(m => m.from === selectedPoint && m.to === -2) ? {
+              bgcolor: `${currentTheme.colors.lightPoint}80`,
+              borderColor: currentTheme.colors.darkPoint,
+              transform: 'scale(1.02)',
+            } : {},
           }}
         >
-          <Box sx={{ typography: 'caption', color: 'text.secondary', mb: 1 }}>
-            White
+          <Box sx={{ typography: 'caption', color: 'text.secondary', fontSize: '0.7rem' }}>
+            White Off
           </Box>
           <Box
             sx={{
               position: 'relative',
-              width: '100%',
-              flex: 1,
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'flex-start',
+              minWidth: checkerSize,
+              height: '100%',
             }}
           >
             <AnimatePresence>
-              {idsRef.current.off.white.map((id, index) => (
+              {idsRef.current.off.white.slice(0, 15).map((id, index) => (
                 <m.div
                   key={id}
                   layout
@@ -734,7 +852,6 @@ export function BackgammonBoard({
                   animate={{
                     opacity: 1,
                     scale: 1,
-                    y: index * (checkerSize * 0.15),
                   }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   transition={{
@@ -744,13 +861,13 @@ export function BackgammonBoard({
                   }}
                   style={{
                     position: 'absolute',
-                    top: 0,
+                    left: index * (checkerSize * 0.15),
                   }}
                 >
                   <Checker
                     player="white"
                     size={checkerSize * 0.6}
-                    yPosition={index * (checkerSize * 0.15)}
+                    yPosition={0}
                     layoutId={id}
                     isSelected={false}
                     isPlayable={false}
@@ -759,74 +876,9 @@ export function BackgammonBoard({
               ))}
             </AnimatePresence>
           </Box>
-          <Box sx={{ typography: 'h6', mt: 'auto' }}>{boardState.off.white}</Box>
-        </Box>
-
-        {/* Black's bear-off zone (پایین) */}
-        <Box
-          sx={{
-            position: 'relative',
-            width: '100%',
-            height: boardHeight * 0.4,
-            bgcolor: `${currentTheme.colors.darkPoint}50`,
-            border: `2px solid ${currentTheme.colors.lightPoint}80`,
-            borderRadius: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            p: 1,
-          }}
-        >
-          <Box sx={{ typography: 'caption', color: 'text.secondary', mb: 1 }}>
-            Black
+          <Box sx={{ typography: 'h6', fontWeight: 'bold', minWidth: 24 }}>
+            {boardState.off.black}
           </Box>
-          <Box
-            sx={{
-              position: 'relative',
-              width: '100%',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-            }}
-          >
-            <AnimatePresence>
-              {idsRef.current.off.black.map((id, index) => (
-                <m.div
-                  key={id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1,
-                    y: index * (checkerSize * 0.15),
-                  }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 500,
-                    damping: 30,
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                  }}
-                >
-                  <Checker
-                    player="black"
-                    size={checkerSize * 0.6}
-                    yPosition={index * (checkerSize * 0.15)}
-                    layoutId={id}
-                    isSelected={false}
-                    isPlayable={false}
-                  />
-                </m.div>
-              ))}
-            </AnimatePresence>
-          </Box>
-          <Box sx={{ typography: 'h6', mt: 'auto' }}>{boardState.off.black}</Box>
         </Box>
       </Box>
 

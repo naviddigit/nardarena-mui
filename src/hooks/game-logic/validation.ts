@@ -36,12 +36,15 @@ export function canBearOff(boardState: BoardState, currentPlayer: Player): boole
   // Can't bear off if checkers on bar
   if (boardState.bar[currentPlayer] > 0) return false;
 
-  // All checkers must be in home board
-  const homeRange = currentPlayer === 'white' ? [18, 23] : [0, 5];
+  // Standard backgammon home boards:
+  // White: points 0-5 (bottom right)
+  // Black: points 18-23 (top right)
+  const homeRange = currentPlayer === 'white' ? [0, 5] : [18, 23];
   
   for (let i = 0; i < 24; i += 1) {
     const point = boardState.points[i];
-    if (point.count > 0 && point.checkers[0] === currentPlayer) {
+    // CRITICAL: Check last checker (top of stack) belongs to current player
+    if (point.count > 0 && point.checkers[point.checkers.length - 1] === currentPlayer) {
       if (i < homeRange[0] || i > homeRange[1]) return false;
     }
   }
@@ -51,7 +54,12 @@ export function canBearOff(boardState: BoardState, currentPlayer: Player): boole
 
 /**
  * Check if specific bear-off move is valid
- * @returns true if the die value allows bearing off from this point
+ * Standard backgammon rules:
+ * 1. Exact match: die matches the point's position number
+ * 2. Higher die: can bear off from highest occupied point if die > highest position
+ * 
+ * White home: 0-5 (position: 0→1, 1→2, 2→3, 3→4, 4→5, 5→6)
+ * Black home: 18-23 (position: 23→1, 22→2, 21→3, 20→4, 19→5, 18→6)
  */
 export function isValidBearOff(
   boardState: BoardState,
@@ -59,24 +67,48 @@ export function isValidBearOff(
   die: number,
   currentPlayer: Player
 ): boolean {
-  const homeBase = currentPlayer === 'white' ? 18 : 0;
-  const pointValue = currentPlayer === 'white' ? from - homeBase + 1 : from + 1;
-
-  // Exact match: die value matches point value
-  if (pointValue === die) return true;
-
-  // Can bear off with higher die if no checkers on higher points
-  if (die > pointValue) {
-    const range = currentPlayer === 'white'
-      ? Array.from({ length: 24 - from - 1 }, (_, i) => from + 1 + i)
-      : Array.from({ length: from }, (_, i) => i);
-    
-    return range.every((p) => {
-      const point = boardState.points[p];
-      return point.count === 0 || point.checkers[0] !== currentPlayer;
-    });
+  let position: number;
+  
+  if (currentPlayer === 'white') {
+    // White home: 0-5
+    // Point 0 = position 1 (closest to off)
+    // Point 5 = position 6 (farthest from off)
+    position = from + 1;
+  } else {
+    // Black home: 18-23
+    // Point 23 = position 1 (closest to off)
+    // Point 18 = position 6 (farthest from off)
+    position = 24 - from;
   }
-
+  
+  // Exact match: die equals position
+  if (position === die) {
+    return true;
+  }
+  
+  // Higher die: can bear off if die > position AND this is the highest occupied point
+  if (die > position) {
+    if (currentPlayer === 'white') {
+      // Check points from+1 to 5 for higher positions (farther from off)
+      for (let p = from + 1; p <= 5; p += 1) {
+        const point = boardState.points[p];
+        if (point.count > 0 && point.checkers[point.checkers.length - 1] === currentPlayer) {
+          return false;
+        }
+      }
+    } else {
+      // Check points 18 to from-1 for higher positions (farther from off)
+      for (let p = 18; p < from; p += 1) {
+        const point = boardState.points[p];
+        if (point.count > 0 && point.checkers[point.checkers.length - 1] === currentPlayer) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  }
+  
   return false;
 }
 
@@ -104,7 +136,8 @@ export function calculateValidMoves(
   // Priority 2: Check all points for regular moves
   for (let from = 0; from < 24; from += 1) {
     const point = boardState.points[from];
-    if (point.count > 0 && point.checkers[0] === currentPlayer) {
+    // CRITICAL: Check last checker (top of stack) belongs to current player
+    if (point.count > 0 && point.checkers[point.checkers.length - 1] === currentPlayer) {
       diceValues.forEach((die) => {
         const to = currentPlayer === 'white' ? from - die : from + die;
         if (to >= 0 && to < 24 && isValidDestination(boardState, to, currentPlayer)) {
@@ -116,10 +149,14 @@ export function calculateValidMoves(
 
   // Priority 3: Check for bearing off if all checkers are in home board
   if (canBearOff(boardState, currentPlayer)) {
+    const homeStart = currentPlayer === 'white' ? 0 : 18;
+    const homeEnd = currentPlayer === 'white' ? 5 : 23;
+    
     diceValues.forEach((die) => {
-      for (let from = 0; from < 24; from += 1) {
+      for (let from = homeStart; from <= homeEnd; from += 1) {
         const point = boardState.points[from];
-        if (point.count > 0 && point.checkers[0] === currentPlayer) {
+        // CRITICAL: Check last checker (top of stack) belongs to current player
+        if (point.count > 0 && point.checkers[point.checkers.length - 1] === currentPlayer) {
           if (isValidBearOff(boardState, from, die, currentPlayer)) {
             moves.push({ from, to: -2, die });
           }

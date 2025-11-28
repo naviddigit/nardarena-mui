@@ -178,7 +178,19 @@ export function executeMoveFromPoint(
 
     const fromPoint = newPoints[fromIndex];
     
-    // Remove checker from board
+    // CRITICAL: Verify the checker belongs to current player before removing
+    const lastChecker = fromPoint.checkers[fromPoint.checkers.length - 1];
+    if (!lastChecker || lastChecker !== currentState.currentPlayer) {
+      console.error('❌ BEAR-OFF ERROR: Trying to bear off wrong player checker!', {
+        fromPoint: fromIndex,
+        expectedPlayer: currentState.currentPlayer,
+        actualChecker: lastChecker,
+        allCheckers: fromPoint.checkers,
+      });
+      return currentState; // Don't execute invalid move
+    }
+    
+    // Remove checker from board (already verified it's current player's checker)
     const checker = fromPoint.checkers.pop();
     if (checker) {
       fromPoint.count -= 1;

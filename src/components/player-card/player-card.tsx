@@ -29,6 +29,7 @@ type PlayerCardProps = {
   isWinner?: boolean;
   isLoser?: boolean;
   setsWon?: number;
+  onAvatarClick?: (event: React.MouseEvent) => void;
 };
 
 export function PlayerCard({ 
@@ -47,6 +48,7 @@ export function PlayerCard({
   isWinner = false,
   isLoser = false,
   setsWon = 0,
+  onAvatarClick,
 }: PlayerCardProps) {
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
@@ -68,7 +70,20 @@ export function PlayerCard({
       }}
     >
       <Box sx={{ position: 'relative', mr: 2 }}>
-        <Avatar alt={name} src={avatarUrl} sx={{ width: 48, height: 48 }} />
+        <Avatar 
+          alt={name} 
+          src={avatarUrl} 
+          sx={{ 
+            width: 48, 
+            height: 48,
+            cursor: onAvatarClick ? 'pointer' : 'default',
+            '&:hover': onAvatarClick ? {
+              boxShadow: (theme) => theme.shadows[4],
+              transform: 'scale(1.05)',
+            } : {}
+          }}
+          onClick={onAvatarClick}
+        />
         {isWinner && (
           <Box
             sx={{
