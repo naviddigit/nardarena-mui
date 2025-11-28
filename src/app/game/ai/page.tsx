@@ -28,7 +28,7 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 import { GameResultDialog } from 'src/components/game-result-dialog';
 import { ColorSelectionDialog } from 'src/components/color-selection-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
-import { ThemeSwitcher } from 'src/components/backgammon-board/theme-switcher';
+import { GameSettingsDrawer } from 'src/components/game-settings-drawer';
 
 // AnimateText component variants and classes
 import { useInView, useAnimation } from 'framer-motion';
@@ -502,9 +502,6 @@ export default function GameAIPage() {
 
   return (
     <BoardThemeProvider useApi={false}>
-      {/* Theme Switcher - پایین وسط صفحه */}
-      <ThemeSwitcher />
-      
       <Container maxWidth="xl" sx={{ py: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
@@ -547,6 +544,11 @@ export default function GameAIPage() {
           >
             <Iconify icon={mode === 'light' ? 'solar:moon-bold' : 'solar:sun-bold'} width={24} />
           </IconButton>
+
+          <GameSettingsDrawer 
+            displayName={playerColor === 'white' ? 'You (White)' : 'You (Black)'}
+            photoURL={_mock.image.avatar(0)}
+          />
         </Stack>
       </Stack>
 
