@@ -30,8 +30,8 @@ import { useAuthContext } from 'src/auth/hooks';
 export type SignUpSchemaType = zod.infer<typeof SignUpSchema>;
 
 export const SignUpSchema = zod.object({
-  firstName: zod.string().min(1, { message: 'First name is required!' }),
-  lastName: zod.string().min(1, { message: 'Last name is required!' }),
+  username: zod.string().min(3, { message: 'Username must be at least 3 characters!' }),
+  displayName: zod.string().min(1, { message: 'Display name is required!' }),
   email: zod
     .string()
     .min(1, { message: 'Email is required!' })
@@ -40,6 +40,8 @@ export const SignUpSchema = zod.object({
     .string()
     .min(1, { message: 'Password is required!' })
     .min(6, { message: 'Password must be at least 6 characters!' }),
+  avatar: zod.string().optional(),
+  country: zod.string().optional(),
 });
 
 // ----------------------------------------------------------------------
@@ -54,10 +56,12 @@ export function JwtSignUpView() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const defaultValues = {
-    firstName: 'Hello',
-    lastName: 'Friend',
-    email: 'hello@gmail.com',
-    password: '@demo1',
+    username: 'testuser',
+    displayName: 'Test User',
+    email: 'test@nardarena.com',
+    password: 'Test123!',
+    avatar: '',
+    country: '',
   };
 
   const methods = useForm<SignUpSchemaType>({
@@ -75,8 +79,10 @@ export function JwtSignUpView() {
       await signUp({
         email: data.email,
         password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        username: data.username,
+        displayName: data.displayName,
+        avatar: data.avatar,
+        country: data.country,
       });
       await checkUserSession?.();
 
@@ -96,7 +102,7 @@ export function JwtSignUpView() {
           Already have an account?
         </Typography>
 
-        <Link component={RouterLink} href={paths.auth.jwt.signIn} variant="subtitle2">
+        <Link component={RouterLink} href={paths.auth.signIn} variant="subtitle2">
           Sign in
         </Link>
       </Stack>
@@ -106,8 +112,8 @@ export function JwtSignUpView() {
   const renderForm = (
     <Stack spacing={3}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <Field.Text name="firstName" label="First name" InputLabelProps={{ shrink: true }} />
-        <Field.Text name="lastName" label="Last name" InputLabelProps={{ shrink: true }} />
+        <Field.Text name="username" label="Username" InputLabelProps={{ shrink: true }} />
+        <Field.Text name="displayName" label="Display Name" InputLabelProps={{ shrink: true }} />
       </Stack>
 
       <Field.Text name="email" label="Email address" InputLabelProps={{ shrink: true }} />
@@ -128,6 +134,11 @@ export function JwtSignUpView() {
           ),
         }}
       />
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <Field.Text name="avatar" label="Avatar URL (optional)" InputLabelProps={{ shrink: true }} />
+        <Field.Text name="country" label="Country Code (optional)" placeholder="US, GB, IR" InputLabelProps={{ shrink: true }} />
+      </Stack>
 
       <LoadingButton
         fullWidth

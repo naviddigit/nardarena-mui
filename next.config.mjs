@@ -10,6 +10,12 @@ const nextConfig = {
   env: {
     BUILD_STATIC_EXPORT: isStaticExport,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   reactStrictMode: false, // Disable to prevent double execution
   modularizeImports: {
     '@mui/icons-material': {

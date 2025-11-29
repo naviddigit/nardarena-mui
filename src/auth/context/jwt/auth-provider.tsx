@@ -39,15 +39,19 @@ export function AuthProvider({ children }: Props) {
 
         const res = await axios.get(endpoints.auth.me);
 
-        const { user } = res.data;
+        const userData = res.data;
 
-        setState({ user: { ...user, accessToken }, loading: false });
+        const user = { ...userData, accessToken };
+        setState({ user, loading: false });
+        return user; // Return user data
       } else {
         setState({ user: null, loading: false });
+        return null;
       }
     } catch (error) {
       console.error(error);
       setState({ user: null, loading: false });
+      return null;
     }
   }, [setState]);
 

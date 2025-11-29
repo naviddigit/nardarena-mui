@@ -25,4 +25,5 @@ export type BackgammonBoardProps = {
   dicePosition?: { top?: number; bottom?: number; left?: number; right?: number };
   isRolling?: boolean;
   isRotated?: boolean;
+  demoOffCounts?: { white: number; black: number };
 };

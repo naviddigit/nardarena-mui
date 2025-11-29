@@ -62,6 +62,7 @@ export function BackgammonBoard({
   dicePosition = { top: 20, right: 20 },
   isRolling = false,
   isRotated = false,
+  demoOffCounts,
 }: BackgammonBoardProps) {
   const theme = useTheme();
   
@@ -88,6 +89,12 @@ export function BackgammonBoard({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Combine real off counts with demo counts for visual display
+  const displayOffCounts = useMemo(() => ({
+    white: boardState.off.white + (demoOffCounts?.white || 0),
+    black: boardState.off.black + (demoOffCounts?.black || 0),
+  }), [boardState.off, demoOffCounts]);
 
   // Refs for stable ID tracking
   const idsRef = useRef<{
@@ -130,8 +137,11 @@ export function BackgammonBoard({
       }
       for (let i = 0; i < nextState.bar.white; i++) newIds.bar.white.push(generateId('white'));
       for (let i = 0; i < nextState.bar.black; i++) newIds.bar.black.push(generateId('black'));
-      for (let i = 0; i < nextState.off.white; i++) newIds.off.white.push(generateId('white'));
-      for (let i = 0; i < nextState.off.black; i++) newIds.off.black.push(generateId('black'));
+      // Use displayOffCounts for initial off checkers
+      const initialWhiteOff = displayOffCounts.white;
+      const initialBlackOff = displayOffCounts.black;
+      for (let i = 0; i < initialWhiteOff; i++) newIds.off.white.push(generateId('white'));
+      for (let i = 0; i < initialBlackOff; i++) newIds.off.black.push(generateId('black'));
     } else {
       // Diff and update
       const pool: { id: string, player: string }[] = [];
@@ -167,23 +177,8 @@ export function BackgammonBoard({
           }
         }
       }
-      // Off zones - handle removal (reset)
-      if (prevState.off.white > nextState.off.white) {
-        for (let k = 0; k < prevState.off.white - nextState.off.white; k++) {
-          const id = newIds.off.white.pop();
-          if (id) {
-            pool.push({ id, player: 'white' });
-          }
-        }
-      }
-      if (prevState.off.black > nextState.off.black) {
-        for (let k = 0; k < prevState.off.black - nextState.off.black; k++) {
-          const id = newIds.off.black.pop();
-          if (id) {
-            pool.push({ id, player: 'black' });
-          }
-        }
-      }
+      // Off zones - we don't remove from pool anymore since we use displayOffCounts
+      // The IDs will be adjusted in the add section based on displayOffCounts
 
       // 2. Distribute to added checkers (Destination)
       // Points
@@ -231,9 +226,12 @@ export function BackgammonBoard({
           newIds.bar.black.push(id);
         }
       }
-      // Off
-      if (nextState.off.white > prevState.off.white) {
-        for (let k = 0; k < nextState.off.white - prevState.off.white; k++) {
+      // Off - use displayOffCounts for demo + real checkers
+      const currentDisplayWhiteOff = displayOffCounts.white;
+      const currentDisplayBlackOff = displayOffCounts.black;
+      
+      if (currentDisplayWhiteOff > newIds.off.white.length) {
+        for (let k = 0; k < currentDisplayWhiteOff - newIds.off.white.length; k++) {
           const poolIndex = pool.findIndex(c => c.player === 'white');
           let id;
           if (poolIndex !== -1) {
@@ -244,9 +242,13 @@ export function BackgammonBoard({
           }
           newIds.off.white.push(id);
         }
+      } else if (currentDisplayWhiteOff < newIds.off.white.length) {
+        // Remove excess IDs if demo count decreased
+        newIds.off.white = newIds.off.white.slice(0, currentDisplayWhiteOff);
       }
-      if (nextState.off.black > prevState.off.black) {
-        for (let k = 0; k < nextState.off.black - prevState.off.black; k++) {
+      
+      if (currentDisplayBlackOff > newIds.off.black.length) {
+        for (let k = 0; k < currentDisplayBlackOff - newIds.off.black.length; k++) {
           const poolIndex = pool.findIndex(c => c.player === 'black');
           let id;
           if (poolIndex !== -1) {
@@ -257,6 +259,9 @@ export function BackgammonBoard({
           }
           newIds.off.black.push(id);
         }
+      } else if (currentDisplayBlackOff < newIds.off.black.length) {
+        // Remove excess IDs if demo count decreased
+        newIds.off.black = newIds.off.black.slice(0, currentDisplayBlackOff);
       }
     }
 
@@ -265,7 +270,7 @@ export function BackgammonBoard({
     prevBoardStateRef.current = nextState;
 
     return newIds;
-  }, [boardState]);
+  }, [boardState, displayOffCounts]);
 
   // Responsive sizing
   const boardHeight = isSmallMobile ? 450 : isMobile ? 500 : 600;
@@ -624,95 +629,65 @@ export function BackgammonBoard({
         }}
       >
       <LayoutGroup id="board-checkers">
-        {/* Black's bear-off zone - بالای تخته */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            mb: 1,
-            px: 2,
-          }}
-        >
+        {/* Black's bear-off zone - Top */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1, px: 2 }}>
           <Box
             onClick={() => {
-              // Handle bear-off zone click for BLACK
               if (selectedPoint !== null && selectedPoint !== undefined && selectedPoint >= 0 && currentPlayer === 'black') {
                 onPointClick?.(selectedPoint, -2);
               }
             }}
             sx={{
-              width: '80%',
-              height: checkerSize * 1.5,
+              width: '60%',
+              minHeight: checkerSize * 0.8,
               bgcolor: selectedPoint !== null && currentPlayer === 'black' && validMoves.some(m => m.from === selectedPoint && m.to === -2)
-                ? `${currentTheme.colors.darkPoint}70`
-                : `${currentTheme.colors.darkPoint}50`,
+                ? `${currentTheme.colors.darkPoint}60`
+                : `${currentTheme.colors.darkPoint}30`,
               border: selectedPoint !== null && currentPlayer === 'black' && validMoves.some(m => m.from === selectedPoint && m.to === -2)
-                ? `3px solid ${currentTheme.colors.lightPoint}`
-                : `2px solid ${currentTheme.colors.lightPoint}80`,
-              borderRadius: 1,
+                ? `2px solid ${currentTheme.colors.lightPoint}`
+                : `1px solid ${currentTheme.colors.lightPoint}40`,
+              borderRadius: 2,
               position: 'relative',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1,
-              p: 1,
+              alignItems: 'flex-start',
+              justifyContent: 'flex-end',
+              px: 1,
+              py: 0,
+
               cursor: selectedPoint !== null && currentPlayer === 'black' ? 'pointer' : 'default',
               transition: 'all 0.2s',
               '&:hover': selectedPoint !== null && currentPlayer === 'black' && validMoves.some(m => m.from === selectedPoint && m.to === -2) ? {
-                bgcolor: `${currentTheme.colors.darkPoint}90`,
+                bgcolor: `${currentTheme.colors.darkPoint}80`,
                 borderColor: currentTheme.colors.lightPoint,
-                transform: 'scale(1.02)',
+                borderWidth: '2px',
               } : {},
             }}
           >
-            <Box sx={{ typography: 'caption', color: 'text.secondary', fontSize: '0.7rem' }}>
-              Black Off
-            </Box>
-            <Box
-              sx={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                minWidth: checkerSize,
-                height: '100%',
-              }}
-            >
-              <AnimatePresence>
-                {idsRef.current.off.black.slice(0, 15).map((id, index) => (
-                  <m.div
-                    key={id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{
-                      opacity: 1,
-                      scale: 1,
-                    }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 30,
-                    }}
-                    style={{
-                      position: 'absolute',
-                      left: index * (checkerSize * 0.15),
-                    }}
-                  >
-                    <Checker
-                      player="black"
-                      size={checkerSize * 0.6}
-                      yPosition={0}
-                      layoutId={id}
-                      isSelected={false}
-                      isPlayable={false}
-                    />
-                  </m.div>
-                ))}
-              </AnimatePresence>
-            </Box>
-            <Box sx={{ typography: 'h6', fontWeight: 'bold', minWidth: 24 }}>
-              {boardState.off.white}
-            </Box>
+            <AnimatePresence>
+              {idsRef.current.off.black.slice(0, 15).map((id, index) => (
+                <m.div
+                  key={id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  style={{
+                    position: 'relative',
+                    marginLeft: index === 0 ? 0 : checkerSize * 0.55,
+                  }}
+                >
+                  <Checker
+                    player="black"
+                    size={checkerSize * 0.7}
+                    yPosition={0}
+                    layoutId={id}
+                    isSelected={false}
+                    isPlayable={false}
+                  />
+                </m.div>
+              ))}
+            </AnimatePresence>
           </Box>
         </Box>
 
@@ -790,95 +765,64 @@ export function BackgammonBoard({
         {bottomPoints.slice(6, 12).map((pointIndex, i) => renderPoint(pointIndex, i, false))}
       </Box>
 
-      {/* White's bear-off zone - زیر تخته */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          mt: 1,
-          px: 2,
-        }}
-      >
+      {/* White's bear-off zone - Bottom */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1, px: 2 }}>
         <Box
           onClick={() => {
-            // Handle bear-off zone click for WHITE
             if (selectedPoint !== null && selectedPoint !== undefined && selectedPoint >= 0 && currentPlayer === 'white') {
               onPointClick?.(selectedPoint, -2);
             }
           }}
           sx={{
-            width: '80%',
-            height: checkerSize * 1.5,
+            width: '60%',
+            minHeight: checkerSize * 0.8,
             bgcolor: selectedPoint !== null && currentPlayer === 'white' && validMoves.some(m => m.from === selectedPoint && m.to === -2)
-              ? `${currentTheme.colors.lightPoint}60`
+              ? `${currentTheme.colors.lightPoint}50`
               : `${currentTheme.colors.lightPoint}20`,
             border: selectedPoint !== null && currentPlayer === 'white' && validMoves.some(m => m.from === selectedPoint && m.to === -2)
-              ? `3px solid ${currentTheme.colors.darkPoint}`
-              : `2px solid ${currentTheme.colors.darkPoint}80`,
-            borderRadius: 1,
+              ? `2px solid ${currentTheme.colors.darkPoint}`
+              : `1px solid ${currentTheme.colors.darkPoint}40`,
+            borderRadius: 2,
             position: 'relative',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1,
-            p: 1,
+            alignItems: 'flex-start',
+            justifyContent: 'flex-end',
+            px: 1,
+            py: 0.5,
             cursor: selectedPoint !== null && currentPlayer === 'white' ? 'pointer' : 'default',
             transition: 'all 0.2s',
             '&:hover': selectedPoint !== null && currentPlayer === 'white' && validMoves.some(m => m.from === selectedPoint && m.to === -2) ? {
-              bgcolor: `${currentTheme.colors.lightPoint}80`,
+              bgcolor: `${currentTheme.colors.lightPoint}70`,
               borderColor: currentTheme.colors.darkPoint,
-              transform: 'scale(1.02)',
+              borderWidth: '2px',
             } : {},
           }}
         >
-          <Box sx={{ typography: 'caption', color: 'text.secondary', fontSize: '0.7rem' }}>
-            White Off
-          </Box>
-          <Box
-            sx={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              minWidth: checkerSize,
-              height: '100%',
-            }}
-          >
-            <AnimatePresence>
-              {idsRef.current.off.white.slice(0, 15).map((id, index) => (
-                <m.div
-                  key={id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1,
-                  }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 500,
-                    damping: 30,
-                  }}
-                  style={{
-                    position: 'absolute',
-                    left: index * (checkerSize * 0.15),
-                  }}
-                >
-                  <Checker
-                    player="white"
-                    size={checkerSize * 0.6}
-                    yPosition={0}
-                    layoutId={id}
-                    isSelected={false}
-                    isPlayable={false}
-                  />
-                </m.div>
-              ))}
-            </AnimatePresence>
-          </Box>
-          <Box sx={{ typography: 'h6', fontWeight: 'bold', minWidth: 24 }}>
-            {boardState.off.black}
-          </Box>
+          <AnimatePresence>
+            {idsRef.current.off.white.slice(0, 15).map((id, index) => (
+              <m.div
+                key={id}
+                layout
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                style={{
+                  position: 'relative',
+                  marginLeft: index === 0 ? 0 : checkerSize * 0.55,
+                }}
+              >
+                <Checker
+                  player="white"
+                  size={checkerSize * 0.7}
+                  yPosition={0}
+                  layoutId={id}
+                  isSelected={false}
+                  isPlayable={false}
+                />
+              </m.div>
+            ))}
+          </AnimatePresence>
         </Box>
       </Box>
 

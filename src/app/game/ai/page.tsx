@@ -29,6 +29,7 @@ import { GameResultDialog } from 'src/components/game-result-dialog';
 import { ColorSelectionDialog } from 'src/components/color-selection-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
 import { GameSettingsDrawer } from 'src/components/game-settings-drawer';
+import { DevHotkeys } from 'src/components/dev-hotkeys';
 
 // AnimateText component variants and classes
 import { useInView, useAnimation } from 'framer-motion';
@@ -192,6 +193,9 @@ export default function GameAIPage() {
   const [currentSet, setCurrentSet] = useState(1);
   const [showWinText, setShowWinText] = useState(false);
   const [winTextMessage, setWinTextMessage] = useState('');
+  
+  // ⚠️ DEV ONLY: Demo state for testing bear-off zones - Remove before production
+  const [demoOffCounts, setDemoOffCounts] = useState({ white: 0, black: 0 });
 
   // Sound hook
   const { isMuted, playSound, toggleMute } = useSound();
@@ -206,6 +210,20 @@ export default function GameAIPage() {
     setTimeout(() => {
       setShowWinText(false);
     }, 4000);
+  };
+
+  // ⚠️ DEV ONLY: Hotkey handlers for testing - Remove before production
+  const handleWinTest = () => showWinMessage('You Win This Test!');
+  
+  const handleBothDemoAdd = () => {
+    setDemoOffCounts(prev => ({ 
+      white: Math.min(prev.white + 1, 15),
+      black: Math.min(prev.black + 1, 15)
+    }));
+  };
+  
+  const handleSetStartTest = () => {
+    showWinMessage(`Start Set ${currentSet} of ${maxSets}`);
   };
 
   useEffect(() => {
@@ -373,28 +391,34 @@ export default function GameAIPage() {
           
           setTimeout(() => {
             setShowWinText(false);
-          }, 4000);
-          
-          setTimeout(() => {
-            setCurrentSet((prev) => prev + 1);
-            startNewSet(currentSetWinner); // Winner starts next set
             
-            // Reset both timers to initial time
-            whiteTimer.resetCountdown();
-            blackTimer.resetCountdown();
-            
-            // Start timer for the winner (who will move first)
-            if (currentSetWinner === 'white') {
-              whiteTimer.startCountdown();
-            } else {
-              blackTimer.startCountdown();
-            }
-            
-            // Reset the processed flag for next set
-            setWinnerProcessedRef.current = false;
-            
-            console.log(`🎮 Starting set ${currentSet + 1} of ${maxSets}, ${currentSetWinner} to move first`);
-          }, 2000); // 2 second delay to show the victory
+            // After win text disappears, show set start animation
+            setTimeout(() => {
+              const nextSet = currentSet + 1;
+              setCurrentSet(nextSet);
+              
+              // Show set start animation
+              showWinMessage(`Start Set ${nextSet} of ${maxSets}`);
+              
+              startNewSet(currentSetWinner); // Winner starts next set
+              
+              // Reset both timers to initial time
+              whiteTimer.resetCountdown();
+              blackTimer.resetCountdown();
+              
+              // Start timer for the winner (who will move first)
+              if (currentSetWinner === 'white') {
+                whiteTimer.startCountdown();
+              } else {
+                blackTimer.startCountdown();
+              }
+              
+              // Reset the processed flag for next set
+              setWinnerProcessedRef.current = false;
+              
+              console.log(`🎮 Starting set ${nextSet} of ${maxSets}, ${currentSetWinner} to move first`);
+            }, 500); // 0.5 second after win text disappears
+          }, 4000); // 4 seconds to show the victory text
         }
         
         return newScore;
@@ -462,6 +486,11 @@ export default function GameAIPage() {
   const handleColorSelect = (color: 'white' | 'black', selectedMaxSets: number) => {
     setPlayerColor(color);
     setMaxSets(selectedMaxSets);
+    
+    // Show set start animation for first set
+    setTimeout(() => {
+      showWinMessage(`Start Set 1 of ${selectedMaxSets}`);
+    }, 500);
   };
 
   // Determine dice notation based on game phase
@@ -501,8 +530,16 @@ export default function GameAIPage() {
   }
 
   return (
-    <BoardThemeProvider useApi={false}>
-      <Container maxWidth="xl" sx={{ py: 3 }}>
+    <>
+      {/* ⚠️ DEV ONLY: Remove DevHotkeys component before production */}
+      <DevHotkeys 
+        onWinTest={handleWinTest}
+        onBothDemoAdd={handleBothDemoAdd}
+        onSetStartTest={handleSetStartTest}
+      />
+      
+      <BoardThemeProvider useApi={false}>
+        <Container maxWidth="xl" sx={{ py: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <IconButton
@@ -590,11 +627,6 @@ export default function GameAIPage() {
           timeRemaining={playerColor === 'white' ? blackTimer.countdown : whiteTimer.countdown}
           isWinner={winner === (playerColor === 'white' ? 'black' : 'white')}
           isLoser={winner === playerColor}
-          onAvatarClick={(event) => {
-            if (event.shiftKey) {
-              showWinMessage('AI Wins This Test!');
-            }
-          }}
         />
       </Box>
 
@@ -617,6 +649,7 @@ export default function GameAIPage() {
           validMoves={gameState.validMoves}
           isRolling={isRolling}
           isRotated={playerColor === 'black'}
+          demoOffCounts={demoOffCounts}
           diceRoller={
             <DiceRoller
               ref={diceRollerRef}
@@ -665,11 +698,6 @@ export default function GameAIPage() {
           timeRemaining={playerColor === 'white' ? whiteTimer.countdown : blackTimer.countdown}
           isWinner={winner === playerColor}
           isLoser={winner !== null && winner !== playerColor}
-          onAvatarClick={(event) => {
-            if (event.shiftKey) {
-              showWinMessage('You Win This Test!');
-            }
-          }}
         />
       </Box>
 
@@ -748,5 +776,6 @@ export default function GameAIPage() {
         </AnimatePresence>
       </Container>
       </BoardThemeProvider>
-    );
-  }
+    </>
+  );
+}

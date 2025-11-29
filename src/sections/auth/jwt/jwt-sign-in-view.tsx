@@ -52,8 +52,8 @@ export function JwtSignInView() {
   const password = useBoolean();
 
   const defaultValues = {
-    email: 'demo@minimals.cc',
-    password: '@demo1',
+    email: 'admin@nardarena.com',
+    password: 'Admin123!',
   };
 
   const methods = useForm<SignInSchemaType>({
@@ -87,7 +87,7 @@ export function JwtSignInView() {
           {`Don't have an account?`}
         </Typography>
 
-        <Link component={RouterLink} href={paths.auth.jwt.signUp} variant="subtitle2">
+        <Link component={RouterLink} href={paths.auth.signUp} variant="subtitle2">
           Get started
         </Link>
       </Stack>
