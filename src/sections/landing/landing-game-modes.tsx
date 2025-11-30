@@ -136,7 +136,7 @@ export function LandingGameModes() {
                       transform: mode.available ? 'scale(1.15) rotate(-8deg)' : 'none',
                     },
                     '&::before': {
-                      height: mode.available ? '100%' : '6px',
+                      opacity: mode.available ? 0.08 : 0.5,
                     },
                   },
                   '&::before': {
@@ -145,11 +145,24 @@ export function LandingGameModes() {
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: '6px',
+                    bottom: 0,
                     background: mode.gradient,
-                    transition: 'height 0.4s ease',
-                    opacity: mode.available ? 1 : 0.5,
+                    transition: 'opacity 0.4s ease',
+                    opacity: 0,
                     zIndex: 0,
+                    borderRadius: 'inherit',
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '4px',
+                    background: mode.gradient,
+                    zIndex: 0,
+                    borderTopLeftRadius: 'inherit',
+                    borderTopRightRadius: 'inherit',
                   },
                   opacity: mode.available ? 1 : 0.7,
                 }}
@@ -258,7 +271,7 @@ export function LandingGameModes() {
                 {mode.available ? (
                   <Button
                     component={RouterLink}
-                    href="/auth/jwt/sign-up"
+                    href="/login"
                     variant="contained"
                     fullWidth
                     size="large"

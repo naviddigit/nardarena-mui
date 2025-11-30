@@ -100,7 +100,7 @@ export function LandingCTA() {
             >
               <Button
                 component={RouterLink}
-                href="/auth/jwt/sign-up"
+                href="/login"
                 size="large"
                 variant="contained"
                 startIcon={<Box sx={{ fontSize: '1.5rem' }}>🚀</Box>}
@@ -127,7 +127,7 @@ export function LandingCTA() {
 
               <Button
                 component={RouterLink}
-                href="/auth/jwt/sign-in"
+                href="/login"
                 size="large"
                 variant="outlined"
                 sx={{

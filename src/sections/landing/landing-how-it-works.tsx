@@ -32,7 +32,7 @@ const STEPS = [
   {
     number: '03',
     title: 'Earn Crypto',
-    description: 'Get rewarded in TRX or BNB. Withdraw anytime directly to your wallet.',
+    description: 'Get rewarded in TRX or BNB. Withdraw anytime by providing your wallet address.',
     icon: '💰',
     color: '#7635dc',
   },
@@ -250,7 +250,7 @@ export function LandingHowItWorks() {
           <Box sx={{ textAlign: 'center', mt: 8 }}>
             <Button
               component={RouterLink}
-              href="/auth/jwt/sign-up"
+              href="/login"
               size="large"
               variant="contained"
               sx={{

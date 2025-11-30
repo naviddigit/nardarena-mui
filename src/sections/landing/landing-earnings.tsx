@@ -9,23 +9,27 @@ import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 
 import { varFade, MotionViewport } from 'src/components/animate';
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
+
+// ⚠️ DO NOT MODIFY - Landing content must reflect actual payment system
+// Users earn USDT only via TRC20 (Tron) and BSC (Binance Smart Chain) networks
 
 const EARNING_METHODS = [
   {
     icon: '🎮',
     title: 'Play to Earn',
-    description: 'Win matches and earn crypto rewards. The more you play and win, the more you earn.',
-    example: 'Win 10 games = ~$50 in TRX',
+    description: 'Win matches and earn USDT rewards. The more you play and win, the more you earn.',
+    example: 'Win 10 games = ~$50 USDT',
     color: '#00A76F',
     features: ['Instant rewards', 'No deposit required', 'Skill-based earnings', 'Competitive rates'],
   },
   {
     icon: '👁️',
     title: 'Watch to Earn',
-    description: 'Earn crypto just by watching live matches. Engage with the community and get rewarded.',
-    example: 'Watch 20 games = ~$10 in BNB',
+    description: 'Earn USDT just by watching live matches. Engage with the community and get rewarded.',
+    example: 'Watch 20 games = ~$10 USDT',
     color: '#2065D1',
     features: ['Passive income', 'No gaming required', 'Community engagement', 'Regular payouts'],
   },
@@ -275,20 +279,19 @@ export function LandingEarnings() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '2rem',
                     mb: 1,
                     mx: 'auto',
                     borderRadius: '50%',
-                    bgcolor: alpha('#FF060A', 0.08),
+                    bgcolor: alpha('#26A17B', 0.08),
                   }}
                 >
-                  💎
+                  <Iconify icon="cryptocurrency:usdt" width={40} />
                 </Box>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  TRX
+                  USDT (TRC20)
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Tron
+                  Tron Network
                 </Typography>
               </Box>
 
@@ -300,17 +303,16 @@ export function LandingEarnings() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '2rem',
                     mb: 1,
                     mx: 'auto',
                     borderRadius: '50%',
-                    bgcolor: alpha('#F3BA2F', 0.08),
+                    bgcolor: alpha('#26A17B', 0.08),
                   }}
                 >
-                  ⚡
+                  <Iconify icon="cryptocurrency:usdt" width={40} />
                 </Box>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  BNB
+                  USDT (BSC)
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   Binance Smart Chain

@@ -11,6 +11,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { RouterLink } from 'src/routes/components';
 
 import { varFade, MotionViewport } from 'src/components/animate';
+import { DiceRollerLanding } from 'src/components/dice-roller-landing';
 
 // ----------------------------------------------------------------------
 
@@ -62,11 +63,10 @@ export function LandingHero() {
                 fontWeight: 900,
                 lineHeight: { xs: 1.3, md: 1.2 },
                 mb: { xs: 2, md: 3 },
-                background: `linear-gradient(135deg, ${theme.palette.primary.lighter} 0%, ${theme.palette.primary.main} 50%, ${theme.palette.secondary.main} 100%)`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: `0 0 80px ${alpha(theme.palette.primary.main, 0.5)}`,
+                color: '#FFFFFF',
+                textShadow: theme.palette.mode === 'dark'
+                  ? `0 2px 40px ${alpha('#000000', 0.9)}, 0 0 60px ${alpha(theme.palette.primary.main, 0.4)}`
+                  : `0 2px 40px ${alpha('#000000', 0.6)}, 0 0 60px ${alpha(theme.palette.primary.main, 0.3)}`,
                 letterSpacing: { xs: '-0.02em', md: '-0.03em' },
               }}
             >
@@ -81,14 +81,15 @@ export function LandingHero() {
               variant="h5"
               sx={{
                 mb: { xs: 4, md: 5 },
-                color: 'text.secondary',
+                color: alpha('#FFFFFF', 0.9),
                 fontWeight: 400,
                 lineHeight: 1.8,
                 fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
                 maxWidth: { xs: '100%', sm: 600 },
+                textShadow: `0 2px 20px ${alpha('#000000', 0.8)}`,
               }}
             >
-              Challenge AI, compete globally, watch & predict matches. Earn TRX and BNB through multiple reward systems.
+              Challenge AI, compete globally, watch & predict matches. Earn USDT directly to your wallet address via TRC20 or BSC networks.
             </Typography>
           </m.div>
 
@@ -105,7 +106,7 @@ export function LandingHero() {
             >
               <Button
                 component={RouterLink}
-                href="/auth/jwt/sign-up"
+                href="/login"
                 size="large"
                 variant="contained"
                 startIcon={<Box sx={{ fontSize: '1.5rem' }}>🎮</Box>}
@@ -193,7 +194,7 @@ export function LandingHero() {
                   }}
                 >
                   <Typography sx={{ fontSize: { xs: '1.75rem', sm: '2rem' } }}>{feature.icon}</Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#FFFFFF', fontSize: { xs: '0.7rem', sm: '0.75rem' }, textShadow: `0 1px 8px ${alpha('#000000', 0.8)}` }}>
                     {feature.label}
                   </Typography>
                 </Box>
@@ -202,7 +203,7 @@ export function LandingHero() {
           </m.div>
         </Box>
 
-        {/* Animated Game Board Visual */}
+        {/* Animated Game Board Visual with 3D Dice */}
         <Box
           sx={{
             position: 'absolute',
@@ -211,7 +212,7 @@ export function LandingHero() {
             transform: 'translateY(-50%)',
             width: { xs: '70%', md: '50%' },
             height: '80%',
-            opacity: { xs: 0.1, md: 0.3 },
+            opacity: { xs: 0.3, md: 0.5 },
             pointerEvents: 'none',
             display: { xs: 'none', sm: 'block' },
           }}
@@ -230,6 +231,22 @@ export function LandingHero() {
               },
             }}
           />
+          
+          {/* 3D Dice Roller */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <DiceRollerLanding autoRoll rollInterval={6000} />
+          </Box>
         </Box>
       </Container>
     </Box>

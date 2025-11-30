@@ -31,17 +31,17 @@ const DICE = (function() {
         scale: 100, //dice size
         
         material_options: {
-            specular: 0x0a0a0a, //کاهش reflection برای واقعی‌تر شدن
-            color: 0xf0f0f0, //رنگ اصلی تاس - روشن
-            shininess: 25, //کاهش براقیت برای مات‌تر شدن
+            specular: 0x172022,
+            color: 0xf0f0f0,
+            shininess: 40,
             shading: THREE.FlatShading,
         },
-        label_color: '#aaaaaa', //رنگ نقاط - خاکستری
-        dice_color: '#202020', //رنگ پس‌زمینه تاس
+        label_color: '#aaaaaa', //numbers on dice
+        dice_color: '#202020',
         ambient_light_color: 0xf0f0f0,
         spot_light_color: 0xefefef,
         desk_color: '#101010', //canvas background
-        desk_opacity: 0.0,
+        desk_opacity: 0.5,
         use_shadows: true,
         use_adapvite_timestep: true //todo: setting this to false improves performace a lot. but the dice rolls don't look as natural...
 
@@ -554,37 +554,16 @@ const DICE = (function() {
             var context = canvas.getContext("2d");
             var ts = calc_texture_size(size + size * 2 * margin) * 2;
             canvas.width = canvas.height = ts;
+            context.font = ts / (1 + 2 * margin) + "pt Arial";
             context.fillStyle = back_color;
             context.fillRect(0, 0, canvas.width, canvas.height);
+            context.textAlign = "center";
+            context.textBaseline = "middle";
             context.fillStyle = color;
-            
-            // رسم نقاط بجای اعداد (Dice dots pattern) با padding
-            var num = parseInt(text);
-            var padding = ts * 0.15; // 15% padding from edges
-            var dotRadius = ts / 14; // کمی کوچکتر برای padding بیشتر
-            var positions = {
-                1: [[0.5, 0.5]],
-                2: [[0.3, 0.3], [0.7, 0.7]],
-                3: [[0.3, 0.3], [0.5, 0.5], [0.7, 0.7]],
-                4: [[0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]],
-                5: [[0.3, 0.3], [0.7, 0.3], [0.5, 0.5], [0.3, 0.7], [0.7, 0.7]],
-                6: [[0.3, 0.3], [0.7, 0.3], [0.3, 0.5], [0.7, 0.5], [0.3, 0.7], [0.7, 0.7]]
-            };
-            
-            if (positions[num]) {
-                positions[num].forEach(function(pos) {
-                    context.beginPath();
-                    context.arc(pos[0] * ts, pos[1] * ts, dotRadius, 0, Math.PI * 2);
-                    context.fill();
-                });
-            } else {
-                // Fallback for other numbers (like 0, 9, 10, etc.) - show as text
-                context.font = ts / (1 + 2 * margin) + "pt Arial";
-                context.textAlign = "center";
-                context.textBaseline = "middle";
-                context.fillText(text, canvas.width / 2, canvas.height / 2);
+            context.fillText(text, canvas.width / 2, canvas.height / 2);
+            if (text == '6' || text == '9') {
+                context.fillText('  .', canvas.width / 2, canvas.height / 2);
             }
-            
             var texture = new THREE.Texture(canvas);
             texture.needsUpdate = true;
             return texture;
@@ -870,7 +849,7 @@ const DICE = (function() {
         if (soundVolume === 0) return;
         const audio = document.createElement('audio');
         outerContainer.appendChild(audio);
-        audio.src = 'assets/nc93322.mp3'; //todo: make this configurable
+        audio.src = 'assets/sounds/dice-roll.mp3'; //sound file path
         audio.volume = soundVolume;
         audio.play();
         audio.onended = () => {
@@ -881,7 +860,3 @@ const DICE = (function() {
     return that;
 }());
 
-// Make DICE available globally for Next.js
-if (typeof window !== 'undefined') {
-    window.DICE = DICE;
-}

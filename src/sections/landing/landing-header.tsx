@@ -7,30 +7,31 @@ import Toolbar from '@mui/material/Toolbar';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import { useTheme, alpha } from '@mui/material/styles';
+import { useTheme, alpha, useColorScheme } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
-import { useSettingsContext } from 'src/components/settings';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
 export function LandingHeader() {
   const theme = useTheme();
-  const settings = useSettingsContext();
+  const { mode, setMode } = useColorScheme();
 
   const handleToggleMode = () => {
-    settings.onUpdateField('colorScheme', theme.palette.mode === 'light' ? 'dark' : 'light');
+    setMode(mode === 'light' ? 'dark' : 'light');
   };
 
   return (
     <AppBar
       position="fixed"
       sx={{
-        bgcolor: alpha(theme.palette.background.default, 0.8),
+        bgcolor: theme.palette.mode === 'dark' ? alpha('#000000', 0.95) : alpha('#FFFFFF', 0.95),
         backdropFilter: 'blur(20px)',
-        boxShadow: `0 1px 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+        boxShadow: theme.palette.mode === 'dark' 
+          ? `0 1px 0 ${alpha(theme.palette.grey[800], 0.8)}, 0 4px 20px ${alpha('#000000', 0.5)}`
+          : `0 1px 0 ${alpha(theme.palette.grey[300], 0.8)}, 0 4px 20px ${alpha('#000000', 0.1)}`,
       }}
     >
       <Container maxWidth="lg">
@@ -51,10 +52,10 @@ export function LandingHeader() {
               variant="h5"
               sx={{
                 fontWeight: 900,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.grey[900],
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
               }}
             >
               🎲 NardArena
@@ -66,7 +67,11 @@ export function LandingHeader() {
             onClick={handleToggleMode}
             sx={{
               mr: 1,
-              color: 'text.primary',
+              color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.grey[900],
+              bgcolor: alpha(theme.palette.primary.main, 0.08),
+              '&:hover': {
+                bgcolor: alpha(theme.palette.primary.main, 0.16),
+              },
             }}
           >
             <Iconify
@@ -78,11 +83,17 @@ export function LandingHeader() {
           {/* Login Button */}
           <Button
             component={RouterLink}
-            href="/auth/jwt/sign-in"
+            href="/login"
             variant="outlined"
             sx={{
               mr: 1,
               display: { xs: 'none', sm: 'inline-flex' },
+              borderColor: theme.palette.mode === 'dark' ? alpha('#FFFFFF', 0.3) : alpha(theme.palette.grey[900], 0.3),
+              color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.grey[900],
+              '&:hover': {
+                borderColor: theme.palette.primary.main,
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+              },
             }}
           >
             Login
@@ -91,7 +102,7 @@ export function LandingHeader() {
           {/* Sign Up Button */}
           <Button
             component={RouterLink}
-            href="/auth/jwt/sign-up"
+            href="/login"
             variant="contained"
             sx={{
               background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
