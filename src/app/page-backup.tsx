@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { SimpleLayout } from 'src/layouts/simple';
+
 import { LandingView } from 'src/sections/landing/view/landing-view';
 
 // ----------------------------------------------------------------------
@@ -65,5 +67,13 @@ export const metadata: Metadata = {
 // ----------------------------------------------------------------------
 
 export default function Page() {
-  return <LandingView />;
+  return (
+    <SimpleLayout
+      content={{
+        compact: true,
+      }}
+    >
+      <LandingView />
+    </SimpleLayout>
+  );
 }

@@ -14,9 +14,7 @@ import { adminAPI, type AdminGame } from 'src/services/admin-api';
 
 import {
   useTable,
-  emptyRows,
   TableNoData,
-  TableEmptyRows,
   TableWithSkeleton,
   TablePaginationCustom,
 } from 'src/components/table';
@@ -141,11 +139,6 @@ export function AdminGameListView() {
               onSelectRow={() => table.onSelectRow(row.id)}
             />
           ))}
-
-          <TableEmptyRows
-            height={table.dense ? 56 : 76}
-            emptyRows={emptyRows(table.page, table.rowsPerPage, totalGames)}
-          />
 
           <TableNoData notFound={notFound} />
         </TableWithSkeleton>

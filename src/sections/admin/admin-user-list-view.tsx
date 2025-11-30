@@ -12,9 +12,7 @@ import Typography from '@mui/material/Typography';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
   useTable,
-  emptyRows,
   TableNoData,
-  TableEmptyRows,
   TableWithSkeleton,
   TablePaginationCustom,
 } from 'src/components/table';
@@ -156,11 +154,6 @@ export function AdminUserListView() {
               onRefresh={fetchUsers}
             />
           ))}
-
-          <TableEmptyRows
-            height={table.dense ? 56 : 76}
-            emptyRows={emptyRows(table.page, table.rowsPerPage, totalUsers)}
-          />
 
           <TableNoData notFound={notFound} />
         </TableWithSkeleton>

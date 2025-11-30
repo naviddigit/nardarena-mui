@@ -35,13 +35,15 @@ export function TableWithSkeleton({
   sx,
   tableHeadProps,
 }: TableWithSkeletonProps) {
+  const rowHeight = tableSize === 'small' ? 56 : 76;
+
   return (
     <Box sx={{ position: 'relative', ...sx }}>
       <Scrollbar>
         <Table size={tableSize} sx={{ minWidth }}>
           <TableHeadCustom headLabel={headLabel} {...tableHeadProps} />
 
-          <TableBody>
+          <TableBody sx={{ minHeight: rowHeight * rowsPerPage }}>
             {loading ? (
               // Show skeleton rows during loading
               skeletonRows
