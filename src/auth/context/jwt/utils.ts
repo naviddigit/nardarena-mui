@@ -57,7 +57,6 @@ export function tokenExpired(exp: number) {
 
   setTimeout(() => {
     try {
-      alert('Token expired!');
       sessionStorage.removeItem(STORAGE_KEY);
       window.location.href = paths.auth.signIn;
     } catch (error) {

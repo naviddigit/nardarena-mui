@@ -24,19 +24,21 @@ export type SignUpParams = {
 /** **************************************
  * Sign in
  *************************************** */
-export const signInWithPassword = async ({ email, password }: SignInParams): Promise<void> => {
+export const signInWithPassword = async ({ email, password }: SignInParams): Promise<any> => {
   try {
     const params = { email, password };
 
     const res = await axios.post(endpoints.auth.signIn, params);
 
-    const { access_token } = res.data;
+    const { access_token, user } = res.data;
 
     if (!access_token) {
       throw new Error('Access token not found in response');
     }
 
     setSession(access_token);
+    
+    return user; // Return user data including role
   } catch (error) {
     console.error('Error during sign in:', error);
     throw error;
@@ -75,6 +77,7 @@ export const signUp = async ({
     sessionStorage.setItem(STORAGE_KEY, access_token);
   } catch (error) {
     console.error('Error during sign up:', error);
+    console.error('Error response data:', error?.response?.data);
     throw error;
   }
 };

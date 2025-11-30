@@ -17,6 +17,7 @@ import { varAlpha, stylesMode } from 'src/theme/styles';
 
 import { bulletColor } from 'src/components/nav-section';
 import { useSettingsContext } from 'src/components/settings';
+import { useAuthContext } from 'src/auth/hooks';
 
 import { Main } from './main';
 import { NavMobile } from './nav-mobile';
@@ -46,11 +47,25 @@ export function DashboardLayout({ sx, children, data }: DashboardLayoutProps) {
 
   const settings = useSettingsContext();
 
+  const { user } = useAuthContext();
+
   const navColorVars = useNavColorVars(theme, settings);
 
   const layoutQuery: Breakpoint = 'lg';
 
-  const navData = data?.nav ?? dashboardNavData;
+  // Filter navigation data based on user role
+  const filteredNavData = useMemo(() => {
+    const baseNavData = data?.nav ?? dashboardNavData;
+    
+    // If user is not an admin, filter out the Admin section
+    if (user?.role !== 'ADMIN') {
+      return baseNavData.filter(section => section.subheader !== 'Admin');
+    }
+    
+    return baseNavData;
+  }, [data?.nav, user?.role]);
+
+  const navData = filteredNavData;
 
   const isNavMini = settings.navLayout === 'mini';
 

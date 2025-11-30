@@ -43,30 +43,30 @@ const ICONS = {
 
 export const navData = [
   /**
-   * Overview
+   * Game
    */
   {
-    subheader: 'Overview 6.0.0',
+    subheader: 'Game',
     items: [
-      { title: 'One', path: paths.dashboard.root, icon: ICONS.dashboard },
-      { title: 'Two', path: paths.dashboard.two, icon: ICONS.ecommerce },
-      { title: 'Three', path: paths.dashboard.three, icon: ICONS.analytics },
+      { title: 'Play AI', path: paths.dashboard.root, icon: ICONS.dashboard },
+      { title: 'Online Game', path: paths.dashboard.two, icon: ICONS.ecommerce },
+      { title: 'Tournaments', path: paths.dashboard.three, icon: ICONS.analytics },
     ],
   },
   /**
-   * Management
+   * Admin Panel
    */
   {
-    subheader: 'Management',
+    subheader: 'Admin',
     items: [
       {
-        title: 'Group',
-        path: paths.dashboard.group.root,
+        title: 'Admin Panel',
+        path: '/dashboard/admin',
         icon: ICONS.user,
         children: [
-          { title: 'Four', path: paths.dashboard.group.root },
-          { title: 'Five', path: paths.dashboard.group.five },
-          { title: 'Six', path: paths.dashboard.group.six },
+          { title: 'Dashboard', path: '/dashboard/admin' },
+          { title: 'Users', path: '/dashboard/admin/users' },
+          { title: 'Games', path: '/dashboard/admin/games' },
         ],
       },
     ],

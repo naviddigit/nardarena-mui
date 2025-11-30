@@ -1,0 +1,204 @@
+/**
+ * Game Persistence API Service
+ * Handles saving and retrieving game data from backend
+ */
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+// ----------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------
+
+export type GameType = 'AI' | 'ONLINE' | 'TOURNAMENT';
+export type GameMode = 'CLASSIC' | 'MODERN' | 'TOURNAMENT';
+export type PlayerColor = 'WHITE' | 'BLACK';
+export type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED';
+export type EndReason = 'NORMAL_WIN' | 'RESIGNATION' | 'TIMEOUT' | 'DISCONNECTION';
+
+export interface CreateGameDto {
+  gameType: GameType;
+  opponentId?: string; // Optional for AI games
+  timeControl?: number; // seconds per player
+  gameMode?: GameMode;
+}
+
+export interface RecordMoveDto {
+  playerColor: PlayerColor;
+  moveNumber: number;
+  from: number;
+  to: number;
+  diceUsed: number;
+  isHit?: boolean;
+  boardStateBefore?: any; // Full board state for replay
+  boardStateAfter?: any; // Full board state after move
+  timeRemaining?: number; // milliseconds
+  moveTime?: number; // milliseconds taken for this move
+}
+
+export interface EndGameDto {
+  winner: PlayerColor;
+  whiteSetsWon: number;
+  blackSetsWon: number;
+  endReason: EndReason;
+  finalGameState?: any;
+}
+
+export interface GameResponse {
+  id: string;
+  gameType: GameType;
+  status: GameStatus;
+  whitePlayerId: string;
+  blackPlayerId: string;
+  currentPlayer: PlayerColor;
+  gameState: any;
+  moveHistory: any[];
+  winner?: PlayerColor;
+  whiteSetsWon: number;
+  blackSetsWon: number;
+  createdAt: string;
+  startedAt?: string;
+  endedAt?: string;
+}
+
+export interface GameHistoryItem {
+  id: string;
+  gameType: GameType;
+  status: GameStatus;
+  whitePlayer: {
+    id: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
+  blackPlayer: {
+    id: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
+  winner?: PlayerColor;
+  whiteSetsWon: number;
+  blackSetsWon: number;
+  createdAt: string;
+  endedAt?: string;
+}
+
+// ----------------------------------------------------------------------
+// API Service
+// ----------------------------------------------------------------------
+
+class GamePersistenceAPI {
+  private getAuthToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('accessToken');
+  }
+
+  private getHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    const token = this.getAuthToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
+  }
+
+  /**
+   * Create a new game
+   */
+  async createGame(data: CreateGameDto): Promise<GameResponse> {
+    const response = await fetch(`${API_BASE_URL}/game/create`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to create game');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Record a move in the game
+   */
+  async recordMove(gameId: string, data: RecordMoveDto): Promise<GameResponse> {
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/move`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to record move');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * End the game
+   */
+  async endGame(gameId: string, data: EndGameDto): Promise<GameResponse> {
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/end`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to end game');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get game details
+   */
+  async getGame(gameId: string): Promise<GameResponse> {
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to get game');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get user's game history
+   */
+  async getGameHistory(limit = 20, offset = 0): Promise<{
+    games: GameHistoryItem[];
+    total: number;
+    hasMore: boolean;
+  }> {
+    const response = await fetch(
+      `${API_BASE_URL}/game/history/me?limit=${limit}&offset=${offset}`,
+      {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to get game history');
+    }
+
+    return response.json();
+  }
+}
+
+// Singleton instance
+export const gamePersistenceAPI = new GamePersistenceAPI();

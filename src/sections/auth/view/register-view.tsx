@@ -136,19 +136,24 @@ export function RegisterView({ onSwitchToLogin }: Props) {
         return;
       }
       
-      await signUp({
+      const registerData = {
         email: data.email,
         password: data.password,
         username: data.username,
         displayName: data.displayName || data.username, // Use username as displayName if not provided
         avatar: selectedAvatar || undefined,
         country: data.country || undefined,
-      });
+      };
+      
+      console.log('Sending registration data:', registerData);
+      
+      await signUp(registerData);
       await checkUserSession?.();
       router.push(CONFIG.auth.redirectPath);
     } catch (error) {
       console.error('Register error:', error);
-      setErrorMsg(typeof error === 'string' ? error : 'Registration failed. Please try again.');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Registration failed. Please try again.';
+      setErrorMsg(Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage);
     }
   });
 

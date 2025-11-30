@@ -25,6 +25,11 @@
     "useUnknownInCatchVariables": false,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "src/*": [
+        "./src/*"
+      ]
+    },
     "plugins": [
       {
         "name": "next"

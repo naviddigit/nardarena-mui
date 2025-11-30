@@ -19,6 +19,9 @@ import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { useSound } from 'src/hooks/use-sound';
 import { _mock } from 'src/_mock';
 import { BoardThemeProvider } from 'src/contexts/board-theme-context';
+import { useAuthContext } from 'src/auth/hooks';
+import { gamePersistenceAPI } from 'src/services/game-persistence-api';
+import type { GameResponse, PlayerColor as APIPlayerColor } from 'src/services/game-persistence-api';
 
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
@@ -193,6 +196,11 @@ export default function GameAIPage() {
   const [currentSet, setCurrentSet] = useState(1);
   const [showWinText, setShowWinText] = useState(false);
   const [winTextMessage, setWinTextMessage] = useState('');
+  
+  // Game persistence state
+  const { user } = useAuthContext();
+  const [backendGameId, setBackendGameId] = useState<string | null>(null);
+  const [moveCounter, setMoveCounter] = useState(0);
   
   // ⚠️ DEV ONLY: Demo state for testing bear-off zones - Remove before production
   const [demoOffCounts, setDemoOffCounts] = useState({ white: 0, black: 0 });
@@ -469,6 +477,8 @@ export default function GameAIPage() {
     setTimeoutWinner(false);
     setScores({ white: 0, black: 0 });
     setCurrentSet(1);
+    setBackendGameId(null); // Reset backend game ID for new game
+    setMoveCounter(0); // Reset move counter
     whiteTimer.setCountdown(1800);
     blackTimer.setCountdown(1800);
     whiteTimer.stopCountdown();
@@ -492,6 +502,100 @@ export default function GameAIPage() {
       showWinMessage(`Start Set 1 of ${selectedMaxSets}`);
     }, 500);
   };
+
+  // Create game in backend when player selects color
+  useEffect(() => {
+    if (playerColor && user && !backendGameId) {
+      const createBackendGame = async () => {
+        try {
+          const response = await gamePersistenceAPI.createGame({
+            gameType: 'AI',
+            gameMode: 'CLASSIC',
+            timeControl: 1800, // 30 minutes
+          });
+          
+          console.log('✅ Game created in backend:', response.id);
+          setBackendGameId(response.id);
+        } catch (error) {
+          console.error('❌ Failed to create game in backend:', error);
+        }
+      };
+      
+      createBackendGame();
+    }
+  }, [playerColor, user, backendGameId]);
+
+  // Record moves to backend
+  useEffect(() => {
+    if (!backendGameId || !user || gameState.moveHistory.length === 0) return;
+    
+    // Only record new moves (when moveHistory grows)
+    if (gameState.moveHistory.length > moveCounter) {
+      const latestMove = gameState.moveHistory[gameState.moveHistory.length - 1];
+      
+      const recordBackendMove = async () => {
+        try {
+          await gamePersistenceAPI.recordMove(backendGameId, {
+            playerColor: latestMove.player.toUpperCase() as APIPlayerColor,
+            moveNumber: gameState.moveHistory.length,
+            from: latestMove.from,
+            to: latestMove.to,
+            diceUsed: latestMove.die,
+            isHit: latestMove.isHit,
+            boardStateAfter: gameState.boardState,
+            timeRemaining: latestMove.player === 'white' ? whiteTimer.countdown : blackTimer.countdown,
+          });
+          
+          setMoveCounter(gameState.moveHistory.length);
+        } catch (error) {
+          console.error('❌ Failed to record move:', error);
+        }
+      };
+      
+      recordBackendMove();
+    }
+  }, [backendGameId, user, gameState.moveHistory, gameState.boardState, moveCounter, whiteTimer.countdown, blackTimer.countdown]);
+
+  // End game in backend when match is over
+  useEffect(() => {
+    if (backendGameId && user && winner && !timeoutWinner) {
+      const endBackendGame = async () => {
+        try {
+          await gamePersistenceAPI.endGame(backendGameId, {
+            winner: winner.toUpperCase() as APIPlayerColor,
+            whiteSetsWon: scores.white,
+            blackSetsWon: scores.black,
+            endReason: 'NORMAL_WIN',
+            finalGameState: gameState.boardState,
+          });
+          
+          console.log('✅ Game ended in backend');
+        } catch (error) {
+          console.error('❌ Failed to end game:', error);
+        }
+      };
+      
+      endBackendGame();
+    } else if (backendGameId && user && winner && timeoutWinner) {
+      const endBackendGame = async () => {
+        try {
+          await gamePersistenceAPI.endGame(backendGameId, {
+            winner: winner.toUpperCase() as APIPlayerColor,
+            whiteSetsWon: scores.white,
+            blackSetsWon: scores.black,
+            endReason: 'TIMEOUT',
+            finalGameState: gameState.boardState,
+          });
+          
+          console.log('✅ Game ended in backend (timeout)');
+        } catch (error) {
+          console.error('❌ Failed to end game:', error);
+        }
+      };
+      
+      endBackendGame();
+    }
+  }, [backendGameId, user, winner, timeoutWinner, scores, gameState.boardState]);
 
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';

@@ -1,4 +1,12 @@
-export type UserType = Record<string, any> | null;
+export type UserType = {
+  id: string;
+  email: string;
+  username: string;
+  displayName: string | null;
+  avatar: string | null;
+  role: 'USER' | 'ADMIN';
+  status: 'ACTIVE' | 'BANNED' | 'SUSPENDED';
+} | null;
 
 export type AuthState = {
   user: UserType;

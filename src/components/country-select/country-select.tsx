@@ -4,8 +4,6 @@ import type {
   AutocompleteRenderGetTagProps,
 } from '@mui/material/Autocomplete';
 
-import { forwardRef } from 'react';
-
 import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -36,24 +34,18 @@ export type CountrySelectProps = AutocompleteBaseProps & {
   helperText?: React.ReactNode;
 };
 
-export const CountrySelect = forwardRef<any, CountrySelectProps>(
-  (
-    {
-      id,
-      label,
-      error,
-      multiple,
-      helperText,
-      hiddenLabel,
-      placeholder,
-      getValue = 'label',
-      ...other
-    },
-    ref
-  ) => {
-    const options = countries.map((country) =>
-      getValue === 'label' ? country.label : country.code
-    );
+export function CountrySelect({
+  id,
+  label,
+  error,
+  multiple,
+  helperText,
+  hiddenLabel,
+  placeholder,
+  getValue = 'label',
+  ...other
+}: CountrySelectProps) {
+  const options = countries.map((country) => (getValue === 'label' ? country.label : country.code));
 
   const renderOption = (props: React.HTMLAttributes<HTMLLIElement>, option: Value) => {
     const country = getCountry(option);
@@ -145,7 +137,6 @@ export const CountrySelect = forwardRef<any, CountrySelectProps>(
 
   return (
     <Autocomplete
-      ref={ref}
       id={`country-select-${id}`}
       multiple={multiple}
       options={options}
@@ -158,6 +149,4 @@ export const CountrySelect = forwardRef<any, CountrySelectProps>(
       {...other}
     />
   );
-});
-
-CountrySelect.displayName = 'CountrySelect';
+}

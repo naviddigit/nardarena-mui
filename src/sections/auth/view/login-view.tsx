@@ -76,16 +76,16 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
   const onSubmit = handleSubmit(async (data) => {
     try {
       setErrorMsg('');
-      await signInWithPassword({ email: data.email, password: data.password });
+      const user = await signInWithPassword({ email: data.email, password: data.password });
+      console.log('Login user data:', user);
       await checkUserSession?.();
-      
-      // Get user info after session check
-      const user = await checkUserSession?.();
       
       // Route based on user role
       if (user?.role === 'ADMIN') {
+        console.log('Redirecting to admin panel');
         router.push(CONFIG.auth.adminRedirectPath);
       } else {
+        console.log('Redirecting to user dashboard');
         router.push(CONFIG.auth.redirectPath);
       }
     } catch (error) {
