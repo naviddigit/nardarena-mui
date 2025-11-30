@@ -37,8 +37,8 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Responsive sizes
-  const containerSize = isMobile ? 150 : 150;
-  const canvasWidth = isMobile ? 180 : 250;
+  const containerSize = isMobile ? 150 : 170;
+  const canvasWidth = isMobile ? 180 : 260;
 
   useEffect(() => {
     let mounted = true;
@@ -293,7 +293,85 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
   };
 
-  // Expose rollDice and clearDice methods via ref
+  // Reload dice.js file (for hot-reload during development)
+  const reloadDiceScript = async () => {
+    try {
+      console.log('🔄 Reloading dice.js...');
+      
+      // Remove old dice.js script
+      const oldScript = document.querySelector('script[src="/dice.js"]');
+      if (oldScript) {
+        oldScript.remove();
+        console.log('🗑️ Removed old dice.js');
+      }
+      
+      // Clear current box
+      if (boxRef.current && boxRef.current.clear) {
+        boxRef.current.clear();
+      }
+      boxRef.current = null;
+      setIsReady(false);
+      
+      // Clear window.DICE to force reload (set to undefined instead of delete)
+      if (window.DICE) {
+        window.DICE = undefined;
+      }
+      
+      // Remove old canvas from container
+      if (containerRef.current) {
+        const oldCanvas = containerRef.current.querySelector('canvas');
+        if (oldCanvas) {
+          oldCanvas.remove();
+          console.log('🗑️ Removed old canvas');
+        }
+      }
+      
+      // Wait a bit for cleanup
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Load new dice.js with cache busting
+      const timestamp = new Date().getTime();
+      const script = document.createElement('script');
+      script.src = `/dice.js?v=${timestamp}`;
+      script.async = false;
+      
+      script.onload = async () => {
+        console.log('✅ dice.js reloaded');
+        
+        // Wait for DICE to be available
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        if (!window.DICE) {
+          console.error('❌ DICE not available after reload');
+          return;
+        }
+        
+        // Reinitialize dice box
+        if (containerRef.current) {
+          try {
+            const box = new window.DICE.dice_box(containerRef.current);
+            box.setDice(diceNotation);
+            boxRef.current = box;
+            setIsReady(true);
+            setHasFailed(false);
+            console.log('✅ Dice box reinitialized and ready!');
+          } catch (error) {
+            console.error('❌ Failed to reinitialize dice box:', error);
+          }
+        }
+      };
+      
+      script.onerror = () => {
+        console.error('❌ Failed to reload dice.js');
+      };
+      
+      document.body.appendChild(script);
+    } catch (error) {
+      console.error('❌ Error reloading dice.js:', error);
+    }
+  };
+
+  // Expose rollDice, clearDice, and reloadDiceScript methods via ref
   useImperativeHandle(ref, () => ({
     rollDice,
     clearDice: () => {
@@ -302,6 +380,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         boxRef.current.clear();
       }
     },
+    reloadDice: reloadDiceScript,
   }));
 
   return (

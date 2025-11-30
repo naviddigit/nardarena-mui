@@ -448,6 +448,18 @@ export default function GameAIPage() {
     }
   };
 
+  const triggerDiceRefresh = () => {
+    if (diceRollerRef.current) {
+      if (diceRollerRef.current.reloadDice) {
+        console.log('🔄 Reloading dice.js via hotkey...');
+        diceRollerRef.current.reloadDice();
+      } else if (diceRollerRef.current.clearDice) {
+        console.log('🎲 Clearing dice via hotkey...');
+        diceRollerRef.current.clearDice();
+      }
+    }
+  };
+
   const handleDone = () => {
     // Save current player before turn ends
     const currentPlayer = gameState.currentPlayer;
@@ -602,10 +614,10 @@ export default function GameAIPage() {
 
   // Responsive dice position
   const dicePosition = isSmallMobile 
-    ? { top: 130, left: 0 } 
+    ? { top: 155, left: 0 } 
     : isMobile 
-      ? { top: 190, left: 0 } 
-      : { top: 200, left: 0 };
+      ? { top: 210, left: 0 } 
+      : { top: 230, left: 0 };
 
   if (loading) {
     return (
@@ -640,6 +652,8 @@ export default function GameAIPage() {
         onWinTest={handleWinTest}
         onBothDemoAdd={handleBothDemoAdd}
         onSetStartTest={handleSetStartTest}
+        onDiceRoll={triggerDiceRoll}
+        onDiceRefresh={triggerDiceRefresh}
       />
       
       <BoardThemeProvider useApi={false}>

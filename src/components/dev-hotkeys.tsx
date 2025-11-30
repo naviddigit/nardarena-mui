@@ -9,9 +9,11 @@ type DevHotkeysProps = {
   onWinTest?: () => void;
   onBothDemoAdd?: () => void;
   onSetStartTest?: () => void;
+  onDiceRoll?: () => void;
+  onDiceRefresh?: () => void;
 };
 
-export function DevHotkeys({ onWinTest, onBothDemoAdd, onSetStartTest }: DevHotkeysProps) {
+export function DevHotkeys({ onWinTest, onBothDemoAdd, onSetStartTest, onDiceRoll, onDiceRefresh }: DevHotkeysProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Ctrl+1: Trigger win effect for testing
@@ -31,11 +33,23 @@ export function DevHotkeys({ onWinTest, onBothDemoAdd, onSetStartTest }: DevHotk
         event.preventDefault();
         onSetStartTest?.();
       }
+      
+      // Ctrl+4: Roll dice
+      if (event.ctrlKey && event.key === '4') {
+        event.preventDefault();
+        onDiceRoll?.();
+      }
+      
+      // Ctrl+5: Refresh/clear dice
+      if (event.ctrlKey && event.key === '5') {
+        event.preventDefault();
+        onDiceRefresh?.();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onWinTest, onBothDemoAdd, onSetStartTest]);
+  }, [onWinTest, onBothDemoAdd, onSetStartTest, onDiceRoll, onDiceRefresh]);
 
   return null; // This component doesn't render anything
 }

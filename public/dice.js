@@ -23,25 +23,31 @@
  * - adding 'd9' option (d10 to be added to d100 properly)
  */
 
-const DICE = (function() {
+// Use var instead of const to allow hot-reload
+var DICE = (function() {
     var that = {};
 
     var vars = { //todo: make these configurable on init
-        frame_rate: 1 / 60,
-        scale: 100, //dice size
+        frame_rate: 1 / 70,
+        scale: 1000, //dice size
         
         material_options: {
-            specular: 0x172022,
-            color: 0xf0f0f0,
-            shininess: 40,
-            shading: THREE.FlatShading,
+            specular: "#010",  // کاهش رفلاکس نور (از 0x172022 به 0x0a0a0a)
+            color: "#ffffff",  // رنگ اصلی تاس (از #eeeeee به #ffffff)
+            shininess: 40,  // کاهش براقیت (از 40 به 15)
+            shading: THREE.FlatShading,  // بهبود کیفیت (از FlatShading به SmoothShading)
         },
-        label_color: '#aaaaaa', //numbers on dice
-        dice_color: '#202020',
-        ambient_light_color: 0xf0f0f0,
-        spot_light_color: 0xefefef,
-        desk_color: '#101010', //canvas background
-        desk_opacity: 0.5,
+        label_color: 'rgba(184, 184, 184, 1)', //numbers on dice
+        dice_color: '#202020ff', // رنگ اصلی تاس 
+        // ambient_light_color: 0xf0f0f0,
+        // spot_light_color: 0xefefef,
+
+        ambient_light_color: '#ffffffff',
+        spot_light_color: '#fff',
+
+
+        desk_color: '#202020', //canvas background
+        desk_opacity: 0.0,
         use_shadows: true,
         use_adapvite_timestep: true //todo: setting this to false improves performace a lot. but the dice rolls don't look as natural...
 
@@ -554,16 +560,37 @@ const DICE = (function() {
             var context = canvas.getContext("2d");
             var ts = calc_texture_size(size + size * 2 * margin) * 2;
             canvas.width = canvas.height = ts;
-            context.font = ts / (1 + 2 * margin) + "pt Arial";
             context.fillStyle = back_color;
             context.fillRect(0, 0, canvas.width, canvas.height);
-            context.textAlign = "center";
-            context.textBaseline = "middle";
             context.fillStyle = color;
-            context.fillText(text, canvas.width / 2, canvas.height / 2);
-            if (text == '6' || text == '9') {
-                context.fillText('  .', canvas.width / 2, canvas.height / 2);
+            
+            // رسم نقاط بجای اعداد (Dice dots pattern) با padding
+            var num = parseInt(text);
+            var padding = ts * 0.15; // 15% padding from edges
+            var dotRadius = ts / 14; // کمی کوچکتر برای padding بیشتر
+            var positions = {
+                1: [[0.5, 0.5]],
+                2: [[0.3, 0.3], [0.7, 0.7]],
+                3: [[0.3, 0.3], [0.5, 0.5], [0.7, 0.7]],
+                4: [[0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]],
+                5: [[0.3, 0.3], [0.7, 0.3], [0.5, 0.5], [0.3, 0.7], [0.7, 0.7]],
+                6: [[0.3, 0.3], [0.7, 0.3], [0.3, 0.5], [0.7, 0.5], [0.3, 0.7], [0.7, 0.7]]
+            };
+            
+            if (positions[num]) {
+                positions[num].forEach(function(pos) {
+                    context.beginPath();
+                    context.arc(pos[0] * ts, pos[1] * ts, dotRadius, 0, Math.PI * 2);
+                    context.fill();
+                });
+            } else {
+                // Fallback for other numbers (like 0, 9, 10, etc.) - show as text
+                context.font = ts / (1 + 2 * margin) + "pt Arial";
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.fillText(text, canvas.width / 2, canvas.height / 2);
             }
+            
             var texture = new THREE.Texture(canvas);
             texture.needsUpdate = true;
             return texture;
@@ -859,4 +886,9 @@ const DICE = (function() {
 
     return that;
 }());
+
+// Make DICE available globally
+if (typeof window !== 'undefined') {
+    window.DICE = DICE;
+}
 
