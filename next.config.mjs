@@ -16,7 +16,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  reactStrictMode: false, // Disable to prevent double execution
+  reactStrictMode: true, // Enable for better performance and debugging
+  
+  // Performance optimizations
+  swcMinify: true,
+  
   modularizeImports: {
     '@mui/icons-material': {
       transform: '@mui/icons-material/{{member}}',
@@ -28,14 +32,23 @@ const nextConfig = {
       transform: '@mui/lab/{{member}}',
     },
   },
-  webpack(config) {
+  
+  webpack(config, { dev, isServer }) {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
 
+    // Optimization for development
+    if (dev && !isServer) {
+      config.cache = {
+        type: 'filesystem',
+      };
+    }
+
     return config;
   },
+  
   ...(isStaticExport === 'true' && {
     output: 'export',
   }),

@@ -104,11 +104,17 @@ export function DashboardLayout({ sx, children, data }: DashboardLayoutProps) {
               contacts: _contacts,
               workspaces: _workspaces,
               notifications: _notifications,
+              userRole: user?.role,
             }}
             slotsDisplay={{
               signIn: false,
               purchase: false,
               helpLink: false,
+              searchbar: false,
+              localization: false,
+              contacts: false,
+              workspaces: false,
+              settings: user?.role === 'ADMIN',
             }}
             slots={{
               topArea: (

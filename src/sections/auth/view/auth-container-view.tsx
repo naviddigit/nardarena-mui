@@ -168,7 +168,7 @@ export function AuthContainerView() {
         {diceIcons.map((num, index) => (
           <m.div
             key={num}
-            {...varFade()[index % 2 === 0 ? 'inLeft' : 'inRight']}
+            {...(index % 2 === 0 ? varFade().inLeft : varFade().inRight)}
             transition={{
               duration: 0.8,
               delay: index * 0.15,

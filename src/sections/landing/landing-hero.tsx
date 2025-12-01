@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha, useTheme, useColorScheme } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
@@ -63,10 +63,8 @@ export function LandingHero() {
                 fontWeight: 900,
                 lineHeight: { xs: 1.3, md: 1.2 },
                 mb: { xs: 2, md: 3 },
-                color: '#FFFFFF',
-                textShadow: theme.palette.mode === 'dark'
-                  ? `0 2px 40px ${alpha('#000000', 0.9)}, 0 0 60px ${alpha(theme.palette.primary.main, 0.4)}`
-                  : `0 2px 40px ${alpha('#000000', 0.6)}, 0 0 60px ${alpha(theme.palette.primary.main, 0.3)}`,
+                color: theme.palette.primary.contrastText,
+                textShadow: `0 2px 40px ${alpha(theme.palette.common.black, 0.8)}, 0 0 60px ${alpha(theme.palette.primary.main, 0.4)}`,
                 letterSpacing: { xs: '-0.02em', md: '-0.03em' },
               }}
             >
@@ -81,12 +79,12 @@ export function LandingHero() {
               variant="h5"
               sx={{
                 mb: { xs: 4, md: 5 },
-                color: alpha('#FFFFFF', 0.9),
+                color: alpha(theme.palette.primary.contrastText, 0.85),
                 fontWeight: 400,
                 lineHeight: 1.8,
                 fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
                 maxWidth: { xs: '100%', sm: 600 },
-                textShadow: `0 2px 20px ${alpha('#000000', 0.8)}`,
+                textShadow: `0 2px 20px ${alpha(theme.palette.common.black, 0.6)}`,
               }}
             >
               Challenge AI, compete globally, watch & predict matches. Earn USDT directly to your wallet address via TRC20 or BSC networks.
@@ -194,7 +192,15 @@ export function LandingHero() {
                   }}
                 >
                   <Typography sx={{ fontSize: { xs: '1.75rem', sm: '2rem' } }}>{feature.icon}</Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#FFFFFF', fontSize: { xs: '0.7rem', sm: '0.75rem' }, textShadow: `0 1px 8px ${alpha('#000000', 0.8)}` }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontWeight: 600, 
+                      color: theme.palette.primary.contrastText,
+                      fontSize: { xs: '0.7rem', sm: '0.75rem' }, 
+                      textShadow: `0 1px 8px ${alpha(theme.palette.common.black, 0.7)}` 
+                    }}
+                  >
                     {feature.label}
                   </Typography>
                 </Box>

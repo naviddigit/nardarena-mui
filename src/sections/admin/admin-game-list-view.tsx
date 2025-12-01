@@ -40,7 +40,7 @@ export function AdminGameListView() {
   const table = useTable({ defaultOrderBy: 'createdAt', defaultOrder: 'desc' });
 
   const [games, setGames] = useState<AdminGame[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [totalGames, setTotalGames] = useState(0);
 
   const fetchGames = useCallback(async () => {

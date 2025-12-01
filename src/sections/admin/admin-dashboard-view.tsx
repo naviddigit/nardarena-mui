@@ -11,8 +11,6 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { adminAPI, type AdminStats } from 'src/services/admin-api';
 import { useAuthContext } from 'src/auth/hooks';
 
-import { LoadingScreen } from 'src/components/loading-screen';
-
 import { AppWelcome } from './app-welcome';
 import { AppWidgetSummary } from './app-widget-summary';
 
@@ -23,30 +21,22 @@ export function AdminDashboardView() {
   const theme = useTheme();
   
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        setLoading(true);
         const data = await adminAPI.getStats();
         setStats(data);
         setError(null);
       } catch (err: any) {
         console.error('Failed to fetch admin stats:', err);
         setError(err.message || 'Failed to load statistics');
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchStats();
   }, []);
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
 
   if (error) {
     return (

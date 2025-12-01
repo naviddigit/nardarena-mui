@@ -20,6 +20,7 @@ import { LanguagePopover } from '../components/language-popover';
 import { ContactsPopover } from '../components/contacts-popover';
 import { WorkspacesPopover } from '../components/workspaces-popover';
 import { NotificationsDrawer } from '../components/notifications-drawer';
+import { ThemeToggleButton } from '../components/theme-toggle-button';
 
 import type { HeaderSectionProps } from './header-section';
 import type { AccountDrawerProps } from '../components/account-drawer';
@@ -66,6 +67,7 @@ export type HeaderBaseProps = HeaderSectionProps & {
     contacts?: ContactsPopoverProps['data'];
     workspaces?: WorkspacesPopoverProps['data'];
     notifications?: NotificationsDrawerProps['data'];
+    userRole?: string;
   };
   slots?: {
     navMobile?: {
@@ -85,6 +87,7 @@ export type HeaderBaseProps = HeaderSectionProps & {
     menuButton?: boolean;
     localization?: boolean;
     notifications?: boolean;
+    themeToggle?: boolean;
   };
 };
 
@@ -107,10 +110,14 @@ export function HeaderBase({
     menuButton = true,
     localization = true,
     notifications = true,
+    themeToggle = false,
   } = {},
   ...other
 }: HeaderBaseProps) {
   const theme = useTheme();
+
+  // Determine if theme toggle should be shown (non-admin users)
+  const showThemeToggle = themeToggle || (!settings && data?.userRole !== 'ADMIN');
 
   return (
     <HeaderSection
@@ -182,6 +189,9 @@ export function HeaderBase({
 
               {/* -- Contacts popover -- */}
               {contacts && <ContactsPopover data-slot="contacts" data={data?.contacts} />}
+
+              {/* -- Theme toggle button (for non-admin) -- */}
+              {showThemeToggle && <ThemeToggleButton data-slot="theme-toggle" />}
 
               {/* -- Settings button -- */}
               {settings && <SettingsButton data-slot="settings" />}

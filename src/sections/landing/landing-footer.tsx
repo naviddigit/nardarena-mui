@@ -9,6 +9,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
+import { Logo } from 'src/components/logo';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -100,19 +101,21 @@ export function LandingFooter() {
         >
           {/* Brand Section */}
           <Box sx={{ gridColumn: { xs: '1', md: 'span 2' } }}>
-            <Typography
-              variant="h5"
-              sx={{
-                mb: 2,
-                fontWeight: 900,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              🎲 NardArena
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Logo width={40} height={40} disableLink />
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 900,
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                NardArena
+              </Typography>
+            </Box>
 
             <Typography
               variant="body2"

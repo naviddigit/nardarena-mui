@@ -9,21 +9,27 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
-import { alpha, useTheme, CardContent } from '@mui/material';
+import CardContent from '@mui/material/CardContent';
+
+import { alpha, useTheme } from '@mui/material/styles';
 
 import { useMockedUser } from 'src/auth/hooks';
 
-import { useSettingsContext } from 'src/components/settings';
+import { useAllWallets } from 'src/hooks/use-wallet';
+import { useGameStats, useMonthlyStats } from 'src/hooks/use-game-stats';
+
+import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
+import { NetworkIcon } from 'src/components/network-icon';
 
 import { GameModeCard } from '../game';
 
 import { PlayerBalanceCard } from './player-balance-card';
 import { PlayerStatWidget } from './player-stat-widget';
 import { GameHistoryTable } from './game-history-table';
+import { WalletHistoryTable } from './wallet-history-table';
 
 // ----------------------------------------------------------------------
 
@@ -64,22 +70,28 @@ const GAME_MODES = [
 export default function DashboardView() {
   const router = useRouter();
   const { user } = useMockedUser();
-  const settings = useSettingsContext();
   const theme = useTheme();
 
-  // ⚠️ MOCK DATA - Will be replaced with API calls
-  // USER BALANCE IS IN USD ONLY (USDT token)
-  // Networks: TRC20 (Tron) and BSC (Binance Smart Chain)
+  // Fetch wallet balance from API - Real Data
+  const { totalBalance: usdBalance, loading: balanceLoading } = useAllWallets();
+  
+  // Fetch game statistics from API - Real Data
+  const { stats: gameStats, loading: statsLoading } = useGameStats();
+  const { stats: monthlyStats, loading: monthlyLoading } = useMonthlyStats();
+
+  // Combine all data
   const userData = {
-    usdBalance: 1245.50, // Total USD balance (USDT on TRC20 + BSC)
-    depositedThisMonth: 500.00,
-    withdrawnThisMonth: 120.00,
-    earningsThisMonth: 865.50,
-    gamesPlayed: 87,
-    wins: 52,
-    winRate: 59.77,
-    bestStreak: 8,
+    usdBalance: usdBalance || 0,
+    depositedThisMonth: monthlyStats?.deposited || 0,
+    withdrawnThisMonth: monthlyStats?.withdrawn || 0,
+    earningsThisMonth: monthlyStats?.earnings || 0,
+    gamesPlayed: gameStats?.gamesPlayed || 0,
+    wins: gameStats?.wins || 0,
+    winRate: gameStats?.winRate || 0,
+    bestStreak: gameStats?.bestStreak || 0,
   };
+
+  const isLoading = balanceLoading || statsLoading || monthlyLoading;
 
   const handlePlayMode = (route: string) => {
     router.push(route);
@@ -117,7 +129,7 @@ export default function DashboardView() {
   ];
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+    <DashboardContent maxWidth="xl">
       <Box
         sx={{
           py: { xs: 3, md: 5 },
@@ -287,7 +299,18 @@ export default function DashboardView() {
 
         {/* Game History */}
         <Box id="history" sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Recent Games
+          </Typography>
           <GameHistoryTable />
+        </Box>
+
+        {/* Wallet History */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Wallet Transactions
+          </Typography>
+          <WalletHistoryTable />
         </Box>
 
         {/* Network Info Card */}
@@ -311,7 +334,7 @@ export default function DashboardView() {
                   }}
                 >
                   <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Iconify icon="cryptocurrency:usdt" width={32} sx={{ color: 'success.main' }} />
+                    <NetworkIcon network="TRC20" size="large" />
                     <Box>
                       <Typography variant="subtitle2">USDT (TRC20)</Typography>
                       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -329,7 +352,7 @@ export default function DashboardView() {
                   }}
                 >
                   <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Iconify icon="cryptocurrency:usdt" width={32} sx={{ color: 'warning.main' }} />
+                    <NetworkIcon network="BSC" size="large" />
                     <Box>
                       <Typography variant="subtitle2">USDT (BSC)</Typography>
                       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -343,7 +366,7 @@ export default function DashboardView() {
           </CardContent>
         </Card>
       </Box>
-    </Container>
+    </DashboardContent>
   );
 }
 

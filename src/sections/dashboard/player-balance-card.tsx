@@ -10,6 +10,9 @@ import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
 import { useTheme } from '@mui/material/styles';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { fCurrency } from 'src/utils/format-number';
 
 import { Iconify } from 'src/components/iconify';
@@ -34,6 +37,7 @@ export function PlayerBalanceCard({
   ...other
 }: Props) {
   const theme = useTheme();
+  const router = useRouter();
 
   const row = (label: string, value: number, isMain?: boolean) => (
     <Box
@@ -76,6 +80,7 @@ export function PlayerBalanceCard({
             variant="contained"
             color="success"
             startIcon={<Iconify icon="solar:upload-minimalistic-bold" />}
+            onClick={() => router.push(paths.dashboard.deposit)}
           >
             Deposit
           </Button>
@@ -85,6 +90,7 @@ export function PlayerBalanceCard({
             variant="outlined"
             color="error"
             startIcon={<Iconify icon="solar:download-minimalistic-bold" />}
+            onClick={() => router.push(paths.dashboard.withdraw)}
           >
             Withdraw
           </Button>

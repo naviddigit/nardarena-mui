@@ -1,19 +1,112 @@
-<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M43.1759 123.179C68.7556 107.091 80.9178 122.509 91.5841 142.787C82.7577 158.858 76.9185 168.665 74.0658 172.209C68.6865 178.894 62.8182 183.956 55.6009 186.876C40.4279 194.007 21.5658 194.34 7 185.524L43.1759 123.179Z" fill="url(#paint0_linear_4107_1209904)"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M222.155 114.863C199.02 74.3851 175.105 36.2488 147.634 92.1912C143.875 99.3829 141.136 113.359 135 113.359V113.288C128.864 113.288 126.125 99.3119 122.367 92.1202C94.8949 36.1778 70.9802 74.3141 47.8448 114.792C46.1037 117.845 44.4312 120.758 43 123.29C96.0189 89.7267 91.5552 191.123 135 191.929V192C178.446 191.194 173.981 89.7977 227 123.36C225.57 120.829 223.897 117.916 222.155 114.863" fill="url(#paint1_linear_4107_1209904)"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M225 192C238.254 192 249 181.254 249 168C249 154.746 238.254 144 225 144C211.746 144 201 154.746 201 168C201 181.254 211.746 192 225 192" fill="url(#paint2_linear_4107_1209904)"/>
-<defs>
-<linearGradient id="paint0_linear_4107_1209904" x1="76" y1="83.8949" x2="32.7615" y2="129.812" gradientUnits="userSpaceOnUse">
-<stop stop-color="#004B50"/>
-<stop offset="1" stop-color="#00A76F"/>
-</linearGradient>
-<linearGradient id="paint1_linear_4107_1209904" x1="43" y1="64" x2="43" y2="192" gradientUnits="userSpaceOnUse">
-<stop stop-color="#5BE49B"/>
-<stop offset="1" stop-color="#00A76F"/>
-</linearGradient>
-<linearGradient id="paint2_linear_4107_1209904" x1="201" y1="144" x2="201" y2="192" gradientUnits="userSpaceOnUse">
-<stop stop-color="#5BE49B"/>
-<stop offset="1" stop-color="#00A76F"/>
-</linearGradient>
-</defs>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 199.02 225.03">
+  <!-- Generator: Adobe Illustrator 30.0.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 123)  -->
+  <defs>
+    <style>
+      .st0, .st1, .st2, .st3 {
+        stroke-width: 3px;
+      }
+
+      .st0, .st1, .st2, .st3, .st4 {
+        fill: #00ffc2;
+      }
+
+      .st0, .st2, .st4 {
+        stroke-miterlimit: 10;
+      }
+
+      .st0, .st3, .st4 {
+        stroke: #09cfd8;
+      }
+
+      .st1, .st2 {
+        stroke: #008cff;
+      }
+
+      .st1, .st3 {
+        stroke-miterlimit: 10;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2">
+    <rect class="st4" x="192.99" y="60.31" width=".65" height="105.56"/>
+    <g>
+      <rect class="st4" x="148.41" y="87.17" width=".65" height="105.56"/>
+      <g>
+        <g>
+          <g>
+            <rect class="st4" x="145.88" y="-20" width=".53" height="105.56" transform="translate(44.68 142.95) rotate(-60)"/>
+            <g>
+              <rect class="st4" x="53.4" y="86.59" width=".5" height="105.56" transform="translate(-93.88 116.15) rotate(-60)"/>
+              <rect class="st4" x="52.01" y="139.54" width=".44" height="105.56" transform="translate(-140.44 141.39) rotate(-60)"/>
+              <rect class="st4" x="44.46" y="57.43" width="105.56" height=".51" transform="translate(-15.81 56.35) rotate(-30)"/>
+              <rect class="st4" x="93.29" y="85.96" width="105.56" height=".43" transform="translate(-23.52 84.58) rotate(-30)"/>
+              <rect class="st4" x="97.76" y="2.14" width=".65" height="105.56" transform="translate(1.49 112.41) rotate(-60)"/>
+              <rect class="st4" x="94.07" y="139.12" width="105.56" height=".53" transform="translate(-50.02 92.1) rotate(-30)"/>
+              <rect class="st4" x="93.5" y="192.09" width="105.56" height=".49" transform="translate(-76.57 98.91) rotate(-30)"/>
+            </g>
+          </g>
+          <rect class="st4" x="51.51" y="85.09" width=".65" height="105.56"/>
+        </g>
+        <rect class="st4" x="100.12" y="113.47" width=".65" height="105.56"/>
+      </g>
+    </g>
+    <g>
+      <rect class="st3" x="139.7" y="177.44" width="57.68" height="3.37" transform="translate(-66.98 108.27) rotate(-30)"/>
+      <circle class="st0" cx="7.48" cy="112.8" r="6.5"/>
+      <g>
+        <rect class="st2" x="49.67" y="135.79" width="3.37" height="57.68"/>
+        <g>
+          <rect class="st1" x="119.38" y="39.57" width="3.37" height="57.68" transform="translate(1.28 139.05) rotate(-60)"/>
+          <rect class="st1" x="73.26" y="176.73" width="3.37" height="57.68" transform="translate(-140.55 167.69) rotate(-60)"/>
+          <g>
+            <rect class="st1" x="1.44" y="31.04" width="105.56" height="3.37" transform="translate(-9.1 31.49) rotate(-30)"/>
+            <g>
+              <rect class="st1" x="54.72" y="33.3" width="3.37" height="105.56" transform="translate(-46.35 91.89) rotate(-60)"/>
+              <circle class="st2" cx="51.4" cy="83.41" r="6.5"/>
+              <g>
+                <circle class="st2" cx="100.14" cy="6.62" r="6.5"/>
+                <circle class="st2" cx="51.4" cy="190.41" r="6.5"/>
+                <g>
+                  <rect class="st2" x="147.05" y="82.77" width="3.37" height="57.68"/>
+                  <rect class="st1" x="97.09" y="149.36" width="57.68" height="3.37" transform="translate(-58.65 83.2) rotate(-30)"/>
+                  <rect class="st1" x="72.06" y="121.53" width="3.37" height="57.68" transform="translate(-93.35 139.05) rotate(-60)"/>
+                  <rect class="st2" x="191.3" y="60.57" width="3.37" height="102.96"/>
+                  <rect class="st2" x="4.94" y="61.32" width="3.37" height="102.96"/>
+                  <circle class="st2" cx="56.4" cy="30.85" r="6.5"/>
+                  <circle class="st2" cx="8.4" cy="59.41" r="6.5"/>
+                  <g>
+                    <g>
+                      <g>
+                        <circle class="st2" cx="99.4" cy="164.41" r="6.5"/>
+                        <g>
+                          <circle class="st2" cx="100.31" cy="109.91" r="6.5"/>
+                          <g>
+                            <circle class="st2" cx="99.63" cy="56.22" r="6.5"/>
+                            <g>
+                              <circle class="st2" cx="148.4" cy="84.4" r="6.5"/>
+                              <circle class="st2" cx="148.74" cy="137.32" r="6.5"/>
+                              <g>
+                                <circle class="st2" cx="192.4" cy="59.41" r="6.5"/>
+                                <circle class="st2" cx="192.4" cy="113.41" r="6.5"/>
+                                <circle class="st2" cx="192.4" cy="165.41" r="6.5"/>
+                              </g>
+                              <circle class="st2" cx="148.4" cy="190.41" r="6.5"/>
+                            </g>
+                          </g>
+                        </g>
+                      </g>
+                      <circle class="st2" cx="99.4" cy="218.41" r="6.5"/>
+                    </g>
+                    <circle class="st2" cx="51.4" cy="137.41" r="6.5"/>
+                  </g>
+                </g>
+                <circle class="st2" cx="6.62" cy="164.27" r="6.5"/>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
 </svg>

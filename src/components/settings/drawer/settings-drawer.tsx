@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
@@ -44,6 +46,13 @@ export function SettingsDrawer({
   const settings = useSettingsContext();
 
   const { mode, setMode } = useColorScheme();
+
+  // Sync colorScheme when mode changes from external sources
+  useEffect(() => {
+    if (mode && settings.colorScheme !== mode) {
+      settings.onUpdateField('colorScheme', mode);
+    }
+  }, [mode, settings]);
 
   const renderHead = (
     <Box display="flex" alignItems="center" sx={{ py: 2, pr: 1, pl: 2.5 }}>

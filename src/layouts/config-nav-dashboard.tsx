@@ -43,13 +43,32 @@ const ICONS = {
 
 export const navData = [
   /**
+   * Overview
+   */
+  {
+    subheader: 'Overview',
+    items: [
+      { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
+    ],
+  },
+  /**
+   * Wallet
+   */
+  {
+    subheader: 'Wallet',
+    items: [
+      { title: 'Deposit', path: paths.dashboard.deposit, icon: ICONS.banking },
+      { title: 'Withdraw', path: paths.dashboard.withdraw, icon: ICONS.invoice },
+    ],
+  },
+  /**
    * Game
    */
   {
     subheader: 'Game',
     items: [
-      { title: 'Play AI', path: paths.dashboard.root, icon: ICONS.dashboard },
-      { title: 'Online Game', path: paths.dashboard.two, icon: ICONS.ecommerce },
+      { title: 'Play AI', path: '/game/ai', icon: ICONS.ecommerce },
+      { title: 'Online Game', path: paths.dashboard.two, icon: ICONS.chat },
       { title: 'Tournaments', path: paths.dashboard.three, icon: ICONS.analytics },
     ],
   },
@@ -61,12 +80,15 @@ export const navData = [
     items: [
       {
         title: 'Admin Panel',
-        path: '/dashboard/admin',
+        path: paths.dashboard.admin.root,
         icon: ICONS.user,
         children: [
-          { title: 'Dashboard', path: '/dashboard/admin' },
-          { title: 'Users', path: '/dashboard/admin/users' },
-          { title: 'Games', path: '/dashboard/admin/games' },
+          { title: 'Dashboard', path: paths.dashboard.admin.root },
+          { title: 'Users', path: paths.dashboard.admin.users },
+          { title: 'Games', path: paths.dashboard.admin.games },
+          { title: 'Wallet Settings', path: paths.dashboard.admin.walletSettings },
+          { title: 'Game Settings', path: paths.dashboard.admin.gameSettings },
+          { title: 'Database', path: paths.dashboard.admin.database },
         ],
       },
     ],

@@ -17,12 +17,22 @@ export const paths = {
   // DASHBOARD
   dashboard: {
     root: ROOTS.DASHBOARD,
+    deposit: `${ROOTS.DASHBOARD}/deposit`,
+    withdraw: `${ROOTS.DASHBOARD}/withdraw`,
     two: `${ROOTS.DASHBOARD}/two`,
     three: `${ROOTS.DASHBOARD}/three`,
     group: {
       root: `${ROOTS.DASHBOARD}/group`,
       five: `${ROOTS.DASHBOARD}/group/five`,
       six: `${ROOTS.DASHBOARD}/group/six`,
+    },
+    admin: {
+      root: `${ROOTS.DASHBOARD}/admin`,
+      users: `${ROOTS.DASHBOARD}/admin/users`,
+      games: `${ROOTS.DASHBOARD}/admin/games`,
+      walletSettings: `${ROOTS.DASHBOARD}/admin/wallet-settings`,
+      gameSettings: `${ROOTS.DASHBOARD}/admin/game-settings`,
+      database: `${ROOTS.DASHBOARD}/admin/database`,
     },
   },
 };

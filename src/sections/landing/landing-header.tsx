@@ -11,6 +11,10 @@ import { useTheme, alpha, useColorScheme } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
+import { bgBlur, varAlpha } from 'src/theme/styles';
+
+import { useSettingsContext } from 'src/components/settings';
+import { Logo } from 'src/components/logo';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -18,47 +22,42 @@ import { Iconify } from 'src/components/iconify';
 export function LandingHeader() {
   const theme = useTheme();
   const { mode, setMode } = useColorScheme();
+  const settings = useSettingsContext();
 
   const handleToggleMode = () => {
-    setMode(mode === 'light' ? 'dark' : 'light');
+    const newMode = mode === 'light' ? 'dark' : 'light';
+    setMode(newMode);
+    settings.onUpdateField('colorScheme', newMode);
   };
 
   return (
     <AppBar
       position="fixed"
       sx={{
-        bgcolor: theme.palette.mode === 'dark' ? alpha('#000000', 0.95) : alpha('#FFFFFF', 0.95),
-        backdropFilter: 'blur(20px)',
-        boxShadow: theme.palette.mode === 'dark' 
-          ? `0 1px 0 ${alpha(theme.palette.grey[800], 0.8)}, 0 4px 20px ${alpha('#000000', 0.5)}`
-          : `0 1px 0 ${alpha(theme.palette.grey[300], 0.8)}, 0 4px 20px ${alpha('#000000', 0.1)}`,
+        ...bgBlur({ color: varAlpha(theme.vars.palette.background.defaultChannel, 0.8) }),
+        boxShadow: `0 1px 0 ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}`,
       }}
     >
       <Container maxWidth="lg">
         <Toolbar disableGutters sx={{ height: 72 }}>
           {/* Logo */}
           <Box
-            component={RouterLink}
-            href="/"
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
-              textDecoration: 'none',
+              gap: 1.5,
               flexGrow: 1,
             }}
           >
+            <Logo width={40} height={40} />
             <Typography
               variant="h5"
               sx={{
                 fontWeight: 900,
-                color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.grey[900],
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
+                color: 'text.primary',
               }}
             >
-              🎲 NardArena
+              NardArena
             </Typography>
           </Box>
 
@@ -67,7 +66,7 @@ export function LandingHeader() {
             onClick={handleToggleMode}
             sx={{
               mr: 1,
-              color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.grey[900],
+              color: 'text.primary',
               bgcolor: alpha(theme.palette.primary.main, 0.08),
               '&:hover': {
                 bgcolor: alpha(theme.palette.primary.main, 0.16),
@@ -75,7 +74,7 @@ export function LandingHeader() {
             }}
           >
             <Iconify
-              icon={theme.palette.mode === 'light' ? 'solar:moon-bold' : 'solar:sun-bold'}
+              icon={mode === 'light' ? 'solar:moon-bold' : 'solar:sun-bold'}
               width={24}
             />
           </IconButton>
@@ -88,10 +87,10 @@ export function LandingHeader() {
             sx={{
               mr: 1,
               display: { xs: 'none', sm: 'inline-flex' },
-              borderColor: theme.palette.mode === 'dark' ? alpha('#FFFFFF', 0.3) : alpha(theme.palette.grey[900], 0.3),
-              color: theme.palette.mode === 'dark' ? '#FFFFFF' : theme.palette.grey[900],
+              borderColor: alpha(theme.palette.text.primary, 0.3),
+              color: 'text.primary',
               '&:hover': {
-                borderColor: theme.palette.primary.main,
+                borderColor: 'primary.main',
                 bgcolor: alpha(theme.palette.primary.main, 0.08),
               },
             }}
