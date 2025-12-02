@@ -52,8 +52,11 @@ export default function GameSettingsView() {
           console.error('Failed to parse bet amounts:', e);
         }
       }
+    } else if (apiSettings.length === 0 && !fetchLoading) {
+      // If API returns empty and not loading, show message
+      console.warn('No game settings found in database. Please run seed command.');
     }
-  }, [apiSettings]);
+  }, [apiSettings, fetchLoading]);
 
   // Handle setting change
   const handleSettingChange = useCallback((id: string, newValue: string) => {
