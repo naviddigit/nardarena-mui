@@ -337,12 +337,10 @@ function GameAIPageContent() {
     },
   });
 
-  // Get time control from database (defaults to 1800 if not found)
-  const gameTimeControl = await gamePersistenceAPI.getGameTimeControl();
-  // Timer for White player
-  const whiteTimer = useCountdownSeconds(gameTimeControl);
-  // Timer for Black player
-  const blackTimer = useCountdownSeconds(gameTimeControl);
+  // Timer for White player (1800 seconds = 30 minutes)
+  const whiteTimer = useCountdownSeconds(1800);
+  // Timer for Black player (1800 seconds = 30 minutes)
+  const blackTimer = useCountdownSeconds(1800);
 
   // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
   useGameTimers({
