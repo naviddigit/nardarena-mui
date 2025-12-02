@@ -369,11 +369,23 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       // because shift_dice_faces in dice.js doesn't always work correctly
       box.roll(vectors, values, (result: number[]) => {
         clearTimeout(rollTimeout);
-        console.log('🎲 Roll complete! Requested:', values, 'Got:', result);
+        
+        // ⚠️ Check if dice.js returned wrong values (it often does!)
+        const requestedSorted = [...values].sort().join(',');
+        const receivedSorted = [...result].sort().join(',');
+        
+        if (requestedSorted !== receivedSorted) {
+          console.warn('⚠️ dice.js returned wrong values!');
+          console.warn('   Requested:', values, 'Got:', result);
+          console.warn('   ✅ Using requested values (correct)');
+        } else {
+          console.log('🎲 Roll complete! Requested:', values, 'Got:', result);
+        }
         
         setIsRolling(false);
         
-        // Use the values we requested, not what the callback returned
+        // ✅ ALWAYS use the values we requested, NOT what dice.js returned
+        // dice.js shift_dice_faces doesn't work reliably!
         const results: DiceResult[] = values.map((value) => ({
           value,
           type: 'd6',

@@ -1,0 +1,92 @@
+/**
+ * ⛔ CRITICAL - DO NOT MODIFY AFTER TESTING! ⛔
+ * 
+ * این فایل کنترل دکمه Roll Dice را مدیریت میکند.
+ * بعد از تست کامل، هیچ تغییری در این فایل ندهید!
+ * 
+ * قوانین Roll Dice:
+ * 1. در opening phase: فقط player (white) میتونه اول roll کنه
+ * 2. در gameplay عادی: فقط وقتی نوبت player هست و در فاز waiting هست
+ * 3. نمیتونه roll کنه اگه:
+ *    - در حال rolling باشه (isRolling = true)
+ *    - منتظر backend باشه (isWaitingForBackend = true)
+ *    - AI در حال حرکت باشه (isExecutingAIMove = true)
+ *    - در فاز moving باشه (باید اول Done بزنه)
+ * 
+ * این فایل با چوب حفاظت شده! 🔒
+ */
+
+import { useMemo } from 'react';
+import type { GameState } from 'src/hooks/game-logic/types';
+
+interface UseDiceRollControlProps {
+  gameState: GameState;
+  playerColor: 'white' | 'black' | null;
+  isRolling: boolean;
+  isWaitingForBackend: boolean;
+  isExecutingAIMove: boolean;
+}
+
+interface UseDiceRollControlReturn {
+  canRoll: boolean;
+  canRollReason: string; // برای debug - چرا نمیتونه roll کنه
+}
+
+export function useDiceRollControl({
+  gameState,
+  playerColor,
+  isRolling,
+  isWaitingForBackend,
+  isExecutingAIMove,
+}: UseDiceRollControlProps): UseDiceRollControlReturn {
+  
+  const { canRoll, canRollReason } = useMemo(() => {
+    // اگه player هنوز انتخاب نشده
+    if (!playerColor) {
+      return { canRoll: false, canRollReason: 'Player color not selected' };
+    }
+
+    // اگه در حال rolling هست
+    if (isRolling) {
+      return { canRoll: false, canRollReason: 'Already rolling' };
+    }
+
+    // اگه منتظر backend هست
+    if (isWaitingForBackend) {
+      return { canRoll: false, canRollReason: 'Waiting for backend' };
+    }
+
+    // اگه AI در حال حرکت هست
+    if (isExecutingAIMove) {
+      return { canRoll: false, canRollReason: 'AI is moving' };
+    }
+
+    // Opening phase: فقط white (player) میتونه اول roll کنه
+    if (gameState.gamePhase === 'opening') {
+      if (playerColor === 'white' && gameState.openingRoll.white === null) {
+        return { canRoll: true, canRollReason: 'Opening roll for white' };
+      }
+      return { canRoll: false, canRollReason: 'Not your turn in opening' };
+    }
+
+    // Gameplay عادی: باید نوبت player باشه و در فاز waiting باشه
+    if (gameState.currentPlayer === playerColor && gameState.gamePhase === 'waiting') {
+      return { canRoll: true, canRollReason: 'Your turn to roll' };
+    }
+
+    // اگه در فاز moving هست
+    if (gameState.gamePhase === 'moving') {
+      return { canRoll: false, canRollReason: 'Must finish moves or click Done' };
+    }
+
+    // اگه نوبت opponent هست
+    if (gameState.currentPlayer !== playerColor) {
+      return { canRoll: false, canRollReason: 'Opponent turn' };
+    }
+
+    // هیچکدوم از شرایط برقرار نیست
+    return { canRoll: false, canRollReason: 'Unknown state' };
+  }, [gameState.gamePhase, gameState.currentPlayer, gameState.openingRoll.white, playerColor, isRolling, isWaitingForBackend, isExecutingAIMove]);
+
+  return { canRoll, canRollReason };
+}

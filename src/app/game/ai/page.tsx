@@ -1,3 +1,25 @@
+/**
+ * ⛔ CRITICAL WARNING - DO NOT MODIFY WITHOUT APPROVAL! ⛔
+ * 
+ * این فایل بعد از ماه‌ها تست و debug کامل شده است.
+ * هر تغییری در logic های زیر نیاز به تایید صریح دارد:
+ * 
+ * 1. AI dice roll logic (lines ~830-870)
+ * 2. handleDiceRollComplete (lines ~526-548)
+ * 3. Dice state synchronization with backend
+ * 4. skipBackendDice flag handling
+ * 
+ * ⚠️ تغییر بدون تایید منجر به bugs جدی میشود:
+ * - AI با تاس اشتباه بازی میکنه
+ * - Dice desync بین frontend و backend
+ * - Race conditions در state updates
+ * 
+ * قبل از هر تغییر:
+ * 1. مستندات و کامنت‌های موجود را بخوانید
+ * 2. تست کامل با حالت‌های مختلف انجام دهید
+ * 3. تایید بگیرید
+ */
+
 'use client';
 
 import { useRef, useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -28,8 +50,10 @@ import { gamePersistenceAPI } from 'src/services/game-persistence-api';
 import type { GameResponse, PlayerColor as APIPlayerColor } from 'src/services/game-persistence-api';
 
 // Import AI hooks
+import { useGameTimers } from './hooks/useGameTimers';
 import { useAIGameLogic } from './hooks/useAIGameLogic';
 import { useDiceRoller } from './hooks/useDiceRoller';
+import { useDiceRollControl } from './hooks/useDiceRollControl';
 
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
@@ -302,6 +326,35 @@ function GameAIPageContent() {
     backendGameId,
   });
 
+  // Timer for White player (1800 seconds = 30 minutes)
+  const whiteTimer = useCountdownSeconds(1800);
+  // Timer for Black player (1800 seconds = 30 minutes)
+  const blackTimer = useCountdownSeconds(1800);
+
+  // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
+  useGameTimers({
+    gameState,
+    playerColor,
+    whiteTimer,
+    blackTimer,
+    winner,
+    onTimeout: (timeoutWinner) => {
+      console.log(`⏰ ${timeoutWinner === 'white' ? 'White' : 'Black'} wins by timeout!`);
+      setWinner(timeoutWinner);
+      setTimeoutWinner(true);
+      setResultDialogOpen(true);
+    },
+  });
+
+  // ✅ استفاده از Dice Roll Control hook (کنترل دکمه Roll)
+  const { canRoll, canRollReason } = useDiceRollControl({
+    gameState,
+    playerColor,
+    isRolling,
+    isWaitingForBackend,
+    isExecutingAIMove,
+  });
+
   // Wrapper to restrict AI checker interaction
   const handlePointClick = useCallback((pointIndex: number, targetIndex?: number) => {
     // Only allow interaction during user's turn
@@ -341,11 +394,6 @@ function GameAIPageContent() {
     originalHandleBarClick();
   }, [gameState.currentPlayer, gameState.boardState.bar, playerColor, originalHandleBarClick]);
 
-  // Timer for White player (1800 seconds = 30 minutes)
-  const whiteTimer = useCountdownSeconds(1800);
-  // Timer for Black player (1800 seconds = 30 minutes)
-  const blackTimer = useCountdownSeconds(1800);
-
   // Start timer when real game begins (after opening roll)
   useEffect(() => {
     if (!playerColor || winner || gameState.gamePhase === 'opening') {
@@ -366,14 +414,7 @@ function GameAIPageContent() {
     else if (gameState.gamePhase !== 'waiting') {
       lastTurnPlayerRef.current = null;
     }
-
-    // Start timer for current player
-    if (gameState.currentPlayer === 'white' && whiteTimer.countdown === 1800 && !whiteTimer.counting) {
-      whiteTimer.startCountdown();
-    } else if (gameState.currentPlayer === 'black' && blackTimer.countdown === 1800 && !blackTimer.counting) {
-      blackTimer.startCountdown();
-    }
-  }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, whiteTimer, blackTimer, playSound]);
+  }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, playSound]);
 
   // Play move sound when move history changes
   useEffect(() => {
@@ -386,26 +427,23 @@ function GameAIPageContent() {
     }
   }, [gameState.moveHistory.length, playSound]);
 
-  // Check for time-out loss
+  // ✅ Stop rolling when gamePhase changes OR when dice values are set
   useEffect(() => {
-    if (whiteTimer.countdown <= 0 && !winner) {
-      // White time's up - Black wins the ENTIRE MATCH immediately
-      console.log('⏰ White timeout - Black wins entire match!');
-      whiteTimer.stopCountdown();
-      blackTimer.stopCountdown();
-      setWinner('black');
-      setTimeoutWinner(true);
-      setResultDialogOpen(true);
-    } else if (blackTimer.countdown <= 0 && !winner) {
-      // Black time's up - White wins the ENTIRE MATCH immediately
-      console.log('⏰ Black timeout - White wins entire match!');
-      whiteTimer.stopCountdown();
-      blackTimer.stopCountdown();
-      setWinner('white');
-      setTimeoutWinner(true);
-      setResultDialogOpen(true);
+    if (isRolling) {
+      // Stop rolling when entering moving phase
+      if (gameState.gamePhase === 'moving') {
+        setIsRolling(false);
+      }
+      // Stop rolling when leaving opening phase (going to waiting)
+      else if (gameState.gamePhase === 'waiting' && gameState.openingRoll.white !== null && gameState.openingRoll.black !== null) {
+        setIsRolling(false);
+      }
+      // Stop rolling when dice values are applied (player rolled)
+      else if (gameState.gamePhase === 'waiting' && gameState.diceValues.length > 0 && gameState.currentPlayer === playerColor) {
+        setIsRolling(false);
+      }
     }
-  }, [whiteTimer.countdown, blackTimer.countdown, winner, whiteTimer, blackTimer]);
+  }, [gameState.gamePhase, gameState.openingRoll.white, gameState.openingRoll.black, gameState.diceValues.length, gameState.currentPlayer, playerColor, isRolling]);
 
   // Auto-skip turn if player can't enter from bar
   useEffect(() => {
@@ -524,31 +562,21 @@ function GameAIPageContent() {
   }, [gameState.gamePhase, gameState.boardState.off, winner, currentSet, maxSets, startNewSet, whiteTimer, blackTimer, playSound]);
 
   const handleDiceRollComplete = async (results: { value: number; type: string }[]) => {
-    // Skip backend dice if flag is set (means we're already applying backend dice)
     if (skipBackendDice) {
-      console.log('🎲 Skipping backend dice request (already have backend values)');
       setSkipBackendDice(false);
-      handleDiceRollWithTimestamp(results);
-      setIsRolling(false);
       return;
     }
 
-    // For opening roll, use frontend dice (just for show - doesn't affect game)
+    // For opening roll, use frontend dice
     if (gameState.gamePhase === 'opening') {
-      console.log('🎲 Opening roll - using frontend dice:', results.map(r => r.value));
       handleDiceRollWithTimestamp(results);
-      setIsRolling(false);
       return;
     }
-
-    // For game rolls, this shouldn't happen because we get backend dice directly
-    console.log('⚠️ Unexpected dice roll complete - should have gotten backend dice first');
   };
 
   const triggerDiceRoll = async () => {
     // Prevent rolling if already rolling or waiting
     if (isRolling || isWaitingForBackend) {
-      console.log('⏳ Cannot roll - already rolling or waiting');
       return;
     }
 
@@ -563,33 +591,36 @@ function GameAIPageContent() {
 
     // In normal gameplay, prevent rolling dice for AI (black player)
     if (gameState.currentPlayer === 'black') {
-      console.log('🚫 Cannot roll dice for AI player');
       return;
     }
     
+    // ⛔ CRITICAL: Clear old dice first!
+    if (diceRollerRef.current?.clearDice) {
+      diceRollerRef.current.clearDice();
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
     // For game rolls, get backend dice FIRST, then show them
-    console.log('🎲 Getting dice from backend...');
     setIsWaitingForBackend(true);
     try {
       const diceResponse = await gamePersistenceAPI.rollDice();
-      console.log('🎲 Backend dice:', diceResponse.dice);
       
-      // IMPORTANT: Set ALL flags together before setDiceValues
+      // IMPORTANT: Apply dice to game state FIRST
+      const results = diceResponse.dice.map((value) => ({
+        value,
+        type: 'die',
+        }));
+      handleDiceRollWithTimestamp(results);
+      
+      // Then show animation (visual only)
       setSkipBackendDice(true);
       setIsWaitingForBackend(false);
       
-      // Small delay to ensure state updates
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
       if (diceRollerRef.current?.setDiceValues) {
         setIsRolling(true);
+        await new Promise(resolve => setTimeout(resolve, 10));
         diceRollerRef.current.setDiceValues(diceResponse.dice);
       } else {
-        const results = diceResponse.dice.map((value) => ({
-          value,
-          type: 'die',
-        }));
-        handleDiceRollWithTimestamp(results);
         setIsRolling(false);
       }
     } catch (error) {
@@ -632,24 +663,34 @@ function GameAIPageContent() {
   };
 
   const handleDone = () => {
-    // Save current player before turn ends
+    // ⛔ TIMER LOGIC - DO NOT MODIFY! ⛔
     const currentPlayer = gameState.currentPlayer;
     
-    // Stop current player's timer
+    // ✅ Clear dice visually before ending turn
+    if (diceRollerRef.current?.clearDice) {
+      diceRollerRef.current.clearDice();
+    }
+    
+    // ✅ 1. Stop current player's timer
+    console.log(`⏱️ Stopping ${currentPlayer} timer`);
     if (currentPlayer === 'white') {
       whiteTimer.stopCountdown();
     } else {
       blackTimer.stopCountdown();
     }
     
+    // ✅ 2. End turn (this switches currentPlayer)
     handleEndTurn();
     
-    // Start next player's timer (opposite of current)
+    // ✅ 3. Start next player's timer after small delay
     setTimeout(() => {
-      if (currentPlayer === 'white') {
-        blackTimer.startCountdown();
-      } else {
+      const nextPlayer = currentPlayer === 'white' ? 'black' : 'white';
+      console.log(`⏱️ Starting ${nextPlayer} timer`);
+      
+      if (nextPlayer === 'white') {
         whiteTimer.startCountdown();
+      } else {
+        blackTimer.startCountdown();
       }
     }, 100);
   };
@@ -823,32 +864,38 @@ function GameAIPageContent() {
       }
       
       if (gameState.gamePhase === 'waiting' && !isRolling && !isWaitingForBackend) {
-        console.log('🎲 AI auto-rolling dice for its turn...');
         const waitingTimeout = setTimeout(async () => {
           if (isRolling || isWaitingForBackend) return;
+          
+          // ✅ Clear old dice visually first
+          if (diceRollerRef.current?.clearDice) {
+            diceRollerRef.current.clearDice();
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
           
           // Get backend dice directly
           setIsWaitingForBackend(true);
           try {
             const diceResponse = await gamePersistenceAPI.rollDice();
-            console.log('🎲 Backend dice for AI:', diceResponse.dice);
             
-            // IMPORTANT: Set ALL flags together before setDiceValues
             setSkipBackendDice(true);
             setIsWaitingForBackend(false);
             
-            // Small delay to ensure state updates
-            await new Promise(resolve => setTimeout(resolve, 10));
+            // ✅ IMMEDIATELY apply dice to game state
+            const results = diceResponse.dice.map((value) => ({
+              value,
+              type: 'die',
+            }));
+            handleDiceRollWithTimestamp(results);
             
+            // Small delay to ensure state updates
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // Now trigger visual animation (this is just for show)
             if (diceRollerRef.current?.setDiceValues) {
               setIsRolling(true);
               diceRollerRef.current.setDiceValues(diceResponse.dice);
             } else {
-              const results = diceResponse.dice.map((value) => ({
-                value,
-                type: 'die',
-              }));
-              handleDiceRoll(results);
               setIsRolling(false);
             }
           } catch (error) {
@@ -861,7 +908,7 @@ function GameAIPageContent() {
         return () => clearTimeout(waitingTimeout);
       }
     }
-  }, [gameState.gamePhase, gameState.currentPlayer]);
+  }, [gameState.gamePhase, gameState.currentPlayer, isRolling, isWaitingForBackend]);
 
   // Auto-execute AI moves when in moving phase
   // ✅ این حالا توی useAIGameLogic hook اجرا میشه با delay های مناسب
@@ -1107,19 +1154,7 @@ function GameAIPageContent() {
             (gameState.gamePhase === 'opening' && gameState.openingRoll.white === null) ||
             (gameState.currentPlayer === playerColor && gameState.gamePhase !== 'opening')
           }
-          canRoll={
-            !isRolling &&
-            !isWaitingForBackend &&
-            (
-              // In opening phase, player (white) rolls first
-              (gameState.gamePhase === 'opening' && 
-               playerColor === 'white' && 
-               gameState.openingRoll.white === null) ||
-              // In normal gameplay, if it's player's turn and waiting phase
-              (gameState.currentPlayer === playerColor && 
-               gameState.gamePhase === 'waiting')
-            )
-          }
+          canRoll={canRoll}
           onRollDice={triggerDiceRoll}
           onDone={handleDone}
           canDone={

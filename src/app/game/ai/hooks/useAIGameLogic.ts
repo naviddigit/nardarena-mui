@@ -1,4 +1,16 @@
 /**
+ * ⛔⛔⛔ CRITICAL - ABSOLUTELY DO NOT MODIFY! ⛔⛔⛔
+ * 
+ * این فایل بعد از ماه‌ها تست و debug کامل شده است.
+ * هیچ تغییری بدون اجازه صریح مجاز نیست!
+ * 
+ * فقط در صورت خطای محرز و با اجازه صریح:
+ * 1. خطا باید قابل تکرار و مستند باشه
+ * 2. فقط این فایل رو تغییر بده، هیچ فایل دیگه ای رو دست نزن
+ * 3. بعد از تغییر کامل تست کن
+ * 
+ * ⚠️ تغییر بدون اجازه = اخراج از پروژه
+ * 
  * AI Game Logic Hook
  * مدیریت کامل منطق بازی با AI با delay های انسانی
  */
@@ -72,7 +84,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId }: UseAI
           return;
         }
 
-        // 3️⃣ 🎯 اجرای تک‌به‌تک حرکات با delay (مثل انسان!)
+        // 3️⃣ 🎯 اجرای تک‌به‌تک حرکات با delay و update واقعی board
         console.log(`🎬 Executing ${aiResult.moves.length} moves with human-like delays...`);
         
         for (let i = 0; i < aiResult.moves.length; i++) {
@@ -93,20 +105,60 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId }: UseAI
           // وقفه کوچک برای نمایش انتخاب
           await new Promise(resolve => setTimeout(resolve, 300));
           
-          // اجرای حرکت
+          // اجرای حرکت locally
           console.log(`➡️ AI moving from ${move.from} to ${move.to}`);
+          setGameState((prev) => {
+            const newBoardState = JSON.parse(JSON.stringify(prev.boardState)); // Deep clone
+
+            // انتقال مهره از مبدا
+            if (move.from === -1) {
+              // از bar
+              newBoardState.bar.black--;
+            } else {
+              // از point - حذف آخرین مهره از آرایه
+              if (newBoardState.points[move.from].checkers.length > 0) {
+                newBoardState.points[move.from].checkers.pop();
+                newBoardState.points[move.from].count--;
+              }
+            }
+
+            // چک کردن hit
+            if (move.to >= 0 && move.to < 24) {
+              const targetPoint = newBoardState.points[move.to];
+              const isOpponentSingle = targetPoint.checkers.length === 1 && 
+                                       targetPoint.checkers[0] === 'white';
+              
+              if (isOpponentSingle) {
+                // Hit white checker
+                targetPoint.checkers = [];
+                targetPoint.count = 0;
+                newBoardState.bar.white++;
+                console.log(`💥 Hit white checker at point ${move.to}`);
+              }
+
+              // قرار دادن مهره black در مقصد
+              newBoardState.points[move.to].checkers.push('black');
+              newBoardState.points[move.to].count++;
+            } else if (move.to === 24 || move.to === -1) {
+              // Bear off
+              newBoardState.off.black++;
+              console.log(`🏁 Bore off black checker`);
+            }
+
+            return {
+              ...prev,
+              boardState: newBoardState,
+              selectedPoint: null,
+            };
+          });
           
           // وقفه برای نمایش حرکت
           await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // پاک کردن انتخاب
-          setGameState(prev => ({
-            ...prev,
-            selectedPoint: null,
-          }));
         }
 
-        // 4️⃣ دریافت state نهایی از backend (همه حرکات اعمال شده)
+        console.log(`✅ All ${aiResult.moves.length} moves executed visually`);
+
+        // 4️⃣ دریافت state نهایی از backend (برای اطمینان)
         const updatedGame = await gamePersistenceAPI.getGame(backendGameId);
         console.log('📥 Fetched final game state from backend');
 
@@ -120,7 +172,8 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId }: UseAI
             []
           );
 
-          setGameState({
+          setGameState((prev) => ({
+            ...prev,
             boardState: updatedGame.gameState,
             currentPlayer: updatedGame.gameState.currentPlayer || 'white',
             diceValues: [],
@@ -128,8 +181,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId }: UseAI
             gamePhase: 'waiting',
             validMoves: newValidMoves,
             moveHistory: [],
-            openingRoll: gameState.openingRoll,
-          });
+          }));
 
           // 6️⃣ ⏱️ وقفه تصادفی قبل از Done (بین حداقل و حداکثر)
           const doneDelay = getRandomDelay();
@@ -182,18 +234,16 @@ async function finishAITurn(
         []
       );
 
-      setGameState({
-        boardState: updatedGame.gameState,
-        currentPlayer: updatedGame.gameState.currentPlayer || 'white',
-        diceValues: [],
-        selectedPoint: null,
-        gamePhase: 'waiting',
-        validMoves: newValidMoves,
-        moveHistory: [],
-        openingRoll: currentGameState.openingRoll,
-      });
-
-      console.log('✅ AI turn finished (no moves)');
+  setGameState((prev) => ({
+    ...prev,
+    boardState: updatedGame.gameState,
+    currentPlayer: updatedGame.gameState.currentPlayer || 'white',
+    diceValues: [],
+    selectedPoint: null,
+    gamePhase: 'waiting',
+    validMoves: newValidMoves,
+    moveHistory: [],
+  }));      console.log('✅ AI turn finished (no moves)');
     }
   } catch (error) {
     console.error('❌ Failed to finish AI turn:', error);
