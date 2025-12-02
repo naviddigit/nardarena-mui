@@ -295,6 +295,98 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
   };
 
+  // Force dice to show specific values (for testing/debugging)
+  const setDiceValues = (values: number[]) => {
+    if (!isReady) {
+      console.error('🎲 Dice system not ready yet');
+      return;
+    }
+    
+    if (isRolling) {
+      console.log('🎲 Already rolling, please wait');
+      return;
+    }
+    
+    if (!boxRef.current) {
+      console.error('🎲 Dice box not initialized');
+      return;
+    }
+    
+    if (!window.DICE) {
+      console.error('🎲 DICE library not available');
+      return;
+    }
+
+    console.log('🎲 Forcing dice values:', values);
+    setIsRolling(true);
+
+    // Play dice roll sound
+    try {
+      const audio = new Audio('/dice-main/assets/nc93322.mp3');
+      audio.volume = 0.5;
+      audio.play().catch((err) => console.log('Audio play failed:', err));
+    } catch (error) {
+      console.log('Audio not supported:', error);
+    }
+
+    const box = boxRef.current;
+
+    try {
+      const notation = window.DICE.parse_notation(diceNotation);
+      
+      if (!notation || notation.set.length === 0) {
+        console.error('🎲 Invalid dice notation');
+        setIsRolling(false);
+        return;
+      }
+
+      // Generate vectors for dice throw
+      const vector = { x: -1, y: 0 };
+      const boost = 500;
+      const vectors = box.generate_vectors(notation, vector, boost);
+      
+      if (!vectors || vectors.length === 0) {
+        console.error('🎲 Failed to generate vectors');
+        setIsRolling(false);
+        return;
+      }
+
+      console.log('🎲 Generated vectors:', vectors);
+
+      // Roll with forced values (pass as second parameter to box.roll)
+      const rollTimeout = setTimeout(() => {
+        console.error('🎲 Roll timeout - forcing completion');
+        setIsRolling(false);
+        const results: DiceResult[] = values.map((value) => ({
+          value,
+          type: 'd6',
+        }));
+        onRollComplete?.(results);
+      }, 5000);
+
+      // Pass forced values as the second parameter
+      // IMPORTANT: Use 'values' parameter directly, NOT the 'result' from callback
+      // because shift_dice_faces in dice.js doesn't always work correctly
+      box.roll(vectors, values, (result: number[]) => {
+        clearTimeout(rollTimeout);
+        console.log('🎲 Roll complete! Requested:', values, 'Got:', result);
+        
+        setIsRolling(false);
+        
+        // Use the values we requested, not what the callback returned
+        const results: DiceResult[] = values.map((value) => ({
+          value,
+          type: 'd6',
+        }));
+        
+        onRollComplete?.(results);
+      });
+    } catch (error) {
+      console.error('🎲 Error forcing dice values:', error);
+      setIsRolling(false);
+    }
+  };
+
   // Reload dice.js file (for hot-reload during development)
   const reloadDiceScript = async () => {
     try {
@@ -373,9 +465,10 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
   };
 
-  // Expose rollDice, clearDice, and reloadDiceScript methods via ref
+  // Expose rollDice, clearDice, setDiceValues, and reloadDiceScript methods via ref
   useImperativeHandle(ref, () => ({
     rollDice,
+    setDiceValues,
     clearDice: () => {
       if (boxRef.current && boxRef.current.clear) {
         console.log('🎲 Clearing dice...');

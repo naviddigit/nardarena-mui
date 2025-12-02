@@ -27,6 +27,7 @@ export function executeMoveFromBar(
     diceValue: validMove.die,
     from: -1,
     to: toIndex,
+    player: currentState.currentPlayer,
   };
 
   const newPoints = currentState.boardState.points.map((point) => ({
@@ -169,6 +170,7 @@ export function executeMoveFromPoint(
       diceValue: validMove.die,
       from: fromIndex,
       to: -2,
+      player: currentState.currentPlayer,
     };
 
     const newPoints = currentState.boardState.points.map((point) => ({
@@ -253,6 +255,7 @@ export function executeMoveFromPoint(
     diceValue: validMove.die,
     from: fromIndex,
     to: toIndex,
+    player: currentState.currentPlayer,
   };
 
   const newPoints = currentState.boardState.points.map((point) => ({

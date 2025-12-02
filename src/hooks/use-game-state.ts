@@ -349,5 +349,7 @@ export function useGameState(initialBoardState: BoardState) {
     startNewSet,
     checkSetWin,
     validDestinations,
+    // Direct state setter for AI moves from backend
+    setGameState,
   };
 }

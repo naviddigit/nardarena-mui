@@ -11,9 +11,10 @@ type DevHotkeysProps = {
   onSetStartTest?: () => void;
   onDiceRoll?: () => void;
   onDiceRefresh?: () => void;
+  onDoubleSix?: () => void; // Ctrl+6: Force dice to show 6,6
 };
 
-export function DevHotkeys({ onWinTest, onBothDemoAdd, onSetStartTest, onDiceRoll, onDiceRefresh }: DevHotkeysProps) {
+export function DevHotkeys({ onWinTest, onBothDemoAdd, onSetStartTest, onDiceRoll, onDiceRefresh, onDoubleSix }: DevHotkeysProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Ctrl+1: Trigger win effect for testing
@@ -45,11 +46,17 @@ export function DevHotkeys({ onWinTest, onBothDemoAdd, onSetStartTest, onDiceRol
         event.preventDefault();
         onDiceRefresh?.();
       }
+      
+      // Ctrl+6: Force dice to show 6,6 (for testing)
+      if (event.ctrlKey && event.key === '6') {
+        event.preventDefault();
+        onDoubleSix?.();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onWinTest, onBothDemoAdd, onSetStartTest, onDiceRoll, onDiceRefresh]);
+  }, [onWinTest, onBothDemoAdd, onSetStartTest, onDiceRoll, onDiceRefresh, onDoubleSix]);
 
   return null; // This component doesn't render anything
 }

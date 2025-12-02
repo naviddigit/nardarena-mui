@@ -10,7 +10,12 @@ const axiosInstance = axios.create({ baseURL: CONFIG.site.serverUrl });
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const accessToken = sessionStorage.getItem('accessToken');
+    // Try sessionStorage first (jwt_access_token)
+    let accessToken = sessionStorage.getItem('jwt_access_token');
+    // Fallback to old key for backwards compatibility
+    if (!accessToken) {
+      accessToken = sessionStorage.getItem('accessToken');
+    }
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }

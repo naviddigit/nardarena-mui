@@ -16,6 +16,7 @@ export type MoveHistory = {
   from: number;
   to: number;
   hitChecker?: Player;
+  player: Player; // Player who made the move
 };
 
 export type GameState = {

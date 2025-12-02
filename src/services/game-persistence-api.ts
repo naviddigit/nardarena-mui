@@ -3,7 +3,7 @@
  * Handles saving and retrieving game data from backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
 
 // ----------------------------------------------------------------------
 // Types
@@ -17,6 +17,7 @@ export type EndReason = 'NORMAL_WIN' | 'RESIGNATION' | 'TIMEOUT' | 'DISCONNECTIO
 
 export interface CreateGameDto {
   gameType: GameType;
+  aiDifficulty?: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'; // AI difficulty level
   opponentId?: string; // Optional for AI games
   timeControl?: number; // seconds per player
   gameMode?: GameMode;
@@ -88,7 +89,16 @@ export interface GameHistoryItem {
 class GamePersistenceAPI {
   private getAuthToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('accessToken');
+    
+    // Try sessionStorage first (jwt_access_token)
+    const sessionToken = sessionStorage.getItem('jwt_access_token');
+    if (sessionToken) return sessionToken;
+    
+    // Fallback to localStorage (accessToken)
+    const localToken = localStorage.getItem('accessToken');
+    if (localToken) return localToken;
+    
+    return null;
   }
 
   private getHeaders(): HeadersInit {
@@ -108,6 +118,11 @@ class GamePersistenceAPI {
    * Create a new game
    */
   async createGame(data: CreateGameDto): Promise<GameResponse> {
+    const token = this.getAuthToken();
+    if (!token) {
+      throw new Error('No token provided');
+    }
+
     const response = await fetch(`${API_BASE_URL}/game/create`, {
       method: 'POST',
       headers: this.getHeaders(),
@@ -194,6 +209,91 @@ class GamePersistenceAPI {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: response.statusText }));
       throw new Error(error.message || 'Failed to get game history');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Trigger AI to make its move
+   */
+  async triggerAIMove(gameId: string): Promise<{
+    moves: Array<{ from: number; to: number }>;
+    diceRoll: [number, number];
+    difficulty: string;
+    newGameState: any;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/ai-move`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to trigger AI move');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Sync game state with backend (for dice rolls, phase changes, etc.)
+   */
+  async syncGameState(gameId: string, gameState: any, diceValues?: number[]): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/sync-state`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        gameState,
+        diceValues,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to sync game state');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Roll two dice on server (for fairness)
+   */
+  async rollDice(): Promise<{
+    dice: [number, number];
+    timestamp: string;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/game/dice/roll`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to roll dice');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Roll opening dice (one per player, no ties)
+   */
+  async rollOpeningDice(): Promise<{
+    white: number;
+    black: number;
+    winner: 'white' | 'black';
+    timestamp: string;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/game/dice/opening`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to roll opening dice');
     }
 
     return response.json();
