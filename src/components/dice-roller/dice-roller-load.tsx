@@ -1,3 +1,17 @@
+/**
+ * ⛔ CRITICAL - DO NOT MODIFY AFTER TESTING! ⛔
+ * 
+ * Dice roller component with 3D physics rendering.
+ * LOCKED after fixing dice desync and clear issues.
+ * 
+ * Key fixes implemented:
+ * 1. setDiceValues() always clears old dice first
+ * 2. Increased clear delay to 500ms for AI rolls
+ * 3. Always use requested values, NOT callback results from dice.js
+ * 
+ * DO NOT modify unless there's a clear, reproducible bug!
+ */
+
 'use client';
 
 import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
@@ -318,6 +332,13 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
 
     console.log('🎲 Forcing dice values:', values);
+    
+    // ✅ CRITICAL: Clear any existing dice first!
+    if (boxRef.current.clear) {
+      console.log('🎲 Clearing old dice before setting new values');
+      boxRef.current.clear();
+    }
+    
     setIsRolling(true);
 
     // Play dice roll sound

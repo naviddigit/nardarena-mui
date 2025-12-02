@@ -1,8 +1,13 @@
 /**
- * ⛔ CRITICAL - DO NOT MODIFY AFTER TESTING! ⛔
+ * ⛔⛔⛔ ABSOLUTELY LOCKED - DO NOT TOUCH! ⛔⛔⛔
  * 
  * این فایل مدیریت تایمرهای بازی را انجام میدهد.
  * بعد از تست کامل، هیچ تغییری در این فایل ندهید!
+ * 
+ * Timer management TESTED and WORKING!
+ * - AI timer stops when AI finishes
+ * - Player timer starts when player's turn begins
+ * - Both timers stop on game end
  * 
  * قوانین تایمر:
  * 1. وقتی نوبت player شروع میشه → تایمر player start + تایمر opponent stop

@@ -118,6 +118,27 @@ const mockSettings: GameSetting[] = [
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
+    // AI Behavior
+    {
+      id: '10',
+      key: 'ai.move_delay_min',
+      value: '1000',
+      description: 'Min AI move delay (ms) - Human-like behavior',
+      category: 'ai',
+      dataType: 'number',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: '11',
+      key: 'ai.move_delay_max',
+      value: '4000',
+      description: 'Max AI move delay (ms) - Human-like behavior',
+      category: 'ai',
+      dataType: 'number',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
   ];
 
 export default function GameSettingsView() {
@@ -261,6 +282,7 @@ export default function GameSettingsView() {
   const timingSettings = (localSettings || []).filter((s) => s.category === 'timing');
   const scoringSettings = (localSettings || []).filter((s) => s.category === 'scoring');
   const rulesSettings = (localSettings || []).filter((s) => s.category === 'rules');
+  const aiSettings = (localSettings || []).filter((s) => s.category === 'ai');
 
   return (
     <DashboardContent maxWidth="xl">
@@ -343,6 +365,22 @@ export default function GameSettingsView() {
               {scoringSettings.map((setting) =>
                 setting.dataType === 'boolean' ? renderSwitch(setting) : renderTextField(setting)
               )}
+            </Stack>
+          </Card>
+        )}
+
+        {/* AI Behavior Settings */}
+        {aiSettings.length > 0 && (
+          <Card sx={{ p: 3 }}>
+            <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
+              <Iconify icon="solar:cpu-bolt-bold-duotone" width={28} />
+              <Typography variant="h6">AI Behavior</Typography>
+            </Stack>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+              Control AI move delays to simulate human-like gameplay
+            </Typography>
+            <Stack spacing={2.5}>
+              {aiSettings.map((setting) => renderTextField(setting))}
             </Stack>
           </Card>
         )}

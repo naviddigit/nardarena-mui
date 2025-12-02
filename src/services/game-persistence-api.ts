@@ -298,6 +298,22 @@ class GamePersistenceAPI {
 
     return response.json();
   }
+
+  /**
+   * Get AI move delay settings
+   */
+  async getAIMoveDelays(): Promise<{ min: number; max: number }> {
+    const response = await fetch(`${API_BASE_URL}/settings/game/ai-delays`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get AI move delays');
+    }
+
+    return response.json();
+  }
 }
 
 // Singleton instance

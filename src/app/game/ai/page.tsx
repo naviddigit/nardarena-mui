@@ -324,6 +324,17 @@ function GameAIPageContent() {
     gameState,
     setGameState,
     backendGameId,
+    onTurnComplete: () => {
+      // ❌ DON'T clear AI dice here - let them stay until player rolls
+      // Players need to see what dice AI used!
+      
+      // ✅ Stop AI (black) timer and start player (white) timer
+      console.log('⏱️ AI turn complete - switching timers: black → white');
+      blackTimer.stopCountdown();
+      setTimeout(() => {
+        whiteTimer.startCountdown();
+      }, 100);
+    },
   });
 
   // Timer for White player (1800 seconds = 30 minutes)
@@ -867,16 +878,17 @@ function GameAIPageContent() {
         const waitingTimeout = setTimeout(async () => {
           if (isRolling || isWaitingForBackend) return;
           
-          // ✅ Clear old dice visually first
+          // ✅ Clear old dice visually first (increased delay)
           if (diceRollerRef.current?.clearDice) {
             diceRollerRef.current.clearDice();
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise(resolve => setTimeout(resolve, 500)); // ✅ Increased to 500ms
           }
           
           // Get backend dice directly
           setIsWaitingForBackend(true);
           try {
             const diceResponse = await gamePersistenceAPI.rollDice();
+            console.log('\ud83c\udfb2 Backend returned dice for AI:', diceResponse.dice);
             
             setSkipBackendDice(true);
             setIsWaitingForBackend(false);
@@ -893,6 +905,7 @@ function GameAIPageContent() {
             
             // Now trigger visual animation (this is just for show)
             if (diceRollerRef.current?.setDiceValues) {
+              console.log('\ud83c\udfb2 Triggering AI dice animation with values:', diceResponse.dice);
               setIsRolling(true);
               diceRollerRef.current.setDiceValues(diceResponse.dice);
             } else {

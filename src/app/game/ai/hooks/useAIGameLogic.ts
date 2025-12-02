@@ -20,14 +20,15 @@ import { gamePersistenceAPI } from 'src/services/game-persistence-api';
 import { calculateValidMoves } from 'src/hooks/game-logic/validation';
 import type { GameState } from 'src/hooks/game-logic/types';
 
-// ⚙️ تنظیمات delay برای حرکات AI (بر حسب میلی‌ثانیه)
-const AI_MOVE_DELAY_MIN = 1000; // حداقل 1 ثانیه
-const AI_MOVE_DELAY_MAX = 4000; // حداکثر 4 ثانیه
+// ⚠️ AI delay settings - loaded from backend
+let AI_MOVE_DELAY_MIN = 1000; // Default: 1 second
+let AI_MOVE_DELAY_MAX = 4000; // Default: 4 seconds
 
 interface UseAIGameLogicProps {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   backendGameId: string | null;
+  onTurnComplete?: () => void; // ✅ Callback when AI finishes turn
 }
 
 /**
@@ -37,8 +38,23 @@ function getRandomDelay(min: number = AI_MOVE_DELAY_MIN, max: number = AI_MOVE_D
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function useAIGameLogic({ gameState, setGameState, backendGameId }: UseAIGameLogicProps) {
+export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnComplete }: UseAIGameLogicProps) {
   const [isExecutingAIMove, setIsExecutingAIMove] = useState(false);
+
+  // Load AI delay settings from backend on mount
+  useEffect(() => {
+    const loadAIDelays = async () => {
+      try {
+        const delays = await gamePersistenceAPI.getAIMoveDelays();
+        AI_MOVE_DELAY_MIN = delays.min;
+        AI_MOVE_DELAY_MAX = delays.max;
+        console.log('⚙️ AI delays loaded:', delays);
+      } catch (error) {
+        console.warn('⚠️ Failed to load AI delays, using defaults');
+      }
+    };
+    loadAIDelays();
+  }, []);
 
   // اجرای خودکار حرکات AI
   useEffect(() => {
@@ -189,6 +205,12 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId }: UseAI
           await new Promise(resolve => setTimeout(resolve, doneDelay));
 
           console.log('✅ AI moves complete! Turn switched to player');
+          
+          // ✅ Call timer switch callback
+          if (onTurnComplete) {
+            console.log('⏱️ Calling onTurnComplete to switch timers');
+            onTurnComplete();
+          }
         }
       } catch (error: any) {
         console.error('❌ AI move failed:', error);
