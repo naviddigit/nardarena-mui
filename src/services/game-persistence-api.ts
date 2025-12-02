@@ -1,11 +1,7 @@
 /**
  * Game Persistence API Service
  * Handles saving and retrieving game data from backend
- * 
- * ✅ Uses axios for automatic token refresh on 401 errors
  */
-
-import axios from 'src/utils/axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
 
@@ -91,36 +87,107 @@ export interface GameHistoryItem {
 // ----------------------------------------------------------------------
 
 class GamePersistenceAPI {
+  private getAuthToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    
+    // Try sessionStorage first (jwt_access_token)
+    const sessionToken = sessionStorage.getItem('jwt_access_token');
+    if (sessionToken) return sessionToken;
+    
+    // Fallback to localStorage (accessToken)
+    const localToken = localStorage.getItem('accessToken');
+    if (localToken) return localToken;
+    
+    return null;
+  }
+
+  private getHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    const token = this.getAuthToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
+  }
+
   /**
    * Create a new game
    */
   async createGame(data: CreateGameDto): Promise<GameResponse> {
-    const response = await axios.post(`${API_BASE_URL}/game/create`, data);
-    return response.data;
+    const token = this.getAuthToken();
+    if (!token) {
+      throw new Error('No token provided');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/game/create`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to create game');
+    }
+
+    return response.json();
   }
 
   /**
    * Record a move in the game
    */
   async recordMove(gameId: string, data: RecordMoveDto): Promise<GameResponse> {
-    const response = await axios.post(`${API_BASE_URL}/game/${gameId}/move`, data);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/move`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to record move');
+    }
+
+    return response.json();
   }
 
   /**
    * End the game
    */
   async endGame(gameId: string, data: EndGameDto): Promise<GameResponse> {
-    const response = await axios.post(`${API_BASE_URL}/game/${gameId}/end`, data);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/end`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to end game');
+    }
+
+    return response.json();
   }
 
   /**
    * Get game details
    */
   async getGame(gameId: string): Promise<GameResponse> {
-    const response = await axios.get(`${API_BASE_URL}/game/${gameId}`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to get game');
+    }
+
+    return response.json();
   }
 
   /**
@@ -131,10 +198,20 @@ class GamePersistenceAPI {
     total: number;
     hasMore: boolean;
   }> {
-    const response = await axios.get(
-      `${API_BASE_URL}/game/history/me?limit=${limit}&offset=${offset}`
+    const response = await fetch(
+      `${API_BASE_URL}/game/history/me?limit=${limit}&offset=${offset}`,
+      {
+        method: 'GET',
+        headers: this.getHeaders(),
+      }
     );
-    return response.data;
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to get game history');
+    }
+
+    return response.json();
   }
 
   /**
@@ -146,19 +223,38 @@ class GamePersistenceAPI {
     difficulty: string;
     newGameState: any;
   }> {
-    const response = await axios.post(`${API_BASE_URL}/game/${gameId}/ai-move`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/ai-move`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to trigger AI move');
+    }
+
+    return response.json();
   }
 
   /**
    * Sync game state with backend (for dice rolls, phase changes, etc.)
    */
   async syncGameState(gameId: string, gameState: any, diceValues?: number[]): Promise<any> {
-    const response = await axios.patch(`${API_BASE_URL}/game/${gameId}/sync-state`, {
-      gameState,
-      diceValues,
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/sync-state`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        gameState,
+        diceValues,
+      }),
     });
-    return response.data;
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to sync game state');
+    }
+
+    return response.json();
   }
 
   /**
@@ -168,8 +264,17 @@ class GamePersistenceAPI {
     dice: [number, number];
     timestamp: string;
   }> {
-    const response = await axios.post(`${API_BASE_URL}/game/dice/roll`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/game/dice/roll`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to roll dice');
+    }
+
+    return response.json();
   }
 
   /**
@@ -181,48 +286,99 @@ class GamePersistenceAPI {
     winner: 'white' | 'black';
     timestamp: string;
   }> {
-    const response = await axios.post(`${API_BASE_URL}/game/dice/opening`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/game/dice/opening`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to roll opening dice');
+    }
+
+    return response.json();
   }
 
   /**
    * Get AI move delay settings
    */
   async getAIMoveDelays(): Promise<{ min: number; max: number }> {
-    const response = await axios.get(`${API_BASE_URL}/settings/game/ai-delays`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/settings/game/ai-delays`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get AI move delays');
+    }
+
+    return response.json();
   }
 
   /**
    * Get all game settings
    */
   async getAllGameSettings(): Promise<any[]> {
-    const response = await axios.get(`${API_BASE_URL}/settings/game`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/settings/game`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get game settings');
+    }
+
+    return response.json();
   }
 
   /**
    * Get game settings by category
    */
   async getGameSettingsByCategory(category: string): Promise<any[]> {
-    const response = await axios.get(`${API_BASE_URL}/settings/game/category/${category}`);
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/settings/game/category/${category}`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get category settings');
+    }
+
+    return response.json();
   }
 
   /**
    * Update single game setting (protected - requires auth)
    */
   async updateGameSetting(key: string, value: string): Promise<any> {
-    const response = await axios.put(`${API_BASE_URL}/settings/game/${key}`, { value });
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/settings/game/${key}`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update setting');
+    }
+
+    return response.json();
   }
 
   /**
    * Bulk update game settings (protected - requires auth)
    */
   async updateGameSettingsBulk(settings: Array<{ key: string; value: string }>): Promise<any[]> {
-    const response = await axios.patch(`${API_BASE_URL}/settings/game/bulk`, { settings });
-    return response.data;
+    const response = await fetch(`${API_BASE_URL}/settings/game/bulk`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ settings }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update settings');
+    }
+
+    return response.json();
   }
 }
 

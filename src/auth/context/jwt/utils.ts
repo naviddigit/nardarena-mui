@@ -52,14 +52,6 @@ export function isValidToken(accessToken: string) {
 // ----------------------------------------------------------------------
 
 export function tokenExpired(exp: number) {
-  // DISABLED: We now use auto-refresh system instead of forcing logout
-  // The auto-refresh interceptor will handle token refresh automatically
-  // See: src/hooks/use-auto-token-refresh.ts and src/utils/axios.ts
-  
-  // If we really need to logout, the 401 interceptor will handle it
-  // after refresh token also fails
-  
-  /* Original code - disabled:
   const currentTime = Date.now();
   const timeLeft = exp * 1000 - currentTime;
 
@@ -72,7 +64,6 @@ export function tokenExpired(exp: number) {
       throw error;
     }
   }, timeLeft);
-  */
 }
 
 // ----------------------------------------------------------------------

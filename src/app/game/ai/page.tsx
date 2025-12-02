@@ -42,7 +42,6 @@ import { useGameState } from 'src/hooks/use-game-state';
 import { calculateValidMoves } from 'src/hooks/game-logic/validation';
 import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { useSound } from 'src/hooks/use-sound';
-import { INITIAL_GAME_TIME } from './constants/game-config';
 import { useAIGame } from 'src/hooks/use-ai-game';
 import { _mock } from 'src/_mock';
 import { BoardThemeProvider } from 'src/contexts/board-theme-context';
@@ -338,10 +337,10 @@ function GameAIPageContent() {
     },
   });
 
-  // Timer for White player (configurable from game-config.ts)
-  const whiteTimer = useCountdownSeconds(INITIAL_GAME_TIME);
-  // Timer for Black player (configurable from game-config.ts)
-  const blackTimer = useCountdownSeconds(INITIAL_GAME_TIME);
+  // Timer for White player (1800 seconds = 30 minutes)
+  const whiteTimer = useCountdownSeconds(1800);
+  // Timer for Black player (1800 seconds = 30 minutes)
+  const blackTimer = useCountdownSeconds(1800);
 
   // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
   useGameTimers({
@@ -715,8 +714,8 @@ function GameAIPageContent() {
     setCurrentSet(1);
     setBackendGameId(null); // Reset backend game ID for new game
     setMoveCounter(0); // Reset move counter
-    whiteTimer.setCountdown(INITIAL_GAME_TIME);
-    blackTimer.setCountdown(INITIAL_GAME_TIME);
+    whiteTimer.setCountdown(1800);
+    blackTimer.setCountdown(1800);
     whiteTimer.stopCountdown();
     blackTimer.stopCountdown();
     // Reset game state to initial
