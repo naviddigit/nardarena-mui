@@ -12,6 +12,11 @@ export function useAutoTokenRefresh() {
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // ✅ Only run in browser (client-side)
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
     const refreshToken = async () => {
       try {
         const refreshTokenValue = sessionStorage.getItem('jwt_refresh_token') || 
