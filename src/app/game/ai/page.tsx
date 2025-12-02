@@ -20,6 +20,29 @@
  * 3. تایید بگیرید
  */
 
+/**
+ * ⛔⛔⛔ ABSOLUTELY CRITICAL - DO NOT MODIFY THIS FILE! ⛔⛔⛔
+ * 
+ * AI Game Page - Main game logic container
+ * 
+ * LOCKED AFTER MONTHS OF DEBUGGING:
+ * - Dice synchronization with backend
+ * - Timer management between players
+ * - AI move execution with delays
+ * - Roll button control logic
+ * - State management and game flow
+ * 
+ * This file is the heart of the game. Any modification will break:
+ * - Dice roll timing
+ * - AI vs Player turn switching
+ * - Timer countdown
+ * - Move execution order
+ * 
+ * ⚠️ User has explicitly forbidden modifications to this file!
+ * 
+ * Last stable: Dec 2, 2025
+ */
+
 'use client';
 
 import { useRef, useState, useEffect, useMemo, useCallback, Suspense } from 'react';
