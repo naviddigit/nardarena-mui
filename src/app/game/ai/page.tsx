@@ -242,6 +242,7 @@ function GameAIPageContent() {
   const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
   const [shareToast, setShareToast] = useState(false);
+  const timeControlRef = useRef(1800); // Default 30 minutes, loaded from DB
   
   // AI Game hook
   const {
@@ -303,6 +304,16 @@ function GameAIPageContent() {
     }, 1200);
     return () => clearTimeout(timer);
   }, []);
+
+  // Load time control from database (runs once on mount)
+  useEffect(() => {
+    gamePersistenceAPI.getGameTimeControl().then((time) => {
+      timeControlRef.current = time;
+      console.log('⏱️ Time control loaded:', time, 'seconds');
+    }).catch((err) => {
+      console.error('Failed to load time control:', err);
+    });
+  }, []);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
@@ -337,10 +348,10 @@ function GameAIPageContent() {
     },
   });
 
-  // Timer for White player (1800 seconds = 30 minutes)
-  const whiteTimer = useCountdownSeconds(1800);
-  // Timer for Black player (1800 seconds = 30 minutes)
-  const blackTimer = useCountdownSeconds(1800);
+  // Timer for White player (loaded from database)
+  const whiteTimer = useCountdownSeconds(timeControlRef.current);
+  // Timer for Black player (loaded from database)
+  const blackTimer = useCountdownSeconds(timeControlRef.current);
 
   // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
   useGameTimers({
@@ -714,8 +725,8 @@ function GameAIPageContent() {
     setCurrentSet(1);
     setBackendGameId(null); // Reset backend game ID for new game
     setMoveCounter(0); // Reset move counter
-    whiteTimer.setCountdown(1800);
-    blackTimer.setCountdown(1800);
+    whiteTimer.setCountdown(timeControlRef.current);
+    blackTimer.setCountdown(timeControlRef.current);
     whiteTimer.stopCountdown();
     blackTimer.stopCountdown();
     // Reset game state to initial
