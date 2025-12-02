@@ -380,6 +380,21 @@ class GamePersistenceAPI {
 
     return response.json();
   }
+
+  /**
+   * Get game time control from settings (in seconds)
+   * Returns total time per game from database, defaults to 1800 (30 min)
+   */
+  async getGameTimeControl(): Promise<number> {
+    try {
+      const settings = await this.getAllGameSettings();
+      const timeSetting = settings.find((s: any) => s.key === 'game.total_time_per_game');
+      return timeSetting ? parseInt(timeSetting.value, 10) : 1800;
+    } catch (error) {
+      console.error('Failed to get time control, using default:', error);
+      return 1800; // Default 30 minutes
+    }
+  }
 }
 
 // Singleton instance

@@ -242,6 +242,7 @@ function GameAIPageContent() {
   const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
   const [shareToast, setShareToast] = useState(false);
+  const [timeControl, setTimeControl] = useState(1800); // Default 30 minutes, loaded from settings
   
   // AI Game hook
   const {
@@ -303,6 +304,21 @@ function GameAIPageContent() {
     }, 1200);
     return () => clearTimeout(timer);
   }, []);
+
+  // Load time control from game settings on component mount
+  useEffect(() => {
+    const loadTimeControl = async () => {
+      try {
+        const time = await gamePersistenceAPI.getGameTimeControl();
+        console.log('⏱️ Time control loaded from settings:', time, 'seconds');
+        setTimeControl(time);
+      } catch (error) {
+        console.error('Failed to load time control, using default:', error);
+        // Keep default 1800
+      }
+    };
+    loadTimeControl();
+  }, []);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
@@ -337,10 +353,16 @@ function GameAIPageContent() {
     },
   });
 
-  // Timer for White player (1800 seconds = 30 minutes)
-  const whiteTimer = useCountdownSeconds(1800);
-  // Timer for Black player (1800 seconds = 30 minutes)
-  const blackTimer = useCountdownSeconds(1800);
+  // Timer for White player (dynamic from game settings)
+  const whiteTimer = useCountdownSeconds(timeControl);
+  // Timer for Black player (dynamic from game settings)
+  const blackTimer = useCountdownSeconds(timeControl);
+
+  // Update timers when timeControl changes
+  useEffect(() => {
+    whiteTimer.setCountdown(timeControl);
+    blackTimer.setCountdown(timeControl);
+  }, [timeControl, whiteTimer, blackTimer]);
 
   // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
   useGameTimers({
