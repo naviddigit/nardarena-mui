@@ -26,7 +26,47 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject((error.response && error.response.data) || 'Something went wrong!')
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If error is 401 and we haven't tried to refresh yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Get refresh token
+        const refreshToken = sessionStorage.getItem('jwt_refresh_token') || 
+                           sessionStorage.getItem('refreshToken');
+
+        if (refreshToken) {
+          // Call refresh endpoint
+          const response = await axios.post(`${CONFIG.site.serverUrl}/api/auth/refresh`, {
+            refreshToken,
+          });
+
+          const { accessToken: newAccessToken } = response.data;
+
+          // Update tokens in storage
+          sessionStorage.setItem('jwt_access_token', newAccessToken);
+          sessionStorage.setItem('accessToken', newAccessToken); // Backwards compatibility
+
+          // Update authorization header
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+          // Retry original request with new token
+          return axiosInstance(originalRequest);
+        }
+      } catch (refreshError) {
+        // Refresh failed, redirect to login
+        console.error('Token refresh failed:', refreshError);
+        sessionStorage.clear();
+        window.location.href = '/auth/jwt/sign-in';
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject((error.response && error.response.data) || 'Something went wrong!');
+  }
 );
 
 export default axiosInstance;

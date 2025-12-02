@@ -14,6 +14,7 @@ import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { detectSettings } from 'src/components/settings/server';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
 import { SnackbarProvider } from 'src/components/snackbar';
+import { TokenRefreshProvider } from 'src/components/token-refresh';
 
 import { AuthProvider } from 'src/auth/context/jwt';
 
@@ -38,20 +39,22 @@ export default async function RootLayout({ children }: Props) {
         {getInitColorSchemeScript}
 
         <AuthProvider>
-          <SettingsProvider
-            settings={settings}
-            caches={CONFIG.isStaticExport ? 'localStorage' : 'cookie'}
-          >
-            <ThemeProvider>
-              <MotionLazy>
-                <SnackbarProvider>
-                  <ProgressBar />
-                  <SettingsDrawer />
-                  {children}
-                </SnackbarProvider>
-              </MotionLazy>
-            </ThemeProvider>
-          </SettingsProvider>
+          <TokenRefreshProvider>
+            <SettingsProvider
+              settings={settings}
+              caches={CONFIG.isStaticExport ? 'localStorage' : 'cookie'}
+            >
+              <ThemeProvider>
+                <MotionLazy>
+                  <SnackbarProvider>
+                    <ProgressBar />
+                    <SettingsDrawer />
+                    {children}
+                  </SnackbarProvider>
+                </MotionLazy>
+              </ThemeProvider>
+            </SettingsProvider>
+          </TokenRefreshProvider>
         </AuthProvider>
       </body>
     </html>
