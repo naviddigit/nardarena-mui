@@ -43,6 +43,7 @@ import { calculateValidMoves } from 'src/hooks/game-logic/validation';
 import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { useSound } from 'src/hooks/use-sound';
 import { useAIGame } from 'src/hooks/use-ai-game';
+import { useGameTimeControl } from 'src/hooks/use-game-time-control';
 import { _mock } from 'src/_mock';
 import { BoardThemeProvider } from 'src/contexts/board-theme-context';
 import { useAuthContext } from 'src/auth/hooks';
@@ -242,7 +243,9 @@ function GameAIPageContent() {
   const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
   const [shareToast, setShareToast] = useState(false);
-  const timeControlRef = useRef(1800); // Default 30 minutes, loaded from DB
+  
+  // Load time control from database (hook handles caching)
+  const timeControl = useGameTimeControl();
   
   // AI Game hook
   const {
@@ -304,16 +307,6 @@ function GameAIPageContent() {
     }, 1200);
     return () => clearTimeout(timer);
   }, []);
-
-  // Load time control from database (runs once on mount)
-  useEffect(() => {
-    gamePersistenceAPI.getGameTimeControl().then((time) => {
-      timeControlRef.current = time;
-      console.log('⏱️ Time control loaded:', time, 'seconds');
-    }).catch((err) => {
-      console.error('Failed to load time control:', err);
-    });
-  }, []);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
@@ -349,9 +342,9 @@ function GameAIPageContent() {
   });
 
   // Timer for White player (loaded from database)
-  const whiteTimer = useCountdownSeconds(timeControlRef.current);
+  const whiteTimer = useCountdownSeconds(timeControl);
   // Timer for Black player (loaded from database)
-  const blackTimer = useCountdownSeconds(timeControlRef.current);
+  const blackTimer = useCountdownSeconds(timeControl);
 
   // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
   useGameTimers({
@@ -725,15 +718,15 @@ function GameAIPageContent() {
     setCurrentSet(1);
     setBackendGameId(null); // Reset backend game ID for new game
     setMoveCounter(0); // Reset move counter
-    whiteTimer.setCountdown(timeControlRef.current);
-    blackTimer.setCountdown(timeControlRef.current);
+    whiteTimer.setCountdown(timeControl);
+    blackTimer.setCountdown(timeControl);
     whiteTimer.stopCountdown();
     blackTimer.stopCountdown();
     // Reset game state to initial
     if (resetGame) {
       resetGame();
     }
-  }, [resetGame, whiteTimer, blackTimer]);
+  }, [resetGame, whiteTimer, blackTimer, timeControl]);
 
   const handleBackToDashboard = () => {
     router.push('/');
