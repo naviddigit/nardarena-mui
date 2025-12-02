@@ -30,13 +30,19 @@ export const signInWithPassword = async ({ email, password }: SignInParams): Pro
 
     const res = await axios.post(endpoints.auth.signIn, params);
 
-    const { access_token, user } = res.data;
+    const { access_token, refresh_token, user } = res.data;
 
     if (!access_token) {
       throw new Error('Access token not found in response');
     }
 
     setSession(access_token);
+    
+    // Store refresh token for auto-refresh system
+    if (refresh_token) {
+      sessionStorage.setItem('jwt_refresh_token', refresh_token);
+      sessionStorage.setItem('refreshToken', refresh_token); // Backwards compatibility
+    }
     
     return user; // Return user data including role
   } catch (error) {
@@ -68,13 +74,19 @@ export const signUp = async ({
   try {
     const res = await axios.post(endpoints.auth.signUp, params);
 
-    const { access_token } = res.data;
+    const { access_token, refresh_token } = res.data;
 
     if (!access_token) {
       throw new Error('Access token not found in response');
     }
 
     sessionStorage.setItem(STORAGE_KEY, access_token);
+    
+    // Store refresh token for auto-refresh system
+    if (refresh_token) {
+      sessionStorage.setItem('jwt_refresh_token', refresh_token);
+      sessionStorage.setItem('refreshToken', refresh_token); // Backwards compatibility
+    }
   } catch (error) {
     console.error('Error during sign up:', error);
     console.error('Error response data:', error?.response?.data);
@@ -88,6 +100,10 @@ export const signUp = async ({
 export const signOut = async (): Promise<void> => {
   try {
     await setSession(null);
+    
+    // Clear refresh token as well
+    sessionStorage.removeItem('jwt_refresh_token');
+    sessionStorage.removeItem('refreshToken');
   } catch (error) {
     console.error('Error during sign out:', error);
     throw error;
