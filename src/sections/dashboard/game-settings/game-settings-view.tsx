@@ -173,11 +173,11 @@ export default function GameSettingsView() {
     />
   );
 
-  // Filter settings by category (with safe checks)
-  const timingSettings = (localSettings || []).filter((s) => s.category === 'timing');
-  const scoringSettings = (localSettings || []).filter((s) => s.category === 'scoring');
-  const rulesSettings = (localSettings || []).filter((s) => s.category === 'rules');
-  const aiSettings = (localSettings || []).filter((s) => s.category === 'ai');
+  // Filter settings by category (case-insensitive to match backend uppercase)
+  const timingSettings = (localSettings || []).filter((s) => s.category?.toLowerCase() === 'timing');
+  const scoringSettings = (localSettings || []).filter((s) => s.category?.toLowerCase() === 'scoring');
+  const rulesSettings = (localSettings || []).filter((s) => s.category?.toLowerCase() === 'rules');
+  const aiSettings = (localSettings || []).filter((s) => s.category?.toLowerCase() === 'ai');
 
   return (
     <DashboardContent maxWidth="xl">
