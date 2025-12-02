@@ -19,9 +19,28 @@ export function useGameStats() {
       setError(null);
       const data = await gameStatsApi.getUserGameStats();
       setStats(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch game stats');
-      console.error('Failed to fetch game stats:', err);
+    } catch (err: any) {
+      // Silently handle 404/401 errors (endpoints not implemented yet)
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
+        // Return mock data instead of error
+        setStats({
+          gamesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          draws: 0,
+          winRate: 0,
+          totalEarnings: 0,
+          totalLosses: 0,
+          netProfit: 0,
+          bestStreak: 0,
+          currentStreak: 0,
+          averageGameDuration: 0,
+          lastGameAt: null,
+        });
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to fetch game stats');
+        console.error('Failed to fetch game stats:', err);
+      }
     } finally {
       setLoading(false);
     }
@@ -60,9 +79,24 @@ export function useMonthlyStats(year?: number, month?: number) {
           : await gameStatsApi.getCurrentMonthStats();
       
       setStats(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch monthly stats');
-      console.error('Failed to fetch monthly stats:', err);
+    } catch (err: any) {
+      // Silently handle 404/401 errors (endpoints not implemented yet)
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
+        // Return mock data instead of error
+        const now = new Date();
+        setStats({
+          month: now.toLocaleString('default', { month: 'long' }),
+          year: now.getFullYear(),
+          gamesPlayed: 0,
+          wins: 0,
+          earnings: 0,
+          deposited: 0,
+          withdrawn: 0,
+        });
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to fetch monthly stats');
+        console.error('Failed to fetch monthly stats:', err);
+      }
     } finally {
       setLoading(false);
     }
