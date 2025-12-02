@@ -23,133 +23,12 @@ import { useGameSettings, useUpdateGameSettings } from 'src/hooks/use-game-setti
 
 // ----------------------------------------------------------------------
 
-// TEMPORARY MOCK DATA - Until backend implements game settings (moved outside component)
-const mockSettings: GameSetting[] = [
-    // Timing
-    {
-      id: '1',
-      key: 'game.time_per_move',
-      value: '30',
-      description: 'Time per move (seconds)',
-      category: 'timing',
-      dataType: 'number',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      key: 'game.total_time_per_game',
-      value: '120',
-      description: 'Total game time (seconds)',
-      category: 'timing',
-      dataType: 'number',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    // Scoring
-    {
-      id: '3',
-      key: 'game.points_per_win',
-      value: '1',
-      description: 'Points per set win',
-      category: 'scoring',
-      dataType: 'number',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '4',
-      key: 'game.double_enabled',
-      value: 'true',
-      description: 'Enable double request',
-      category: 'scoring',
-      dataType: 'boolean',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '5',
-      key: 'game.mars_enabled',
-      value: 'true',
-      description: 'Enable Mars (backgammon)',
-      category: 'scoring',
-      dataType: 'boolean',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '6',
-      key: 'game.mars_applies_on_doubled',
-      value: 'true',
-      description: 'Mars counts double in doubled games',
-      category: 'scoring',
-      dataType: 'boolean',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    // Rules
-    {
-      id: '7',
-      key: 'game.allow_undo',
-      value: 'false',
-      description: 'Allow undo move',
-      category: 'rules',
-      dataType: 'boolean',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '8',
-      key: 'game.one_game_per_player',
-      value: 'true',
-      description: 'One active game per player',
-      category: 'rules',
-      dataType: 'boolean',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '9',
-      key: 'game.max_board_requests',
-      value: '5',
-      description: 'Max pending game requests',
-      category: 'rules',
-      dataType: 'number',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    // AI Behavior
-    {
-      id: '10',
-      key: 'ai.move_delay_min',
-      value: '1000',
-      description: 'Min AI move delay (ms) - Human-like behavior',
-      category: 'ai',
-      dataType: 'number',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '11',
-      key: 'ai.move_delay_max',
-      value: '4000',
-      description: 'Max AI move delay (ms) - Human-like behavior',
-      category: 'ai',
-      dataType: 'number',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ];
-
 export default function GameSettingsView() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   
-  // Fetch settings from API (with error handling)
+  // Fetch settings from API
   const { settings: apiSettings = [], loading: fetchLoading, refetch } = useGameSettings();
   const { updateBulk, resetToDefaults, loading: updateLoading } = useUpdateGameSettings();
-
-  // Use mock data if API returns empty, otherwise use API data
-  const settings = apiSettings.length > 0 ? apiSettings : mockSettings;
 
   // Local state for editing
   const [localSettings, setLocalSettings] = useState<GameSetting[]>([]);
@@ -158,13 +37,13 @@ export default function GameSettingsView() {
   const [betAmounts, setBetAmounts] = useState<number[]>([5, 10, 25, 50, 100, 250, 500]);
   const [newBetAmount, setNewBetAmount] = useState('');
 
-  // Sync local state with fetched settings ONCE on mount or when apiSettings changes
+  // Sync local state with fetched settings whenever apiSettings changes
   useEffect(() => {
-    if (settings && settings.length > 0 && localSettings.length === 0) {
-      setLocalSettings(settings);
+    if (apiSettings && apiSettings.length > 0) {
+      setLocalSettings(apiSettings);
       
       // Parse bet amounts from settings
-      const betSetting = settings.find((s) => s.key === 'game.allowed_bet_amounts');
+      const betSetting = apiSettings.find((s) => s.key === 'game.allowed_bet_amounts');
       if (betSetting) {
         try {
           const amounts = JSON.parse(betSetting.value);
@@ -174,7 +53,7 @@ export default function GameSettingsView() {
         }
       }
     }
-  }, [settings, localSettings.length]);
+  }, [apiSettings]);
 
   // Handle setting change
   const handleSettingChange = useCallback((id: string, newValue: string) => {
@@ -214,13 +93,26 @@ export default function GameSettingsView() {
   // Save settings to backend
   const handleSave = useCallback(async () => {
     try {
-      const updates = localSettings.map((s) => ({ key: s.key, value: s.value }));
+      // Only update settings that exist in API (not mock data)
+      // Filter by checking if setting exists in apiSettings
+      const realSettings = localSettings.filter((s) => 
+        apiSettings.some((api) => api.key === s.key)
+      );
       
-      // Add bet amounts to updates
-      updates.push({
-        key: 'game.allowed_bet_amounts',
-        value: JSON.stringify(betAmounts),
-      });
+      const updates = realSettings.map((s) => ({ key: s.key, value: s.value }));
+      
+      // Only add bet amounts if it exists in apiSettings
+      if (apiSettings.some((s) => s.key === 'game.allowed_bet_amounts')) {
+        updates.push({
+          key: 'game.allowed_bet_amounts',
+          value: JSON.stringify(betAmounts),
+        });
+      }
+      
+      if (updates.length === 0) {
+        console.warn('No real settings to update');
+        return;
+      }
       
       await updateBulk(updates);
 
@@ -232,7 +124,7 @@ export default function GameSettingsView() {
     } catch (error) {
       console.error('Failed to save settings:', error);
     }
-  }, [localSettings, betAmounts, updateBulk, refetch]);
+  }, [localSettings, apiSettings, betAmounts, updateBulk, refetch]);
 
   // Reset to defaults
   const handleReset = useCallback(async () => {

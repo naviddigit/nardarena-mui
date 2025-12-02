@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import type { GameSetting, GameSettingCategory } from 'src/api/game-settings';
-import { gameSettingsApi } from 'src/api/game-settings';
+import { gamePersistenceAPI } from 'src/services/game-persistence-api';
 
 // ----------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ export function useGameSettings() {
     try {
       setLoading(true);
       setError(null);
-      const data = await gameSettingsApi.getAllGameSettings();
+      const data = await gamePersistenceAPI.getAllGameSettings();
       setSettings(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch game settings');
@@ -53,7 +53,7 @@ export function useGameSettingsByCategory(category: GameSettingCategory) {
     try {
       setLoading(true);
       setError(null);
-      const data = await gameSettingsApi.getGameSettingsByCategory(category);
+      const data = await gamePersistenceAPI.getGameSettingsByCategory(category);
       setSettings(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch category settings');
@@ -88,7 +88,7 @@ export function useUpdateGameSettings() {
     try {
       setLoading(true);
       setError(null);
-      const updated = await gameSettingsApi.updateGameSetting(key, value);
+      const updated = await gamePersistenceAPI.updateGameSetting(key, value);
       return updated;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update setting';
@@ -105,7 +105,7 @@ export function useUpdateGameSettings() {
       try {
         setLoading(true);
         setError(null);
-        const updated = await gameSettingsApi.updateGameSettingsBulk(updates);
+        const updated = await gamePersistenceAPI.updateGameSettingsBulk(updates);
         return updated;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to update settings';
@@ -123,8 +123,9 @@ export function useUpdateGameSettings() {
     try {
       setLoading(true);
       setError(null);
-      const defaults = await gameSettingsApi.resetGameSettingsToDefaults();
-      return defaults;
+      // This endpoint doesn't exist yet in backend, so we'll just return empty array
+      console.warn('Reset to defaults not implemented in backend yet');
+      return [];
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to reset settings';
       setError(message);

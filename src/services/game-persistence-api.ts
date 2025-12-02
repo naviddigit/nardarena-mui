@@ -314,6 +314,72 @@ class GamePersistenceAPI {
 
     return response.json();
   }
+
+  /**
+   * Get all game settings
+   */
+  async getAllGameSettings(): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/settings/game`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get game settings');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get game settings by category
+   */
+  async getGameSettingsByCategory(category: string): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/settings/game/category/${category}`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get category settings');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Update single game setting (protected - requires auth)
+   */
+  async updateGameSetting(key: string, value: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/settings/game/${key}`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update setting');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Bulk update game settings (protected - requires auth)
+   */
+  async updateGameSettingsBulk(settings: Array<{ key: string; value: string }>): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/settings/game/bulk`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ settings }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update settings');
+    }
+
+    return response.json();
+  }
 }
 
 // Singleton instance
