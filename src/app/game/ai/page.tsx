@@ -42,8 +42,8 @@ import { useGameState } from 'src/hooks/use-game-state';
 import { calculateValidMoves } from 'src/hooks/game-logic/validation';
 import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { useSound } from 'src/hooks/use-sound';
+import { INITIAL_GAME_TIME } from './constants/game-config';
 import { useAIGame } from 'src/hooks/use-ai-game';
-import { useGameTimeControl } from 'src/hooks/use-game-time-control';
 import { _mock } from 'src/_mock';
 import { BoardThemeProvider } from 'src/contexts/board-theme-context';
 import { useAuthContext } from 'src/auth/hooks';
@@ -244,9 +244,6 @@ function GameAIPageContent() {
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
   const [shareToast, setShareToast] = useState(false);
   
-  // Load time control from database (hook handles caching)
-  const timeControl = useGameTimeControl();
-  
   // AI Game hook
   const {
     isAIThinking,
@@ -341,10 +338,10 @@ function GameAIPageContent() {
     },
   });
 
-  // Timer for White player (loaded from database)
-  const whiteTimer = useCountdownSeconds(timeControl);
-  // Timer for Black player (loaded from database)
-  const blackTimer = useCountdownSeconds(timeControl);
+  // Timer for White player (configurable from game-config.ts)
+  const whiteTimer = useCountdownSeconds(INITIAL_GAME_TIME);
+  // Timer for Black player (configurable from game-config.ts)
+  const blackTimer = useCountdownSeconds(INITIAL_GAME_TIME);
 
   // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
   useGameTimers({
@@ -718,15 +715,15 @@ function GameAIPageContent() {
     setCurrentSet(1);
     setBackendGameId(null); // Reset backend game ID for new game
     setMoveCounter(0); // Reset move counter
-    whiteTimer.setCountdown(timeControl);
-    blackTimer.setCountdown(timeControl);
+    whiteTimer.setCountdown(INITIAL_GAME_TIME);
+    blackTimer.setCountdown(INITIAL_GAME_TIME);
     whiteTimer.stopCountdown();
     blackTimer.stopCountdown();
     // Reset game state to initial
     if (resetGame) {
       resetGame();
     }
-  }, [resetGame, whiteTimer, blackTimer, timeControl]);
+  }, [resetGame, whiteTimer, blackTimer]);
 
   const handleBackToDashboard = () => {
     router.push('/');

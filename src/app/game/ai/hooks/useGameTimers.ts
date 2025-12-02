@@ -18,6 +18,7 @@
 
 import { useEffect } from 'react';
 import type { GameState } from 'src/hooks/game-logic/types';
+import { INITIAL_GAME_TIME } from '../constants/game-config';
 
 interface UseGameTimersProps {
   gameState: GameState;
@@ -53,14 +54,14 @@ export function useGameTimers({
 
     // Start white timer if it's white's turn and timer hasn't started
     if (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting') {
-      if (!whiteTimer.counting && whiteTimer.countdown === 1800) {
+      if (!whiteTimer.counting && whiteTimer.countdown === INITIAL_GAME_TIME) {
         console.log('⏱️ Starting white timer');
         whiteTimer.startCountdown();
       }
     }
     // Start black timer if it's black's turn and timer hasn't started
     else if (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting') {
-      if (!blackTimer.counting && blackTimer.countdown === 1800) {
+      if (!blackTimer.counting && blackTimer.countdown === INITIAL_GAME_TIME) {
         console.log('⏱️ Starting black timer');
         blackTimer.startCountdown();
       }

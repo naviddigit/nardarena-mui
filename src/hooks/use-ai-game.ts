@@ -46,8 +46,12 @@ export function useAIGame(options: UseAIGameOptions = {}) {
             setIsAIThinking(false);
           }
         }
-      } catch (error) {
-        console.error('Error polling game state:', error);
+      } catch (error: any) {
+        // Only log critical errors, skip auth errors (401 will be handled by interceptor)
+        if (error?.response?.status !== 401 && error?.message !== 'Invalid or expired token') {
+          console.error('Error polling game state:', error);
+        }
+        // Don't stop polling - interceptor will handle 401 and retry
       }
     }, 1000); // Poll every 1 second
   }, [onGameUpdate]);
