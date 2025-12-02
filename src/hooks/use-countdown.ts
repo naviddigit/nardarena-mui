@@ -74,6 +74,15 @@ export type UseCountdownSecondsReturn = {
 
 export function useCountdownSeconds(initCountdown: number): UseCountdownSecondsReturn {
   const [countdown, setCountdown] = useState(initCountdown);
+  const initCountdownRef = useRef(initCountdown);
+
+  // Update countdown when initCountdown changes (but only if timer is not running)
+  useEffect(() => {
+    if (initCountdown !== initCountdownRef.current && !startTimeRef.current) {
+      setCountdown(initCountdown);
+      initCountdownRef.current = initCountdown;
+    }
+  }, [initCountdown]);
 
   // Store start time to calculate actual elapsed time (防止 minimize 时停止)
   const startTimeRef = useRef<number | null>(null);

@@ -358,12 +358,6 @@ function GameAIPageContent() {
   // Timer for Black player (dynamic from game settings)
   const blackTimer = useCountdownSeconds(timeControl);
 
-  // Update timers when timeControl changes
-  useEffect(() => {
-    whiteTimer.setCountdown(timeControl);
-    blackTimer.setCountdown(timeControl);
-  }, [timeControl, whiteTimer, blackTimer]);
-
   // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
   useGameTimers({
     gameState,
