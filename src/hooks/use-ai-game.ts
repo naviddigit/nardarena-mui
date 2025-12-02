@@ -67,17 +67,14 @@ export function useAIGame(options: UseAIGameOptions = {}) {
    */
   const createAIGame = useCallback(async () => {
     try {
-      // Get time control from game settings (default 1800 if not set)
-      const timeControl = await gamePersistenceAPI.getGameTimeControl();
-      
       const game = await gamePersistenceAPI.createGame({
         gameType: 'AI',
         aiDifficulty,
         gameMode: 'CLASSIC',
-        timeControl, // Dynamic value from database
+        timeControl: 1800, // 30 minutes
       });
 
-      console.log('✅ AI Game created:', game.id, 'Difficulty:', aiDifficulty, 'Time:', timeControl);
+      console.log('✅ AI Game created:', game.id, 'Difficulty:', aiDifficulty);
       lastGameStateRef.current = game.gameState;
       
       return game;

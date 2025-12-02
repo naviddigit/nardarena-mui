@@ -74,21 +74,12 @@ export type UseCountdownSecondsReturn = {
 
 export function useCountdownSeconds(initCountdown: number): UseCountdownSecondsReturn {
   const [countdown, setCountdown] = useState(initCountdown);
-  const initCountdownRef = useRef(initCountdown);
 
   // Store start time to calculate actual elapsed time (防止 minimize 时停止)
   const startTimeRef = useRef<number | null>(null);
   const targetTimeRef = useRef<number | null>(null);
   const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
   const rafIdRef = useRef<number | null>(null);
-
-  // Update countdown when initCountdown changes (but only if timer is not running)
-  useEffect(() => {
-    if (initCountdown !== initCountdownRef.current && !startTimeRef.current) {
-      setCountdown(initCountdown);
-      initCountdownRef.current = initCountdown;
-    }
-  }, [initCountdown]);
 
   // Use requestAnimationFrame + Date.now() for accurate timing even when tab is inactive
   const updateCountdown = useCallback(() => {
