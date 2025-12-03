@@ -90,6 +90,16 @@ import { BackgammonBoard, type BoardState } from 'src/components/backgammon-boar
 import { GameSettingsDrawer } from 'src/components/game-settings-drawer';
 import { DevHotkeys } from 'src/components/dev-hotkeys';
 
+// Guest user for non-authenticated play
+const GUEST_USER = {
+  id: '00000000-0000-0000-0000-000000000000',
+  displayName: 'Guest',
+  username: 'guest',
+  email: 'guest@nardaria.com',
+  photoURL: null,
+  role: 'USER' as const,
+};
+
 // AnimateText component variants and classes
 import { useInView, useAnimation } from 'framer-motion';
 
@@ -260,7 +270,9 @@ function GameAIPageContent() {
   const [winTextMessage, setWinTextMessage] = useState('');
   
   // Game persistence state
-  const { user } = useAuthContext();
+  const { user: authUser } = useAuthContext();
+  const user = authUser || GUEST_USER; // Fallback to guest user
+  console.log('🔐 User:', user.displayName, '(', user.id, ')');
   const [backendGameId, setBackendGameId] = useState<string | null>(urlGameId);
   const [moveCounter, setMoveCounter] = useState(0);
   const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
@@ -770,7 +782,13 @@ function GameAIPageContent() {
 
   // Create game in backend when player selects color
   useEffect(() => {
-    if (playerColor && user && !backendGameId) {
+    console.log('🎮 Game creation useEffect triggered:', { 
+      playerColor, 
+      userId: user.id,
+      backendGameId 
+    });
+    
+    if (playerColor && !backendGameId) {
       const createBackendGame = async () => {
         try {
           console.log('🎮 Creating AI game... Player:', playerColor, 'User ID:', user.id);
