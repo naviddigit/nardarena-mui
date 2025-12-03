@@ -9,12 +9,13 @@ import type { GameResponse } from 'src/services/game-persistence-api';
 interface UseAIGameOptions {
   gameId?: string | null;
   aiDifficulty?: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+  aiPlayerColor?: 'white' | 'black'; // AI player color for backend
   onAIMove?: (moves: Array<{ from: number; to: number }>, dice: [number, number]) => void;
   onGameUpdate?: (game: GameResponse) => void;
 }
 
 export function useAIGame(options: UseAIGameOptions = {}) {
-  const { gameId, aiDifficulty = 'MEDIUM', onAIMove, onGameUpdate } = options;
+  const { gameId, aiDifficulty = 'MEDIUM', aiPlayerColor = 'black', onAIMove, onGameUpdate } = options;
   
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -74,11 +75,12 @@ export function useAIGame(options: UseAIGameOptions = {}) {
       const game = await gamePersistenceAPI.createGame({
         gameType: 'AI',
         aiDifficulty,
+        aiPlayerColor,
         gameMode: 'CLASSIC',
         timeControl: 1800, // 30 minutes
       });
 
-      console.log('✅ AI Game created:', game.id, 'Difficulty:', aiDifficulty);
+      console.log('✅ AI Game created:', game.id, 'Difficulty:', aiDifficulty, 'AI Color:', aiPlayerColor);
       lastGameStateRef.current = game.gameState;
       
       return game;
@@ -87,7 +89,7 @@ export function useAIGame(options: UseAIGameOptions = {}) {
       setAiError('Failed to create game');
       throw error;
     }
-  }, [aiDifficulty]);
+  }, [aiDifficulty, aiPlayerColor]);
 
   /**
    * Manually trigger AI move (if needed)

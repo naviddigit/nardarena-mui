@@ -18,6 +18,7 @@ export type EndReason = 'NORMAL_WIN' | 'RESIGNATION' | 'TIMEOUT' | 'DISCONNECTIO
 export interface CreateGameDto {
   gameType: GameType;
   aiDifficulty?: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'; // AI difficulty level
+  aiPlayerColor?: 'white' | 'black'; // AI player color (for AI games)
   opponentId?: string; // Optional for AI games
   timeControl?: number; // seconds per player
   gameMode?: GameMode;

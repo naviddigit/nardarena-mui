@@ -265,8 +265,10 @@ function GameAIPageContent() {
   const [moveCounter, setMoveCounter] = useState(0);
   const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
-  const [shareToast, setShareToast] = useState(false);
-  
+  // Calculate AI player color (opposite of human player)
+  // Only valid when playerColor is set
+  const aiPlayerColor = playerColor ? (playerColor === 'white' ? 'black' : 'white') : 'black'; // Default to black if not set yet
+
   // AI Game hook
   const {
     isAIThinking,
@@ -276,6 +278,7 @@ function GameAIPageContent() {
   } = useAIGame({
     gameId: backendGameId,
     aiDifficulty,
+    aiPlayerColor, // Pass AI player color to backend
     onGameUpdate: (game) => {
       console.log('🎮 Game updated:', game);
       // Update board state from backend
@@ -342,10 +345,6 @@ function GameAIPageContent() {
     validDestinations,
     setGameState, // For directly setting state from backend
   } = useGameState(initialBoardState);
-
-  // Calculate AI player color (opposite of human player)
-  // Only valid when playerColor is set
-  const aiPlayerColor = playerColor ? (playerColor === 'white' ? 'black' : 'white') : 'black'; // Default to black if not set yet
 
   // ✅ استفاده از AI hooks جدید (بعد از useGameState)
   const { isExecutingAIMove } = useAIGameLogic({
