@@ -290,7 +290,6 @@ function GameAIPageContent() {
   const lastTurnPlayerRef = useRef<'white' | 'black' | null>(null);
   const lastMoveCountRef = useRef(0);
   const setWinnerProcessedRef = useRef(false); // Track if we've processed this set winner
-  const aiOpeningRollInitiatedRef = useRef(false); // Track if AI opening roll has been initiated
 
   // Win text display function
   const showWinMessage = (message: string) => {
@@ -895,14 +894,8 @@ function GameAIPageContent() {
   // Auto-roll for AI in opening phase (immediately when game starts)
   // Triggers when dice roller becomes ready
   useEffect(() => {
-    // Reset flag when game phase changes away from opening
-    if (gameState.gamePhase !== 'opening') {
-      aiOpeningRollInitiatedRef.current = false;
-      return;
-    }
-    
-    // Skip if AI already initiated roll, already rolled, or dice roller not ready
-    if (aiOpeningRollInitiatedRef.current ||
+    // Skip if not in opening phase or AI already rolled
+    if (gameState.gamePhase !== 'opening' || 
         gameState.openingRoll.black !== null ||
         !playerColor ||
         !diceRollerRef.current?.rollDice) {
@@ -910,7 +903,6 @@ function GameAIPageContent() {
     }
     
     console.log('🎲 AI auto-rolling opening die (dice roller ready)...');
-    aiOpeningRollInitiatedRef.current = true; // Mark as initiated immediately
     
     const openingTimeout = setTimeout(() => {
       // Double-check conditions before rolling
@@ -933,7 +925,7 @@ function GameAIPageContent() {
     }, 800); // Short delay after dice roller is ready
     
     return () => clearTimeout(openingTimeout);
-  }, [gameState.gamePhase, gameState.openingRoll.black, playerColor, diceRollerRef.current?.rollDice]); // Re-check when these change
+  }, [diceRollerRef.current?.rollDice]); // Trigger when rollDice becomes available
 
   // Auto-roll for AI (only in waiting phase, NOT in opening)
   useEffect(() => {
