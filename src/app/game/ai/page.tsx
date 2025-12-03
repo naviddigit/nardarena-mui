@@ -893,13 +893,17 @@ function GameAIPageContent() {
   }, [gameState.shouldClearDice, setGameState]);
 
   // Auto-roll for AI in opening phase using modular hook
+  // AI player color is opposite of human player color
+  const aiPlayerColor = playerColor === 'white' ? 'black' : 'white';
+  
   useAIOpeningRoll({
     gameState,
     isAIGame: !!playerColor, // playerColor exists means it's AI game
+    aiPlayerColor,
     diceRollerReady: !!diceRollerRef.current?.rollDice,
     onRollNeeded: useCallback(() => {
-      // Set currentPlayer to black temporarily
-      setGameState(prev => ({ ...prev, currentPlayer: 'black' }));
+      // Set currentPlayer to AI color
+      setGameState(prev => ({ ...prev, currentPlayer: aiPlayerColor }));
       
       // Roll the dice
       setTimeout(() => {
@@ -908,7 +912,7 @@ function GameAIPageContent() {
           diceRollerRef.current.rollDice();
         }
       }, 100);
-    }, [setGameState, setIsRolling]),
+    }, [setGameState, setIsRolling, aiPlayerColor]),
   });
 
   // Auto-roll for AI (only in waiting phase, NOT in opening)

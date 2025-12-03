@@ -4,6 +4,7 @@ import type { GameState } from './use-game-state';
 interface UseAIOpeningRollProps {
   gameState: GameState;
   isAIGame: boolean;
+  aiPlayerColor: 'white' | 'black';
   diceRollerReady: boolean;
   onRollNeeded: () => void;
 }
@@ -15,6 +16,7 @@ interface UseAIOpeningRollProps {
 export function useAIOpeningRoll({
   gameState,
   isAIGame,
+  aiPlayerColor,
   diceRollerReady,
   onRollNeeded,
 }: UseAIOpeningRollProps) {
@@ -42,8 +44,8 @@ export function useAIOpeningRoll({
       return;
     }
 
-    // Skip if AI already rolled
-    if (gameState.openingRoll.black !== null) {
+    // Skip if AI already rolled (check based on aiPlayerColor, not hardcoded black)
+    if (gameState.openingRoll[aiPlayerColor] !== null) {
       return;
     }
 
@@ -58,16 +60,16 @@ export function useAIOpeningRoll({
     }
 
     // All conditions met - trigger AI roll
-    console.log('🤖 AI opening roll conditions met, scheduling roll...');
+    console.log(`🤖 AI (${aiPlayerColor}) opening roll conditions met, scheduling roll...`);
 
     timeoutRef.current = setTimeout(() => {
       // Double-check conditions before executing
       if (
         gameState.gamePhase === 'opening' &&
-        gameState.openingRoll.black === null &&
+        gameState.openingRoll[aiPlayerColor] === null &&
         gameState.selectedPoint === null
       ) {
-        console.log('🎲 Executing AI opening roll');
+        console.log(`🎲 Executing AI (${aiPlayerColor}) opening roll`);
         hasRolledRef.current = true; // Mark as rolled ONLY when actually rolling
         onRollNeeded();
       } else {
@@ -83,9 +85,10 @@ export function useAIOpeningRoll({
     };
   }, [
     gameState.gamePhase,
-    gameState.openingRoll.black,
+    gameState.openingRoll[aiPlayerColor],
     gameState.selectedPoint,
     isAIGame,
+    aiPlayerColor,
     diceRollerReady,
     onRollNeeded,
   ]);
