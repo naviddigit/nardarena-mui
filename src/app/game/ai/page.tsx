@@ -379,10 +379,29 @@ function GameAIPageContent() {
                 if (lastMove.timeRemaining) {
                   // Set the timer for the player who made the last move
                   const lastMovePlayer = lastMove.playerColor.toLowerCase();
+                  const timeInSeconds = Math.floor(lastMove.timeRemaining / 1000);
+                  
                   if (lastMovePlayer === 'white') {
-                    whiteTimer.setCountdown(Math.floor(lastMove.timeRemaining / 1000));
+                    whiteTimer.setCountdown(timeInSeconds);
+                    // Keep black timer at default or find second-to-last move
                   } else {
-                    blackTimer.setCountdown(Math.floor(lastMove.timeRemaining / 1000));
+                    blackTimer.setCountdown(timeInSeconds);
+                    // Keep white timer at default or find second-to-last move
+                  }
+                  
+                  // Try to get other player's timer from second-to-last move
+                  if (game.moveHistory.length > 1) {
+                    const secondLastMove = game.moveHistory[game.moveHistory.length - 2];
+                    if (secondLastMove.timeRemaining) {
+                      const secondLastPlayer = secondLastMove.playerColor.toLowerCase();
+                      const secondTimeInSeconds = Math.floor(secondLastMove.timeRemaining / 1000);
+                      
+                      if (secondLastPlayer === 'white') {
+                        whiteTimer.setCountdown(secondTimeInSeconds);
+                      } else {
+                        blackTimer.setCountdown(secondTimeInSeconds);
+                      }
+                    }
                   }
                 }
               }
