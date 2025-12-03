@@ -352,10 +352,12 @@ function GameAIPageContent() {
   }, []);
 
   // 🔄 Game Resume: Load existing game from URL
+  // ✅ Load existing game from URL (on mount or refresh)
   useEffect(() => {
     const loadExistingGame = async () => {
-      // Only try to load if we have urlGameId, user is logged in, and playerColor not set yet
-      if (urlGameId && user && !playerColor) {
+      // Only try to load if we have urlGameId and user is logged in
+      // ⚠️ Don't check playerColor - we need to restore it on refresh!
+      if (urlGameId && user) {
         try {
           const game = await gamePersistenceAPI.getGame(urlGameId);
           
@@ -368,16 +370,32 @@ function GameAIPageContent() {
             if (isWhitePlayer || isBlackPlayer) {
               const resumedPlayerColor = isWhitePlayer ? 'white' : 'black';
               
-              // Restore game state
+              console.log('✅ Restoring game - You are:', resumedPlayerColor);
+              
+              // ✅ Always restore playerColor (even on refresh)
               setPlayerColor(resumedPlayerColor);
               setBackendGameId(game.id);
+              
+              // ✅ Determine correct gamePhase
+              // Priority: game.gameState.phase > check diceValues > default 'waiting'
+              let restoredPhase: GamePhase = 'waiting';
+              
+              if (game.gameState.phase) {
+                restoredPhase = game.gameState.phase as GamePhase;
+              } else if (game.gameState.diceValues && game.gameState.diceValues.length > 0) {
+                restoredPhase = 'moving';
+              } else if (!game.gameState.currentPlayer) {
+                restoredPhase = 'opening';
+              }
+              
+              console.log('🎮 Restored phase:', restoredPhase, '| Current player:', game.gameState.currentPlayer);
               
               // Restore board state
               setGameState((prev) => ({
                 ...prev,
                 boardState: game.gameState,
                 currentPlayer: game.gameState.currentPlayer || 'white',
-                gamePhase: game.gameState.phase || 'waiting',
+                gamePhase: restoredPhase,
                 diceValues: game.gameState.diceValues || [],
               }));
               
@@ -502,7 +520,7 @@ function GameAIPageContent() {
     };
     
     loadExistingGame();
-  }, [urlGameId, user, playerColor]);
+  }, [urlGameId, user]); // ✅ Removed playerColor to prevent infinite loop
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
