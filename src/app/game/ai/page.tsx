@@ -1385,8 +1385,10 @@ function GameAIPageContent() {
           position: 'relative',
         }}
       >
-        <BackgammonBoard 
-          boardState={gameState.boardState} 
+        {/* ✅ Safety check: only render when boardState exists */}
+        {gameState.boardState && gameState.boardState.points ? (
+          <BackgammonBoard 
+            boardState={gameState.boardState} 
           onPointClick={handlePointClick}
           onBarClick={handleBarClick}
           selectedPoint={gameState.selectedPoint}
@@ -1405,6 +1407,11 @@ function GameAIPageContent() {
           }
           dicePosition={dicePosition}
         />
+        ) : (
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <Typography>Loading game board...</Typography>
+          </Box>
+        )}
       </Box>
 
       {/* Player 2 (You - Bottom) */}
