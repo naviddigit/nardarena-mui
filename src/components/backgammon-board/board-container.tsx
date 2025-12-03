@@ -407,7 +407,8 @@ export function BackgammonBoard({
                 const isCheckerPlayable = isTopChecker && playablePoints.has(pointIndex) && player === currentPlayer;
                 
                 // Get valid destinations for this checker
-                const checkerValidMoves = validMoves.filter(m => m.from === pointIndex);
+                // ✅ Safety check for validMoves
+                const checkerValidMoves = validMoves?.filter(m => m.from === pointIndex) || [];
                 // Check if all moves go to the same destination (important for doubles like 3-3)
                 const uniqueDestinations = new Set(checkerValidMoves.map(m => m.to));
                 const hasSingleDestination = uniqueDestinations.size === 1;
@@ -448,7 +449,8 @@ export function BackgammonBoard({
               {/* Count label on empty position after last visible checker */}
               {point.count > 5 && (() => {
                 // Get valid destinations for this checker
-                const checkerValidMoves = validMoves.filter(m => m.from === pointIndex);
+                // ✅ Safety check for validMoves
+                const checkerValidMoves = validMoves?.filter(m => m.from === pointIndex) || [];
                 const uniqueDestinations = new Set(checkerValidMoves.map(m => m.to));
                 const hasSingleDestination = uniqueDestinations.size === 1;
                 const isCheckerSelected = selectedPoint === pointIndex;
@@ -515,7 +517,8 @@ export function BackgammonBoard({
     const checkerSize = pointWidth * checkerScale;
     const barStackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
     const isBarPlayable = playablePoints.has(-1);
-    const barValidMoves = validMoves.filter(m => m.from === -1);
+    // ✅ Safety check for validMoves
+    const barValidMoves = validMoves?.filter(m => m.from === -1) || [];
     const uniqueBarDestinations = new Set(barValidMoves.map(m => m.to));
     const hasBarSingleDestination = uniqueBarDestinations.size === 1;
     const isBarSelected = selectedPoint === -1;
