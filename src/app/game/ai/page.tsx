@@ -277,6 +277,10 @@ function GameAIPageContent() {
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
   const [shareToast, setShareToast] = useState(false);
   
+  // Timer initial values (will be restored from backend if resuming)
+  const [whiteTimerInit, setWhiteTimerInit] = useState(1800);
+  const [blackTimerInit, setBlackTimerInit] = useState(1800);
+  
   // Calculate AI player color (opposite of human player)
   // Only valid when playerColor is set
   const aiPlayerColor = playerColor ? (playerColor === 'white' ? 'black' : 'white') : 'black'; // Default to black if not set yet
@@ -377,16 +381,13 @@ function GameAIPageContent() {
               if (game.moveHistory && game.moveHistory.length > 0) {
                 const lastMove = game.moveHistory[game.moveHistory.length - 1];
                 if (lastMove.timeRemaining) {
-                  // Set the timer for the player who made the last move
                   const lastMovePlayer = lastMove.playerColor.toLowerCase();
                   const timeInSeconds = Math.floor(lastMove.timeRemaining / 1000);
                   
                   if (lastMovePlayer === 'white') {
-                    whiteTimer.setCountdown(timeInSeconds);
-                    // Keep black timer at default or find second-to-last move
+                    setWhiteTimerInit(timeInSeconds);
                   } else {
-                    blackTimer.setCountdown(timeInSeconds);
-                    // Keep white timer at default or find second-to-last move
+                    setBlackTimerInit(timeInSeconds);
                   }
                   
                   // Try to get other player's timer from second-to-last move
@@ -397,9 +398,9 @@ function GameAIPageContent() {
                       const secondTimeInSeconds = Math.floor(secondLastMove.timeRemaining / 1000);
                       
                       if (secondLastPlayer === 'white') {
-                        whiteTimer.setCountdown(secondTimeInSeconds);
+                        setWhiteTimerInit(secondTimeInSeconds);
                       } else {
-                        blackTimer.setCountdown(secondTimeInSeconds);
+                        setBlackTimerInit(secondTimeInSeconds);
                       }
                     }
                   }
@@ -417,7 +418,7 @@ function GameAIPageContent() {
     };
     
     loadExistingGame();
-  }, [urlGameId, user, playerColor, whiteTimer, blackTimer]);
+  }, [urlGameId, user, playerColor]);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
@@ -453,10 +454,10 @@ function GameAIPageContent() {
     },
   });
 
-  // Timer for White player (1800 seconds = 30 minutes)
-  const whiteTimer = useCountdownSeconds(1800);
-  // Timer for Black player (1800 seconds = 30 minutes)
-  const blackTimer = useCountdownSeconds(1800);
+  // Timer for White player (restored from backend or default 30 minutes)
+  const whiteTimer = useCountdownSeconds(whiteTimerInit);
+  // Timer for Black player (restored from backend or default 30 minutes)
+  const blackTimer = useCountdownSeconds(blackTimerInit);
 
   // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
   useGameTimers({
