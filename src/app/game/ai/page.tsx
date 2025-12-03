@@ -344,7 +344,8 @@ function GameAIPageContent() {
   } = useGameState(initialBoardState);
 
   // Calculate AI player color (opposite of human player)
-  const aiPlayerColor = playerColor === 'white' ? 'black' : 'white';
+  // Only valid when playerColor is set
+  const aiPlayerColor = playerColor ? (playerColor === 'white' ? 'black' : 'white') : 'black'; // Default to black if not set yet
 
   // ✅ استفاده از AI hooks جدید (بعد از useGameState)
   const { isExecutingAIMove } = useAIGameLogic({
@@ -644,8 +645,15 @@ function GameAIPageContent() {
       return;
     }
 
-    // In normal gameplay, prevent rolling dice for AI (black player)
-    if (gameState.currentPlayer === 'black') {
+    // Guard: playerColor must be set
+    if (!playerColor) {
+      console.log('⚠️ Cannot roll - playerColor not set yet');
+      return;
+    }
+
+    // In normal gameplay, prevent rolling dice for AI player
+    if (gameState.currentPlayer === aiPlayerColor) {
+      console.log(`⚠️ Cannot roll - it's AI (${aiPlayerColor}) turn`);
       return;
     }
     
