@@ -290,6 +290,7 @@ function GameAIPageContent() {
   const lastTurnPlayerRef = useRef<'white' | 'black' | null>(null);
   const lastMoveCountRef = useRef(0);
   const setWinnerProcessedRef = useRef(false); // Track if we've processed this set winner
+  const aiOpeningRollAttemptedRef = useRef(false); // Track if AI attempted opening roll
 
   // Win text display function
   const showWinMessage = (message: string) => {
@@ -886,6 +887,9 @@ function GameAIPageContent() {
         shouldClearDice: false,
       }));
       
+      // Reset AI opening roll flag for re-roll
+      aiOpeningRollAttemptedRef.current = false;
+      
       // Both players can roll again after clearing (no auto-roll)
       console.log('🎲 Dice cleared. Both players can roll again.');
     }
@@ -894,6 +898,11 @@ function GameAIPageContent() {
   // Auto-roll for AI in opening phase (immediately when game starts)
   // Triggers when dice roller becomes ready
   useEffect(() => {
+    // Skip if AI already attempted to roll
+    if (aiOpeningRollAttemptedRef.current) {
+      return;
+    }
+    
     // Skip if not in opening phase or AI already rolled
     if (gameState.gamePhase !== 'opening' || 
         gameState.openingRoll.black !== null ||
@@ -903,6 +912,7 @@ function GameAIPageContent() {
     }
     
     console.log('🎲 AI auto-rolling opening die (dice roller ready)...');
+    aiOpeningRollAttemptedRef.current = true; // Mark as attempted
     
     const openingTimeout = setTimeout(() => {
       // Double-check conditions before rolling
