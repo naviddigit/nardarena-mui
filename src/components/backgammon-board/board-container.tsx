@@ -70,7 +70,8 @@ export function BackgammonBoard({
   const { currentTheme } = useBoardTheme();
   
   // چک کردن doubles (جفت): اگه همه تاس‌ها یکسان باشن
-  const diceValues = validMoves.map(m => m.die);
+  // ✅ Safety check for validMoves
+  const diceValues = validMoves?.map(m => m.die) || [];
   const uniqueDiceValues = new Set(diceValues);
   const isDoubles = uniqueDiceValues.size === 1 && diceValues.length > 1;
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -80,9 +81,12 @@ export function BackgammonBoard({
   // Calculate playable points (points with checkers that can move)
   const playablePoints = useMemo(() => {
     const points = new Set<number>();
-    validMoves.forEach(move => {
-      points.add(move.from);
-    });
+    // ✅ Safety check for validMoves
+    if (validMoves) {
+      validMoves.forEach(move => {
+        points.add(move.from);
+      });
+    }
     return points;
   }, [validMoves, isDoubles, currentPlayer]);
 
@@ -91,10 +95,15 @@ export function BackgammonBoard({
   }, []);
 
   // Combine real off counts with demo counts for visual display
-  const displayOffCounts = useMemo(() => ({
-    white: boardState.off.white + (demoOffCounts?.white || 0),
-    black: boardState.off.black + (demoOffCounts?.black || 0),
-  }), [boardState.off, demoOffCounts]);
+  const displayOffCounts = useMemo(() => {
+    // ✅ Safety check for boardState.off
+    const whiteOff = boardState?.off?.white || 0;
+    const blackOff = boardState?.off?.black || 0;
+    return {
+      white: whiteOff + (demoOffCounts?.white || 0),
+      black: blackOff + (demoOffCounts?.black || 0),
+    };
+  }, [boardState?.off, demoOffCounts]);
 
   // Refs for stable ID tracking
   const idsRef = useRef<{
@@ -111,6 +120,15 @@ export function BackgammonBoard({
 
   // Generate stable IDs for checkers to enable smooth transitions
   const checkerIds = useMemo(() => {
+    // ✅ Early return if boardState is not ready
+    if (!boardState || !boardState.points || !boardState.bar || !boardState.off) {
+      return {
+        points: Array.from({ length: 24 }, () => []),
+        bar: { white: [], black: [] },
+        off: { white: [], black: [] }
+      };
+    }
+    
     const prevIds = idsRef.current;
     const prevState = prevBoardStateRef.current;
     const nextState = boardState;
@@ -583,7 +601,7 @@ export function BackgammonBoard({
     }
 
     return checkers;
-  }, [boardState.bar.white, boardState.bar.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, pointHeight, isMobile, onBarClick, playablePoints, currentPlayer, validMoves, selectedPoint, onPointClick]);
+  }, [boardState?.bar?.white, boardState?.bar?.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, pointHeight, isMobile, onBarClick, playablePoints, currentPlayer, validMoves, selectedPoint, onPointClick]);
 
   if (!mounted) {
     return <SplashScreen />;
