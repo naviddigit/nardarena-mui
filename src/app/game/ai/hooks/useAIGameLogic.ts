@@ -77,16 +77,25 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
       try {
         // 1️⃣ همگام‌سازی state با backend
         console.log('📤 Syncing game state to backend...');
+        console.log('🔍 Current player in gameState:', gameState.currentPlayer);
+        console.log('🔍 AI player color:', aiPlayerColor);
+        
+        const syncState = {
+          ...gameState.boardState,
+          currentPlayer: aiPlayerColor,
+          phase: 'moving',
+        };
+        console.log('🔍 Syncing state currentPlayer:', syncState.currentPlayer);
+        
         await gamePersistenceAPI.syncGameState(
           backendGameId,
-          {
-            ...gameState.boardState,
-            currentPlayer: aiPlayerColor,
-            phase: 'moving',
-          },
+          syncState,
           gameState.diceValues
         );
         console.log('✅ Game state synced');
+        
+        // ⏱️ Small delay to ensure database commit completes
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // 2️⃣ محاسبه حرکات توسط AI
         console.log('🧠 Asking backend AI to calculate moves...');
