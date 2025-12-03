@@ -352,6 +352,7 @@ export function BackgammonBoard({
         )}
 
         {/* Render checkers - max 5 visible with count label if more */}
+        <AnimatePresence mode="popLayout">
         {(() => {
           const point = boardState.points[pointIndex];
           if (!point) return null;
@@ -481,6 +482,7 @@ export function BackgammonBoard({
             </>
           );
         })()}
+        </AnimatePresence>
       </Box>
     );
   };
@@ -721,7 +723,9 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.white > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          {barCheckers.white}
+          <AnimatePresence mode="popLayout">
+            {barCheckers.white}
+          </AnimatePresence>
         </Box>
 
         {topPoints.slice(6, 12).map((pointIndex, i) => renderPoint(pointIndex, i, true))}
@@ -758,7 +762,9 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.black > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          {barCheckers.black}
+          <AnimatePresence mode="popLayout">
+            {barCheckers.black}
+          </AnimatePresence>
         </Box>
 
         {/* Right side: points 5→0 */}
