@@ -59,7 +59,6 @@ export function useAIOpeningRoll({
 
     // All conditions met - trigger AI roll
     console.log('🤖 AI opening roll conditions met, scheduling roll...');
-    hasRolledRef.current = true;
 
     timeoutRef.current = setTimeout(() => {
       // Double-check conditions before executing
@@ -69,9 +68,12 @@ export function useAIOpeningRoll({
         gameState.selectedPoint === null
       ) {
         console.log('🎲 Executing AI opening roll');
+        hasRolledRef.current = true; // Mark as rolled ONLY when actually rolling
         onRollNeeded();
+      } else {
+        console.log('⏭️ AI roll cancelled - conditions changed');
       }
-    }, 800);
+    }, 1500); // 1.5 seconds to give player time
 
     return () => {
       if (timeoutRef.current) {
