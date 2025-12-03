@@ -66,6 +66,7 @@ import { calculateValidMoves } from 'src/hooks/game-logic/validation';
 import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { useSound } from 'src/hooks/use-sound';
 import { useAIGame } from 'src/hooks/use-ai-game';
+import { useAIOpeningRoll } from 'src/hooks/use-ai-opening-roll';
 import { _mock } from 'src/_mock';
 import { BoardThemeProvider } from 'src/contexts/board-theme-context';
 import { useAuthContext } from 'src/auth/hooks';
@@ -891,41 +892,24 @@ function GameAIPageContent() {
     }
   }, [gameState.shouldClearDice, setGameState]);
 
-  // Auto-roll for AI in opening phase (immediately when game starts)
-  // Triggers when dice roller becomes ready
-  useEffect(() => {
-    // Skip if not in opening phase or AI already rolled
-    if (gameState.gamePhase !== 'opening' || 
-        gameState.openingRoll.black !== null ||
-        !playerColor ||
-        !diceRollerRef.current?.rollDice) {
-      return;
-    }
-    
-    console.log('🎲 AI auto-rolling opening die (dice roller ready)...');
-    
-    const openingTimeout = setTimeout(() => {
-      // Double-check conditions before rolling
-      if (gameState.gamePhase === 'opening' && 
-          gameState.openingRoll.black === null && 
-          diceRollerRef.current?.rollDice) {
-        console.log('🎲 Executing AI opening roll...');
-        
-        // Set currentPlayer to black temporarily
-        setGameState(prev => ({ ...prev, currentPlayer: 'black' }));
-        
-        // Roll the dice
-        setTimeout(() => {
-          if (diceRollerRef.current?.rollDice) {
-            setIsRolling(true);
-            diceRollerRef.current.rollDice();
-          }
-        }, 100);
-      }
-    }, 800); // Short delay after dice roller is ready
-    
-    return () => clearTimeout(openingTimeout);
-  }, [diceRollerRef.current?.rollDice]); // Trigger when rollDice becomes available
+  // Auto-roll for AI in opening phase using modular hook
+  useAIOpeningRoll({
+    gameState,
+    isAIGame: !!playerColor, // playerColor exists means it's AI game
+    diceRollerReady: !!diceRollerRef.current?.rollDice,
+    onRollNeeded: useCallback(() => {
+      // Set currentPlayer to black temporarily
+      setGameState(prev => ({ ...prev, currentPlayer: 'black' }));
+      
+      // Roll the dice
+      setTimeout(() => {
+        if (diceRollerRef.current?.rollDice) {
+          setIsRolling(true);
+          diceRollerRef.current.rollDice();
+        }
+      }, 100);
+    }, [setGameState, setIsRolling]),
+  });
 
   // Auto-roll for AI (only in waiting phase, NOT in opening)
   useEffect(() => {
