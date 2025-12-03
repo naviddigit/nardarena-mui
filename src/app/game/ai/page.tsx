@@ -382,6 +382,10 @@ function GameAIPageContent() {
               }));
               
               // 🕐 Restore timers from last moves with elapsed time calculation
+              // Use game.timeControl as base timer if available (in seconds)
+              const gameTimeControl = game.timeControl || 1800;
+              console.log('⏱️ Game time control:', gameTimeControl, 's');
+              
               if (game.moveHistory && game.moveHistory.length > 0) {
                 const now = Date.now();
                 const currentPlayerInGame = game.gameState.currentPlayer?.toLowerCase() || 'white';
@@ -393,6 +397,13 @@ function GameAIPageContent() {
                 // Iterate from end to find last move of each player
                 for (let i = game.moveHistory.length - 1; i >= 0; i--) {
                   const move = game.moveHistory[i];
+                  
+                  // ✅ Safely handle playerColor (may be undefined in old data)
+                  if (!move.playerColor) {
+                    console.warn('⚠️ Move without playerColor at index', i, move);
+                    continue; // Skip this move
+                  }
+                  
                   const movePlayer = move.playerColor.toLowerCase();
                   
                   if (movePlayer === 'white' && !whiteLastMove) {
@@ -443,6 +454,25 @@ function GameAIPageContent() {
                     console.log('⏱️ Black timer: ', timeInSeconds, 's (not current player)');
                   }
                 }
+                
+                // ✅ If a player has no moves yet, use game time control
+                if (!whiteLastMove) {
+                  setWhiteTimerInit(gameTimeControl);
+                  whiteTimerValueRef.current = gameTimeControl;
+                  console.log('⏱️ White timer: ', gameTimeControl, 's (no moves yet, using game timeControl)');
+                }
+                if (!blackLastMove) {
+                  setBlackTimerInit(gameTimeControl);
+                  blackTimerValueRef.current = gameTimeControl;
+                  console.log('⏱️ Black timer: ', gameTimeControl, 's (no moves yet, using game timeControl)');
+                }
+              } else {
+                // No moves at all - use game time control for both
+                setWhiteTimerInit(gameTimeControl);
+                setBlackTimerInit(gameTimeControl);
+                whiteTimerValueRef.current = gameTimeControl;
+                blackTimerValueRef.current = gameTimeControl;
+                console.log('⏱️ Both timers:', gameTimeControl, 's (no moves yet, using game timeControl)');
               }
               
               console.log('✅ Game resumed:', game.id, 'Player:', resumedPlayerColor);
