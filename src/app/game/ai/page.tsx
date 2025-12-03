@@ -373,6 +373,20 @@ function GameAIPageContent() {
                 diceValues: game.gameState.diceValues || [],
               }));
               
+              // 🕐 Restore timers from last move
+              if (game.moveHistory && game.moveHistory.length > 0) {
+                const lastMove = game.moveHistory[game.moveHistory.length - 1];
+                if (lastMove.timeRemaining) {
+                  // Set the timer for the player who made the last move
+                  const lastMovePlayer = lastMove.playerColor.toLowerCase();
+                  if (lastMovePlayer === 'white') {
+                    whiteTimer.setCountdown(Math.floor(lastMove.timeRemaining / 1000));
+                  } else {
+                    blackTimer.setCountdown(Math.floor(lastMove.timeRemaining / 1000));
+                  }
+                }
+              }
+              
               console.log('✅ Game resumed:', game.id, 'Player:', resumedPlayerColor);
             }
           }
@@ -384,7 +398,7 @@ function GameAIPageContent() {
     };
     
     loadExistingGame();
-  }, [urlGameId, user, playerColor]);
+  }, [urlGameId, user, playerColor, whiteTimer, blackTimer]);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
