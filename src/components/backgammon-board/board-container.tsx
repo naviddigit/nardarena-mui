@@ -595,11 +595,13 @@ export function BackgammonBoard({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ 
         opacity: 1, 
-        scale: 1
+        scale: 1,
+        rotate: isRotated ? 180 : 0,
       }}
       transition={{ 
         opacity: { duration: 0.3 },
-        scale: { duration: 0.3 }
+        scale: { duration: 0.3 },
+        rotate: { duration: 0.6, ease: 'easeInOut' }
       }}
       sx={{ display: 'inline-block' }}
     >
