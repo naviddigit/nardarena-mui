@@ -47,22 +47,30 @@ export function useGameTimers({
   onTimeout,
 }: UseGameTimersProps) {
   
-  // ✅ 1. Start timer when turn begins (only once at start)
+  // ✅ 1. Start/stop timers based on whose turn it is
   useEffect(() => {
     if (winner || !playerColor) return;
 
-    // Start white timer if it's white's turn and timer hasn't started
+    // White's turn: start white timer, stop black timer
     if (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting') {
-      if (!whiteTimer.counting && whiteTimer.countdown === 1800) {
-        console.log('⏱️ Starting white timer');
+      if (!whiteTimer.counting) {
+        console.log('⏱️ Starting white timer (white\'s turn)');
         whiteTimer.startCountdown();
       }
+      if (blackTimer.counting) {
+        console.log('⏱️ Stopping black timer (not black\'s turn)');
+        blackTimer.stopCountdown();
+      }
     }
-    // Start black timer if it's black's turn and timer hasn't started
+    // Black's turn: start black timer, stop white timer
     else if (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting') {
-      if (!blackTimer.counting && blackTimer.countdown === 1800) {
-        console.log('⏱️ Starting black timer');
+      if (!blackTimer.counting) {
+        console.log('⏱️ Starting black timer (black\'s turn)');
         blackTimer.startCountdown();
+      }
+      if (whiteTimer.counting) {
+        console.log('⏱️ Stopping white timer (not white\'s turn)');
+        whiteTimer.stopCountdown();
       }
     }
   }, [gameState.currentPlayer, gameState.gamePhase, playerColor, winner]);
