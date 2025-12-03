@@ -942,8 +942,6 @@ function GameAIPageContent() {
   }, [backendGameId, user, winner, timeoutWinner, scores, gameState.boardState]);
 
   // Clear dice when opening roll is a tie (shouldClearDice flag)
-  useEffect(() => {
-
   // 🏆 Check for game winner after each move
   useEffect(() => {
     const whiteWon = gameState.boardState.off.white === 15;
@@ -957,8 +955,10 @@ function GameAIPageContent() {
       setResultDialogOpen(true);
     }
   }, [gameState.boardState.off.white, gameState.boardState.off.black, winner]);
+
+  // Clear dice when opening roll is a tie (shouldClearDice flag)
+  useEffect(() => {
     if (gameState.shouldClearDice && diceRollerRef.current?.clearDice) {
-      console.log('🔄 Clearing dice for re-roll...');
       diceRollerRef.current.clearDice();
       
       // Reset the flag after clearing
@@ -966,9 +966,6 @@ function GameAIPageContent() {
         ...prev,
         shouldClearDice: false,
       }));
-      
-      // Both players can roll again after clearing (no auto-roll)
-      console.log('🎲 Dice cleared. Both players can roll again.');
     }
   }, [gameState.shouldClearDice, setGameState]);
 
