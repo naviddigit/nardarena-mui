@@ -407,13 +407,20 @@ function GameAIPageContent() {
               console.log('🎮 Restored phase:', restoredPhase, '| Current player:', game.gameState.currentPlayer);
               
               // Restore board state
+              // ✅ Extract board structure from gameState
               setGameState((prev) => ({
                 ...prev,
-                boardState: game.gameState,
+                boardState: {
+                  points: game.gameState.points || prev.boardState.points,
+                  bar: game.gameState.bar || prev.boardState.bar,
+                  off: game.gameState.off || prev.boardState.off,
+                },
                 currentPlayer: game.gameState.currentPlayer || 'white',
                 gamePhase: restoredPhase,
                 diceValues: game.gameState.diceValues || [],
               }));
+              
+              console.log('✅ Board restored with', game.gameState.points?.length || 0, 'points');
               
               // 🕐 Restore timers from MOVES (not moveHistory - it has wrong structure)
               // Use game.timeControl as base timer if available (in seconds)
