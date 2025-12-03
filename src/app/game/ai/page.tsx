@@ -377,33 +377,38 @@ function GameAIPageContent() {
                 diceValues: game.gameState.diceValues || [],
               }));
               
-              // 🕐 Restore timers from last move
+              // 🕐 Restore timers from last move with elapsed time calculation
               if (game.moveHistory && game.moveHistory.length > 0) {
                 const lastMove = game.moveHistory[game.moveHistory.length - 1];
-                if (lastMove.timeRemaining) {
+                
+                if (lastMove.timeRemaining && lastMove.createdAt) {
                   const lastMovePlayer = lastMove.playerColor.toLowerCase();
-                  const timeInSeconds = Math.floor(lastMove.timeRemaining / 1000);
+                  const lastMoveTime = new Date(lastMove.createdAt).getTime();
+                  const now = Date.now();
+                  const elapsedSeconds = Math.floor((now - lastMoveTime) / 1000);
                   
+                  // Calculate actual remaining time
+                  const timeInSeconds = Math.floor(lastMove.timeRemaining / 1000);
+                  const actualTimeRemaining = Math.max(0, timeInSeconds - elapsedSeconds);
+                  
+                  // Set timer for current player (who needs to move now)
+                  const currentPlayerInGame = game.gameState.currentPlayer?.toLowerCase() || 'white';
+                  
+                  if (currentPlayerInGame === 'white') {
+                    setWhiteTimerInit(actualTimeRemaining);
+                  } else {
+                    setBlackTimerInit(actualTimeRemaining);
+                  }
+                  
+                  // Set timer for the player who made the last move (from their last move)
                   if (lastMovePlayer === 'white') {
                     setWhiteTimerInit(timeInSeconds);
                   } else {
                     setBlackTimerInit(timeInSeconds);
                   }
                   
-                  // Try to get other player's timer from second-to-last move
-                  if (game.moveHistory.length > 1) {
-                    const secondLastMove = game.moveHistory[game.moveHistory.length - 2];
-                    if (secondLastMove.timeRemaining) {
-                      const secondLastPlayer = secondLastMove.playerColor.toLowerCase();
-                      const secondTimeInSeconds = Math.floor(secondLastMove.timeRemaining / 1000);
-                      
-                      if (secondLastPlayer === 'white') {
-                        setWhiteTimerInit(secondTimeInSeconds);
-                      } else {
-                        setBlackTimerInit(secondTimeInSeconds);
-                      }
-                    }
-                  }
+                  console.log('⏱️ Timer restored - Last move player:', lastMovePlayer, 'Time:', timeInSeconds, 's');
+                  console.log('⏱️ Current player:', currentPlayerInGame, 'Actual time remaining:', actualTimeRemaining, 's (elapsed:', elapsedSeconds, 's)');
                 }
               }
               
