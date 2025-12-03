@@ -59,28 +59,14 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
 
   // اجرای خودکار حرکات AI
   useEffect(() => {
-    console.log('🔍 AI Logic Check:', {
-      currentPlayer: gameState.currentPlayer,
-      aiPlayerColor,
-      gamePhase: gameState.gamePhase,
-      validMovesCount: gameState.validMoves.length,
-      backendGameId,
-      isExecutingAIMove,
-    });
-    
     const shouldExecuteAI =
       gameState.currentPlayer === aiPlayerColor &&
       gameState.gamePhase === 'moving' &&
       gameState.validMoves.length > 0 &&
       backendGameId &&
       !isExecutingAIMove;
-
-    console.log('🔍 shouldExecuteAI:', shouldExecuteAI);
     
     if (!shouldExecuteAI) return;
-
-    console.log(`🤖 AI (${aiPlayerColor}) needs to move! Valid moves:`, gameState.validMoves.length);
-    console.log('🎲 AI dice values:', gameState.diceValues);
 
     const executeAIMoves = async () => {
       setIsExecutingAIMove(true);

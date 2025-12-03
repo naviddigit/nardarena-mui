@@ -939,9 +939,9 @@ function GameAIPageContent() {
   useEffect(() => {
     if (gameState.currentPlayer === aiPlayerColor && diceRollerRef.current) {
       
-      if (gameState.gamePhase === 'waiting' && !isRolling && !isWaitingForBackend) {
+      if (gameState.gamePhase === 'waiting' && !isRolling && !isWaitingForBackend && !isExecutingAIMove) {
         const waitingTimeout = setTimeout(async () => {
-          if (isRolling || isWaitingForBackend) return;
+          if (isRolling || isWaitingForBackend || isExecutingAIMove) return;
           
           // ✅ Clear old dice visually first (increased delay)
           if (diceRollerRef.current?.clearDice) {
@@ -951,7 +951,6 @@ function GameAIPageContent() {
           
           // ✅ Roll dice using dice.js (not backend)
           if (diceRollerRef.current?.rollDice) {
-            console.log(`🎲 AI (${aiPlayerColor}) rolling dice using dice.js...`);
             setIsRolling(true);
             diceRollerRef.current.rollDice();
           } else {
@@ -962,7 +961,7 @@ function GameAIPageContent() {
         return () => clearTimeout(waitingTimeout);
       }
     }
-  }, [gameState.gamePhase, gameState.currentPlayer, aiPlayerColor, isRolling, isWaitingForBackend]);
+  }, [gameState.gamePhase, gameState.currentPlayer, aiPlayerColor, isRolling, isWaitingForBackend, isExecutingAIMove]);
 
   // Auto-execute AI moves when in moving phase
   // ✅ این حالا توی useAIGameLogic hook اجرا میشه با delay های مناسب
