@@ -265,6 +265,8 @@ function GameAIPageContent() {
   const [moveCounter, setMoveCounter] = useState(0);
   const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
+  const [shareToast, setShareToast] = useState(false);
+  
   // Calculate AI player color (opposite of human player)
   // Only valid when playerColor is set
   const aiPlayerColor = playerColor ? (playerColor === 'white' ? 'black' : 'white') : 'black'; // Default to black if not set yet
