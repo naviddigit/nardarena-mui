@@ -271,7 +271,6 @@ function GameAIPageContent() {
   
   // Game persistence state
   const { user } = useAuthContext();
-  console.log('🔐 Auth user:', user);
   const [backendGameId, setBackendGameId] = useState<string | null>(urlGameId);
   const [moveCounter, setMoveCounter] = useState(0);
   const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
@@ -781,13 +780,6 @@ function GameAIPageContent() {
 
   // Create game in backend when player selects color
   useEffect(() => {
-    console.log('🎮 Game creation useEffect triggered:', { 
-      playerColor, 
-      hasUser: !!user,
-      userId: user?.id,
-      backendGameId 
-    });
-    
     if (playerColor && user && !backendGameId) {
       const createBackendGame = async () => {
         try {

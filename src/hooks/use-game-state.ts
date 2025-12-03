@@ -89,15 +89,12 @@ export function useGameState(initialBoardState: BoardState) {
       
       // Normal roll
       const diceValues = results.map((r) => r.value);
-      console.log('🎲 handleDiceRoll - Normal roll:', diceValues, 'currentPlayer:', prev.currentPlayer);
       
       // Handle doubles
       const finalDiceValues = diceValues[0] === diceValues[1] 
         ? [diceValues[0], diceValues[0], diceValues[0], diceValues[0]]
         : diceValues;
       const validMoves = calculateValidMoves(prev.boardState, prev.currentPlayer, finalDiceValues);
-      
-      console.log('✅ Valid moves calculated:', validMoves.length);
       
       // Check if player has checkers on bar
       const hasCheckersOnBar = prev.boardState.bar[prev.currentPlayer] > 0;
@@ -108,7 +105,6 @@ export function useGameState(initialBoardState: BoardState) {
       
       // If no valid moves available, skip turn automatically
       if (validMoves.length === 0) {
-        console.log('⚠️ No valid moves! Skipping turn...');
         const nextPlayer: Player = prev.currentPlayer === 'white' ? 'black' : 'white';
         return {
           ...prev,
@@ -121,7 +117,6 @@ export function useGameState(initialBoardState: BoardState) {
         };
       }
       
-      console.log('✅ Setting gamePhase to moving');
       return {
         ...prev,
         diceValues: finalDiceValues,
