@@ -270,9 +270,8 @@ function GameAIPageContent() {
   const [winTextMessage, setWinTextMessage] = useState('');
   
   // Game persistence state
-  const { user: authUser } = useAuthContext();
-  const user = authUser || GUEST_USER; // Fallback to guest user
-  console.log('🔐 User:', user.displayName, '(', user.id, ')');
+  const { user } = useAuthContext();
+  console.log('🔐 Auth user:', user);
   const [backendGameId, setBackendGameId] = useState<string | null>(urlGameId);
   const [moveCounter, setMoveCounter] = useState(0);
   const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
@@ -784,11 +783,12 @@ function GameAIPageContent() {
   useEffect(() => {
     console.log('🎮 Game creation useEffect triggered:', { 
       playerColor, 
-      userId: user.id,
+      hasUser: !!user,
+      userId: user?.id,
       backendGameId 
     });
     
-    if (playerColor && !backendGameId) {
+    if (playerColor && user && !backendGameId) {
       const createBackendGame = async () => {
         try {
           console.log('🎮 Creating AI game... Player:', playerColor, 'User ID:', user.id);

@@ -91,10 +91,14 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
         console.log('🔍 Current player in gameState:', gameState.currentPlayer);
         console.log('🔍 AI player color:', aiPlayerColor);
         
+        // Sync complete game state with updated currentPlayer
         const syncState = {
-          ...gameState.boardState,
+          points: gameState.boardState.points,
+          bar: gameState.boardState.bar,
+          off: gameState.boardState.off,
           currentPlayer: aiPlayerColor,
           phase: 'moving',
+          aiPlayerColor: aiPlayerColor,
         };
         console.log('🔍 Syncing state currentPlayer:', syncState.currentPlayer);
         
