@@ -49,6 +49,7 @@ export function Checker({
   return (
     <Box
       component={m.div}
+      layout
       layoutId={layoutId}
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ 

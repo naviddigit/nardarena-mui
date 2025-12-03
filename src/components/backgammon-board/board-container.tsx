@@ -201,14 +201,17 @@ export function BackgammonBoard({
       }
       // Bar (e.g. hit)
       if (nextState.bar.white > prevState.bar.white) {
+        console.log('📥 Adding white checker to bar. Pool before:', pool.map(p => `${p.player}:${p.id}`));
         for (let k = 0; k < nextState.bar.white - prevState.bar.white; k++) {
           const poolIndex = pool.findIndex(c => c.player === 'white');
           let id;
           if (poolIndex !== -1) {
             id = pool[poolIndex].id;
             pool.splice(poolIndex, 1);
+            console.log('✅ Reusing white ID from pool:', id);
           } else {
             id = generateId('white');
+            console.log('⚠️ No white ID in pool, generating new:', id);
           }
           newIds.bar.white.push(id);
         }
@@ -723,7 +726,7 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.white > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          <AnimatePresence mode="sync">
+          <AnimatePresence>
             {barCheckers.white.map(checker => checker)}
           </AnimatePresence>
         </Box>
@@ -762,7 +765,7 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.black > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          <AnimatePresence mode="sync">
+          <AnimatePresence>
             {barCheckers.black.map(checker => checker)}
           </AnimatePresence>
         </Box>

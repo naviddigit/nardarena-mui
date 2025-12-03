@@ -18,7 +18,8 @@
 import { useEffect, useState } from 'react';
 import { gamePersistenceAPI } from 'src/services/game-persistence-api';
 import { calculateValidMoves } from 'src/hooks/game-logic/validation';
-import type { GameState } from 'src/hooks/game-logic/types';
+import { executeMove } from 'src/hooks/game-logic/move-executor';
+import type { GameState, ValidMove } from 'src/hooks/game-logic/types';
 
 // ⚠️ AI delay settings - loaded from backend
 let AI_MOVE_DELAY_MIN = 1000; // Default: 1 second
@@ -121,51 +122,20 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
           // وقفه کوچک برای نمایش انتخاب
           await new Promise(resolve => setTimeout(resolve, 300));
           
-          // اجرای حرکت locally
+          // اجرای حرکت با استفاده از executeMove (مثل حرکت بازیکن)
           console.log(`➡️ AI moving from ${move.from} to ${move.to}`);
+          
+          // Create a ValidMove object for executeMove
+          const validMove: ValidMove = {
+            from: move.from,
+            to: move.to,
+            die: move.die,
+          };
+          
+          // Use executeMove to properly handle animations
           setGameState((prev) => {
-            const newBoardState = JSON.parse(JSON.stringify(prev.boardState)); // Deep clone
-
-            // انتقال مهره از مبدا
-            if (move.from === -1) {
-              // از bar
-              newBoardState.bar.black--;
-            } else {
-              // از point - حذف آخرین مهره از آرایه
-              if (newBoardState.points[move.from].checkers.length > 0) {
-                newBoardState.points[move.from].checkers.pop();
-                newBoardState.points[move.from].count--;
-              }
-            }
-
-            // چک کردن hit
-            if (move.to >= 0 && move.to < 24) {
-              const targetPoint = newBoardState.points[move.to];
-              const isOpponentSingle = targetPoint.checkers.length === 1 && 
-                                       targetPoint.checkers[0] === 'white';
-              
-              if (isOpponentSingle) {
-                // Hit white checker
-                targetPoint.checkers = [];
-                targetPoint.count = 0;
-                newBoardState.bar.white++;
-                console.log(`💥 Hit white checker at point ${move.to}`);
-              }
-
-              // قرار دادن مهره black در مقصد
-              newBoardState.points[move.to].checkers.push('black');
-              newBoardState.points[move.to].count++;
-            } else if (move.to === 24 || move.to === -1) {
-              // Bear off
-              newBoardState.off.black++;
-              console.log(`🏁 Bore off black checker`);
-            }
-
-            return {
-              ...prev,
-              boardState: newBoardState,
-              selectedPoint: null,
-            };
+            const result = executeMove(prev, move.from, move.to, validMove, setGameState);
+            return result || prev;
           });
           
           // وقفه برای نمایش حرکت
