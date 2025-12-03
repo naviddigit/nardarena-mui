@@ -361,11 +361,27 @@ function GameAIPageContent() {
         try {
           const game = await gamePersistenceAPI.getGame(urlGameId);
           
+          console.log('📥 Game loaded from backend:', {
+            gameId: game.id,
+            whitePlayerId: game.whitePlayerId,
+            blackPlayerId: game.blackPlayerId,
+            userId: user.id,
+            status: game.status,
+          });
+          
           // Check if game is still active
           if (game.status === 'ACTIVE' && game.gameState) {
             // Determine player color based on user ID
             const isWhitePlayer = game.whitePlayerId === user.id;
             const isBlackPlayer = game.blackPlayerId === user.id;
+            
+            console.log('🎯 Player determination:', {
+              isWhitePlayer,
+              isBlackPlayer,
+              userId: user.id,
+              whitePlayerId: game.whitePlayerId,
+              blackPlayerId: game.blackPlayerId,
+            });
             
             if (isWhitePlayer || isBlackPlayer) {
               const resumedPlayerColor = isWhitePlayer ? 'white' : 'black';
