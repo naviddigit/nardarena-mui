@@ -33,6 +33,12 @@ export function useAIOpeningRoll({
       }
       return;
     }
+    
+    // ✅ CRITICAL: Reset hasRolled when both rolls are null (tie happened)
+    if (gameState.openingRoll.white === null && gameState.openingRoll.black === null) {
+      hasRolledRef.current = false;
+      console.log('🔄 Opening roll reset (tie) - AI can roll again');
+    }
 
     // Skip if not AI game
     if (!isAIGame) {

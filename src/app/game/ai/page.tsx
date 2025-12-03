@@ -380,10 +380,10 @@ function GameAIPageContent() {
             const isWhitePlayer = game.whitePlayerId === user.id;
             const isBlackPlayer = game.blackPlayerId === user.id;
             
-            // User's color from backend
-            const resumedPlayerColor = isWhitePlayer ? 'white' : 'black';
-            // AI is OPPOSITE of user
-            const resumedAIColor = resumedPlayerColor === 'white' ? 'black' : 'white';
+            // ✅ Get AI color from backend (authoritative source)
+            const resumedAIColor = (game.gameState.aiPlayerColor || 'black') as 'white' | 'black';
+            // User is OPPOSITE of AI
+            const resumedPlayerColor = resumedAIColor === 'white' ? 'black' : 'white';
             
             console.log('🎯 Player determination:', {
               isWhitePlayer,
@@ -393,6 +393,7 @@ function GameAIPageContent() {
               blackPlayerId: game.blackPlayerId,
               playerColor: resumedPlayerColor,
               aiColor: resumedAIColor,
+              aiColorFromDB: game.gameState.aiPlayerColor,
             });
             
             if (isWhitePlayer || isBlackPlayer) {
@@ -601,8 +602,13 @@ function GameAIPageContent() {
                     console.log('⏱️ It\'s AI turn - no player timer needed');
                   }
                   
-                  // ✅ If it's AI's turn and phase is waiting (no dice rolled yet), trigger AI
-                  if (currentPlayerAfterLoad === resumedAIColor && restoredPhase === 'waiting') {
+                  // ✅ If it's AI's turn, phase is waiting AND turn is completed, trigger AI
+                  const restoredTurnCompleted = game.gameState?.turnCompleted ?? true;
+                  if (
+                    currentPlayerAfterLoad === resumedAIColor && 
+                    restoredPhase === 'waiting' &&
+                    restoredTurnCompleted === true
+                  ) {
                     console.log('🎲 AI needs to roll dice after resume - triggering...');
                     setTimeout(async () => {
                       try {
@@ -1177,12 +1183,14 @@ function GameAIPageContent() {
   }, [playerColor, user, backendGameId, createAIGame]);
 
   // Save opening roll results to backend when both players have rolled
+  // Auto-save opening roll when both players have rolled
   useEffect(() => {
     if (!backendGameId || !user) return;
     
-    // Check if opening roll is complete (both players rolled)
+    // ⚠️ ONLY save opening roll if we're actively IN opening phase
+    // Don't re-save if we loaded a game that already completed opening roll
     if (
-      gameState.gamePhase === 'waiting' &&
+      gameState.gamePhase === 'opening' && // Must be actively in opening phase
       gameState.openingRoll.white !== null &&
       gameState.openingRoll.black !== null &&
       !openingRollEndedRef.current // Only execute once
