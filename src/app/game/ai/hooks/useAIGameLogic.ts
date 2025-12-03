@@ -18,8 +18,7 @@
 import { useEffect, useState } from 'react';
 import { gamePersistenceAPI } from 'src/services/game-persistence-api';
 import { calculateValidMoves } from 'src/hooks/game-logic/validation';
-import { executeMove } from 'src/hooks/game-logic/move-executor';
-import type { GameState, ValidMove } from 'src/hooks/game-logic/types';
+import type { GameState } from 'src/hooks/game-logic/types';
 
 // ⚠️ AI delay settings - loaded from backend
 let AI_MOVE_DELAY_MIN = 1000; // Default: 1 second
@@ -122,24 +121,119 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
           // وقفه کوچک برای نمایش انتخاب
           await new Promise(resolve => setTimeout(resolve, 300));
           
-          // اجرای حرکت با استفاده از executeMove (مثل حرکت بازیکن)
+          // اجرای حرکت locally
           console.log(`➡️ AI moving from ${move.from} to ${move.to}`);
           
-          // Create a ValidMove object for executeMove
-          const validMove: ValidMove = {
-            from: move.from,
-            to: move.to,
-            die: move.die,
-          };
-          
-          // Use executeMove to properly handle animations
-          setGameState((prev) => {
-            const result = executeMove(prev, move.from, move.to, validMove, setGameState);
-            return result || prev;
-          });
-          
-          // وقفه برای نمایش حرکت
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Check if this is a hit move first
+          const isHitMove = move.to >= 0 && move.to < 24 && 
+                           gameState.boardState.points[move.to].count === 1 && 
+                           gameState.boardState.points[move.to].checkers[0] === 'white';
+
+          if (isHitMove) {
+            // STEP 1: Hit the opponent checker first (triggers hit animation)
+            setGameState((prev) => {
+              const newPoints = prev.boardState.points.map((point) => ({
+                checkers: [...point.checkers],
+                count: point.count,
+              }));
+
+              // Hit white checker - send to bar
+              newPoints[move.to] = {
+                checkers: [],
+                count: 0,
+              };
+
+              const newBar = {
+                ...prev.boardState.bar,
+                white: prev.boardState.bar.white + 1,
+              };
+
+              console.log(`💥 Hit white checker at point ${move.to}`);
+
+              return {
+                ...prev,
+                boardState: {
+                  points: newPoints,
+                  bar: newBar,
+                  off: { ...prev.boardState.off },
+                },
+              };
+            });
+
+            // Wait for hit animation
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // STEP 2: Move our checker (triggers move animation)
+            setGameState((prev) => {
+              const newPoints = prev.boardState.points.map((point) => ({
+                checkers: [...point.checkers],
+                count: point.count,
+              }));
+
+              // Remove from source
+              if (move.from === -1) {
+                // From bar
+              } else {
+                // From point
+                if (newPoints[move.from].checkers.length > 0) {
+                  newPoints[move.from].checkers.pop();
+                  newPoints[move.from].count--;
+                }
+              }
+
+              // Add to destination
+              newPoints[move.to].checkers.push('black');
+              newPoints[move.to].count++;
+
+              const newBar = move.from === -1 
+                ? { ...prev.boardState.bar, black: prev.boardState.bar.black - 1 }
+                : { ...prev.boardState.bar };
+
+              return {
+                ...prev,
+                boardState: {
+                  points: newPoints,
+                  bar: newBar,
+                  off: { ...prev.boardState.off },
+                },
+                selectedPoint: null,
+              };
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 200));
+          } else {
+            // Regular move (no hit)
+            setGameState((prev) => {
+              const newBoardState = JSON.parse(JSON.stringify(prev.boardState));
+
+              // انتقال مهره از مبدا
+              if (move.from === -1) {
+                newBoardState.bar.black--;
+              } else {
+                if (newBoardState.points[move.from].checkers.length > 0) {
+                  newBoardState.points[move.from].checkers.pop();
+                  newBoardState.points[move.from].count--;
+                }
+              }
+
+              // قرار دادن مهره در مقصد
+              if (move.to >= 0 && move.to < 24) {
+                newBoardState.points[move.to].checkers.push('black');
+                newBoardState.points[move.to].count++;
+              } else if (move.to === 24 || move.to === -1) {
+                newBoardState.off.black++;
+                console.log(`🏁 Bore off black checker`);
+              }
+
+              return {
+                ...prev,
+                boardState: newBoardState,
+                selectedPoint: null,
+              };
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
         }
 
         console.log(`✅ All ${aiResult.moves.length} moves executed visually`);
