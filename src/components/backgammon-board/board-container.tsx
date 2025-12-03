@@ -376,7 +376,8 @@ export function BackgammonBoard({
         <AnimatePresence>
         {(() => {
           const point = boardState.points[pointIndex];
-          if (!point) return null;
+          // ✅ Safety check: ensure point and checkers array exist
+          if (!point || !point.checkers || !Array.isArray(point.checkers)) return null;
           
           // استفاده از SCALE_CONFIG
           const stackSpacing = isMobile ? SCALE_CONFIG.stackSpacing.mobile : SCALE_CONFIG.stackSpacing.desktop;
