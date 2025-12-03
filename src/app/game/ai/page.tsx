@@ -892,7 +892,7 @@ function GameAIPageContent() {
   }, [gameState.shouldClearDice, setGameState]);
 
   // Auto-roll for AI in opening phase (immediately when game starts)
-  // Only triggers ONCE when component mounts and opening phase is active
+  // Triggers when dice roller becomes ready
   useEffect(() => {
     // Skip if not in opening phase or AI already rolled
     if (gameState.gamePhase !== 'opening' || 
@@ -902,7 +902,7 @@ function GameAIPageContent() {
       return;
     }
     
-    console.log('🎲 AI auto-rolling opening die (initial mount)...');
+    console.log('🎲 AI auto-rolling opening die (dice roller ready)...');
     
     const openingTimeout = setTimeout(() => {
       // Double-check conditions before rolling
@@ -922,11 +922,10 @@ function GameAIPageContent() {
           }
         }, 100);
       }
-    }, 1200); // 1.2 seconds after page loads
+    }, 800); // Short delay after dice roller is ready
     
     return () => clearTimeout(openingTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency - only run once on mount
+  }, [diceRollerRef.current?.rollDice]); // Trigger when rollDice becomes available
 
   // Auto-roll for AI (only in waiting phase, NOT in opening)
   useEffect(() => {
