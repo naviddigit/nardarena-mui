@@ -892,42 +892,41 @@ function GameAIPageContent() {
   }, [gameState.shouldClearDice, setGameState]);
 
   // Auto-roll for AI in opening phase (immediately when game starts)
+  // Only triggers ONCE when component mounts and opening phase is active
   useEffect(() => {
-    console.log('🔍 AI opening check:', {
-      phase: gameState.gamePhase,
-      blackRoll: gameState.openingRoll.black,
-      playerColor,
-      hasDiceRoller: !!diceRollerRef.current?.rollDice,
-    });
-    
-    // AI rolls automatically when opening phase starts
-    if (gameState.gamePhase === 'opening' && 
-        gameState.openingRoll.black === null && 
-        playerColor &&
-        diceRollerRef.current?.rollDice) {
-      console.log('🎲 AI auto-rolling opening die immediately...');
-      const openingTimeout = setTimeout(() => {
-        if (gameState.gamePhase === 'opening' && 
-            gameState.openingRoll.black === null && 
-            diceRollerRef.current?.rollDice) {
-          console.log('🎲 Executing AI opening roll...');
-          
-          // Set currentPlayer to black temporarily
-          setGameState(prev => ({ ...prev, currentPlayer: 'black' }));
-          
-          // Roll the dice
-          setTimeout(() => {
-            if (diceRollerRef.current?.rollDice) {
-              setIsRolling(true);
-              diceRollerRef.current.rollDice();
-            }
-          }, 100);
-        }
-      }, 1200); // 1.2 seconds after page loads (after dice box is ready)
-      
-      return () => clearTimeout(openingTimeout);
+    // Skip if not in opening phase or AI already rolled
+    if (gameState.gamePhase !== 'opening' || 
+        gameState.openingRoll.black !== null ||
+        !playerColor ||
+        !diceRollerRef.current?.rollDice) {
+      return;
     }
-  }, [gameState.gamePhase, gameState.openingRoll.black, playerColor, diceRollerRef.current, setGameState]);
+    
+    console.log('🎲 AI auto-rolling opening die (initial mount)...');
+    
+    const openingTimeout = setTimeout(() => {
+      // Double-check conditions before rolling
+      if (gameState.gamePhase === 'opening' && 
+          gameState.openingRoll.black === null && 
+          diceRollerRef.current?.rollDice) {
+        console.log('🎲 Executing AI opening roll...');
+        
+        // Set currentPlayer to black temporarily
+        setGameState(prev => ({ ...prev, currentPlayer: 'black' }));
+        
+        // Roll the dice
+        setTimeout(() => {
+          if (diceRollerRef.current?.rollDice) {
+            setIsRolling(true);
+            diceRollerRef.current.rollDice();
+          }
+        }, 100);
+      }
+    }, 1200); // 1.2 seconds after page loads
+    
+    return () => clearTimeout(openingTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency - only run once on mount
 
   // Auto-roll for AI (only in waiting phase, NOT in opening)
   useEffect(() => {
