@@ -16,9 +16,10 @@ interface UseDiceRollerProps {
   gameState: GameState;
   diceRollerRef: React.RefObject<any>;
   onDiceRollComplete: (values: number[]) => void;
+  backendGameId: string | null; // Added: need gameId for backend dice
 }
 
-export function useDiceRoller({ gameState, diceRollerRef, onDiceRollComplete }: UseDiceRollerProps) {
+export function useDiceRoller({ gameState, diceRollerRef, onDiceRollComplete, backendGameId }: UseDiceRollerProps) {
   const [isRolling, setIsRolling] = useState(false);
   const [isWaitingForBackend, setIsWaitingForBackend] = useState(false);
   const [skipBackendDice, setSkipBackendDice] = useState(false);
@@ -60,6 +61,11 @@ export function useDiceRoller({ gameState, diceRollerRef, onDiceRollComplete }: 
       return;
     }
 
+    if (!backendGameId) {
+      console.error('❌ No gameId - cannot roll dice');
+      return;
+    }
+
     // Opening phase: تاس frontend
     if (gameState.gamePhase === 'opening') {
       if (diceRollerRef.current?.rollDice) {
@@ -74,8 +80,8 @@ export function useDiceRoller({ gameState, diceRollerRef, onDiceRollComplete }: 
     setIsWaitingForBackend(true);
 
     try {
-      const diceResponse = await gamePersistenceAPI.rollDice();
-      console.log('🎲 Backend dice:', diceResponse.dice);
+      const diceResponse = await gamePersistenceAPI.rollDice(backendGameId);
+      console.log('🎲 Backend dice:', diceResponse.dice, 'source:', diceResponse.source);
 
       // تنظیم flag‌ها
       setSkipBackendDice(true);
@@ -94,7 +100,7 @@ export function useDiceRoller({ gameState, diceRollerRef, onDiceRollComplete }: 
       setIsRolling(false);
       setIsWaitingForBackend(false);
     }
-  }, [isRolling, isWaitingForBackend, gameState.gamePhase, diceRollerRef]);
+  }, [isRolling, isWaitingForBackend, gameState.gamePhase, diceRollerRef, backendGameId]);
 
   /**
    * انداختن خودکار تاس برای AI
@@ -102,12 +108,17 @@ export function useDiceRoller({ gameState, diceRollerRef, onDiceRollComplete }: 
   const triggerAIDiceRoll = useCallback(async () => {
     if (isRolling || isWaitingForBackend) return;
 
+    if (!backendGameId) {
+      console.error('❌ No gameId - cannot roll AI dice');
+      return;
+    }
+
     console.log('🎲 AI auto-rolling dice...');
     setIsWaitingForBackend(true);
 
     try {
-      const diceResponse = await gamePersistenceAPI.rollDice();
-      console.log('🎲 Backend dice for AI:', diceResponse.dice);
+      const diceResponse = await gamePersistenceAPI.rollDice(backendGameId);
+      console.log('🎲 Backend dice for AI:', diceResponse.dice, 'source:', diceResponse.source);
 
       setSkipBackendDice(true);
       setIsWaitingForBackend(false);
@@ -123,7 +134,7 @@ export function useDiceRoller({ gameState, diceRollerRef, onDiceRollComplete }: 
       setIsRolling(false);
       setIsWaitingForBackend(false);
     }
-  }, [isRolling, isWaitingForBackend, diceRollerRef]);
+  }, [isRolling, isWaitingForBackend, diceRollerRef, backendGameId]);
 
   return {
     isRolling,

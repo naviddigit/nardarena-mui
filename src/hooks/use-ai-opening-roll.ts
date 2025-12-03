@@ -44,8 +44,16 @@ export function useAIOpeningRoll({
       return;
     }
 
-    // Skip if AI already rolled (check based on aiPlayerColor, not hardcoded black)
+    // Skip if AI already rolled
     if (gameState.openingRoll[aiPlayerColor] !== null) {
+      return;
+    }
+
+    // ✅ AI should roll AFTER human player has rolled
+    // Check if human player has rolled
+    const humanColor = aiPlayerColor === 'white' ? 'black' : 'white';
+    if (gameState.openingRoll[humanColor] === null) {
+      // Human hasn't rolled yet - wait
       return;
     }
 
@@ -60,7 +68,7 @@ export function useAIOpeningRoll({
     }
 
     // All conditions met - trigger AI roll
-    console.log(`🤖 AI (${aiPlayerColor}) opening roll conditions met, scheduling roll...`);
+    console.log(`🤖 AI (${aiPlayerColor}) will roll - human (${humanColor}) already rolled: ${gameState.openingRoll[humanColor]}`);
 
     timeoutRef.current = setTimeout(() => {
       // Double-check conditions before executing
@@ -85,7 +93,7 @@ export function useAIOpeningRoll({
     };
   }, [
     gameState.gamePhase,
-    gameState.openingRoll[aiPlayerColor],
+    gameState.openingRoll, // Watch entire openingRoll object
     gameState.selectedPoint,
     isAIGame,
     aiPlayerColor,

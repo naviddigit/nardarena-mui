@@ -3,6 +3,8 @@
  * Handles saving and retrieving game data from backend
  */
 
+import axios from 'axios';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
 
 // ----------------------------------------------------------------------
@@ -88,6 +90,22 @@ export interface GameHistoryItem {
 // ----------------------------------------------------------------------
 
 class GamePersistenceAPI {
+  // Expose axios instance for direct calls
+  public axios = axios.create({
+    baseURL: API_BASE_URL,
+  });
+
+  constructor() {
+    // Add request interceptor to include auth token
+    this.axios.interceptors.request.use((config) => {
+      const token = this.getAuthToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+  }
+
   private getAuthToken(): string | null {
     if (typeof window === 'undefined') return null;
     
@@ -261,11 +279,12 @@ class GamePersistenceAPI {
   /**
    * Roll two dice on server (for fairness)
    */
-  async rollDice(): Promise<{
+  async rollDice(gameId: string): Promise<{
     dice: [number, number];
+    source: 'pre-generated' | 'generated';
     timestamp: string;
   }> {
-    const response = await fetch(`${API_BASE_URL}/game/dice/roll`, {
+    const response = await fetch(`${API_BASE_URL}/game/dice/roll/${gameId}`, {
       method: 'POST',
       headers: this.getHeaders(),
     });

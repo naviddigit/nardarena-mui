@@ -36,6 +36,7 @@ interface UseGameTimersProps {
   };
   winner: 'white' | 'black' | null;
   onTimeout: (winner: 'white' | 'black') => void;
+  isExecutingAIMove?: boolean; // ✅ Added: disable timer control during AI execution
 }
 
 export function useGameTimers({
@@ -45,11 +46,20 @@ export function useGameTimers({
   blackTimer,
   winner,
   onTimeout,
+  isExecutingAIMove = false, // ✅ Default to false
 }: UseGameTimersProps) {
   
   // ✅ 1. Start/stop timers based on whose turn it is
   useEffect(() => {
-    if (winner || !playerColor) return;
+    if (winner || !playerColor || isExecutingAIMove) return; // ✅ Don't control timers during AI execution
+
+    console.log('⏱️ [useGameTimers] Checking timer state:', {
+      currentPlayer: gameState.currentPlayer,
+      gamePhase: gameState.gamePhase,
+      whiteTimerCounting: whiteTimer.counting,
+      blackTimerCounting: blackTimer.counting,
+      isExecutingAIMove,
+    });
 
     // White's turn: start white timer, stop black timer
     if (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting') {
@@ -73,7 +83,7 @@ export function useGameTimers({
         whiteTimer.stopCountdown();
       }
     }
-  }, [gameState.currentPlayer, gameState.gamePhase, playerColor, winner]);
+  }, [gameState.currentPlayer, gameState.gamePhase, playerColor, winner, isExecutingAIMove]);
 
   // ✅ 2. Check for timeout
   useEffect(() => {

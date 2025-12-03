@@ -67,6 +67,7 @@ import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { useSound } from 'src/hooks/use-sound';
 import { useAIGame } from 'src/hooks/use-ai-game';
 import { useAIOpeningRoll } from 'src/hooks/use-ai-opening-roll';
+import { useGameRecovery } from 'src/hooks/use-game-recovery';
 import { _mock } from 'src/_mock';
 import { BoardThemeProvider } from 'src/contexts/board-theme-context';
 import { useAuthContext } from 'src/auth/hooks';
@@ -285,9 +286,12 @@ function GameAIPageContent() {
   const whiteTimerValueRef = useRef(1800);
   const blackTimerValueRef = useRef(1800);
   
-  // Calculate AI player color (opposite of human player)
-  // Only valid when playerColor is set
-  const aiPlayerColor = playerColor ? (playerColor === 'white' ? 'black' : 'white') : 'black'; // Default to black if not set yet
+  // AI player color state (opposite of human player)
+  const [aiPlayerColor, setAiPlayerColor] = useState<'white' | 'black'>('black');
+  
+  // ✅ Backend authorization state - controls if user can play
+  const [canUserPlay, setCanUserPlay] = useState<boolean>(true);
+  const [waitingForOpponent, setWaitingForOpponent] = useState<boolean>(false);
 
   // AI Game hook
   const {
@@ -314,6 +318,7 @@ function GameAIPageContent() {
   const lastTurnPlayerRef = useRef<'white' | 'black' | null>(null);
   const lastMoveCountRef = useRef(0);
   const setWinnerProcessedRef = useRef(false); // Track if we've processed this set winner
+  const openingRollEndedRef = useRef(false); // Track if opening roll endTurn was called
 
   // Win text display function
   const showWinMessage = (message: string) => {
@@ -371,9 +376,14 @@ function GameAIPageContent() {
           
           // Check if game is still active
           if (game.status === 'ACTIVE' && game.gameState) {
-            // Determine player color based on user ID
+            // ✅ Determine which color this user is playing
             const isWhitePlayer = game.whitePlayerId === user.id;
             const isBlackPlayer = game.blackPlayerId === user.id;
+            
+            // User's color from backend
+            const resumedPlayerColor = isWhitePlayer ? 'white' : 'black';
+            // AI is OPPOSITE of user
+            const resumedAIColor = resumedPlayerColor === 'white' ? 'black' : 'white';
             
             console.log('🎯 Player determination:', {
               isWhitePlayer,
@@ -381,15 +391,16 @@ function GameAIPageContent() {
               userId: user.id,
               whitePlayerId: game.whitePlayerId,
               blackPlayerId: game.blackPlayerId,
+              playerColor: resumedPlayerColor,
+              aiColor: resumedAIColor,
             });
             
             if (isWhitePlayer || isBlackPlayer) {
-              const resumedPlayerColor = isWhitePlayer ? 'white' : 'black';
+              console.log('✅ Restoring game - You are:', resumedPlayerColor, '| AI is:', resumedAIColor);
               
-              console.log('✅ Restoring game - You are:', resumedPlayerColor);
-              
-              // ✅ Always restore playerColor (even on refresh)
+              // ✅ Set colors ONCE at the beginning
               setPlayerColor(resumedPlayerColor);
+              setAiPlayerColor(resumedAIColor);
               setBackendGameId(game.id);
               
               // ✅ Determine correct gamePhase
@@ -407,7 +418,13 @@ function GameAIPageContent() {
               console.log('🎮 Restored phase:', restoredPhase, '| Current player:', game.gameState.currentPlayer);
               
               // Restore board state
-              // ✅ Extract board structure from gameState
+              // ✅ Backend now sends SAME format as frontend: {checkers: [...], count: n}
+              // NO CONVERSION NEEDED!
+              console.log('📥 Restoring board state from backend (no conversion)');
+              console.log('  Points[0]:', game.gameState.points?.[0]);
+              console.log('  Points[5]:', game.gameState.points?.[5]);
+              console.log('  Points[23]:', game.gameState.points?.[23]);
+              
               setGameState((prev) => ({
                 ...prev,
                 boardState: {
@@ -418,9 +435,22 @@ function GameAIPageContent() {
                 currentPlayer: game.gameState.currentPlayer || 'white',
                 gamePhase: restoredPhase,
                 diceValues: game.gameState.diceValues || [],
+                openingRoll: game.gameState.openingRoll || prev.openingRoll, // ✅ Restore opening roll
               }));
               
               console.log('✅ Board restored with', game.gameState.points?.length || 0, 'points');
+              
+              // ⚠️ CRITICAL FIX: If moving phase but no dice, force to waiting phase
+              if (restoredPhase === 'moving' && (!game.gameState.diceValues || game.gameState.diceValues.length === 0)) {
+                console.warn('🔧 FORCE FIX: Moving phase but no dice - switching to waiting phase');
+                setTimeout(() => {
+                  setGameState(prev => ({
+                    ...prev,
+                    gamePhase: 'waiting',
+                    diceValues: [],
+                  }));
+                }, 500);
+              }
               
               // 🕐 Restore timers from MOVES (not moveHistory - it has wrong structure)
               // Use game.timeControl as base timer if available (in seconds)
@@ -449,13 +479,16 @@ function GameAIPageContent() {
                     continue;
                   }
                   
-                  const movePlayer = move.playerColor.toLowerCase();
+                  // ✅ Handle both uppercase and lowercase
+                  const movePlayer = move.playerColor.toString().toLowerCase();
                   
                   if (movePlayer === 'white' && !whiteLastMove) {
                     whiteLastMove = move;
+                    console.log('✅ Found WHITE move:', move.moveNumber, 'timeRemaining:', move.timeRemaining);
                   }
                   if (movePlayer === 'black' && !blackLastMove) {
                     blackLastMove = move;
+                    console.log('✅ Found BLACK move:', move.moveNumber, 'timeRemaining:', move.timeRemaining);
                   }
                   
                   // Stop if we found both
@@ -532,7 +565,58 @@ function GameAIPageContent() {
                 console.log('⏱️ Both timers:', gameTimeControl, 's (no moves yet, using game timeControl)');
               }
               
-              console.log('✅ Game resumed:', game.id, 'Player:', resumedPlayerColor);
+              console.log('✅ Game resumed:', game.id, 'Player:', resumedPlayerColor, 'AI:', resumedAIColor);
+              
+              try {
+                const canPlayResponse = await gamePersistenceAPI.axios.get(`/game/${game.id}/can-play`);
+                
+                const { canPlay, isYourTurn, currentPlayer } = canPlayResponse.data;
+                const { lastDoneBy, lastDoneAt } = canPlayResponse.data;
+                
+                console.log('📊 Last Done:', lastDoneBy || 'Nobody', lastDoneAt ? new Date(lastDoneAt).toLocaleTimeString() : '');
+                
+                setCanUserPlay(canPlay);
+                setWaitingForOpponent(!canPlay);
+                
+              } catch (error) {
+                console.error('❌ Failed to check can play:', error);
+              }
+              
+              // ⏱️ Start timer ONLY for HUMAN player if it's their turn (NOT during opening)
+              if (restoredPhase !== 'opening') {
+                setTimeout(() => {
+                  const currentPlayerAfterLoad = (game.gameState.currentPlayer?.toLowerCase() || 'white') as Player;
+                  console.log('⏱️ Checking timer for current player:', currentPlayerAfterLoad);
+                  console.log('🤖 AI color:', resumedAIColor, '| Player color:', resumedPlayerColor);
+                  
+                  // Only start timer if it's HUMAN player's turn
+                  if (currentPlayerAfterLoad === resumedPlayerColor) {
+                    console.log('⏱️ Starting', resumedPlayerColor, 'timer (player\'s turn after resume)');
+                    if (resumedPlayerColor === 'white') {
+                      whiteTimer.startCountdown();
+                    } else {
+                      blackTimer.startCountdown();
+                    }
+                  } else {
+                    console.log('⏱️ It\'s AI turn - no player timer needed');
+                  }
+                  
+                  // ✅ If it's AI's turn and phase is waiting (no dice rolled yet), trigger AI
+                  if (currentPlayerAfterLoad === resumedAIColor && restoredPhase === 'waiting') {
+                    console.log('🎲 AI needs to roll dice after resume - triggering...');
+                    setTimeout(async () => {
+                      try {
+                        const result = await gamePersistenceAPI.triggerAIMove(game.id);
+                        console.log('✅ AI move triggered:', result);
+                      } catch (error) {
+                        console.error('❌ Failed to trigger AI:', error);
+                      }
+                    }, 1000);
+                  }
+                }, 500);
+              } else {
+                console.log('⏱️ Opening phase - timers handled by opening roll logic');
+              }
             }
           }
         } catch (error) {
@@ -570,12 +654,25 @@ function GameAIPageContent() {
       // ❌ DON'T clear AI dice here - let them stay until player rolls
       // Players need to see what dice AI used!
       
-      // ✅ Stop AI (black) timer and start player (white) timer
-      console.log('⏱️ AI turn complete - switching timers: black → white');
-      blackTimer.stopCountdown();
-      setTimeout(() => {
-        whiteTimer.startCountdown();
-      }, 100);
+      // ✅ Stop AI timer and start player timer (based on actual colors)
+      console.log('⏱️ AI turn complete - switching timers');
+      console.log('  AI color:', aiPlayerColor, '| Player color:', playerColor);
+      
+      if (aiPlayerColor === 'black') {
+        // AI is black → stop black, start white
+        console.log('  Stopping black (AI) timer, starting white (player) timer');
+        blackTimer.stopCountdown();
+        setTimeout(() => {
+          whiteTimer.startCountdown();
+        }, 100);
+      } else {
+        // AI is white → stop white, start black
+        console.log('  Stopping white (AI) timer, starting black (player) timer');
+        whiteTimer.stopCountdown();
+        setTimeout(() => {
+          blackTimer.startCountdown();
+        }, 100);
+      }
     },
   });
 
@@ -600,6 +697,7 @@ function GameAIPageContent() {
     whiteTimer,
     blackTimer,
     winner,
+    isExecutingAIMove, // ✅ Pass AI execution state to prevent timer conflicts
     onTimeout: (timeoutWinner) => {
       console.log(`⏰ ${timeoutWinner === 'white' ? 'White' : 'Black'} wins by timeout!`);
       setWinner(timeoutWinner);
@@ -812,6 +910,7 @@ function GameAIPageContent() {
               
               // Reset the processed flag for next set
               setWinnerProcessedRef.current = false;
+              openingRollEndedRef.current = false; // Reset opening roll flag for new set
               
               console.log(`🎮 Starting set ${nextSet} of ${maxSets}, ${currentSetWinner} to move first`);
             }, 500); // 0.5 second after win text disappears
@@ -836,6 +935,23 @@ function GameAIPageContent() {
   };
 
   const triggerDiceRoll = async () => {
+    if (backendGameId && user && gameState.gamePhase !== 'opening') {
+      try {
+        const canPlayResponse = await gamePersistenceAPI.axios.get(`/game/${backendGameId}/can-play`);
+        const { canRollNewDice } = canPlayResponse.data;
+        
+        if (!canRollNewDice) {
+          return;
+        }
+        
+        setCanUserPlay(true);
+        setWaitingForOpponent(false);
+      } catch (error) {
+        console.error('❌ Failed to check authorization:', error);
+        return;
+      }
+    }
+    
     // In opening phase, allow rolling only if this player hasn't rolled yet
     if (gameState.gamePhase === 'opening') {
       // Check if player already rolled
@@ -851,7 +967,8 @@ function GameAIPageContent() {
       if (diceRollerRef.current?.rollDice) {
         console.log(`🎲 ${playerColor} rolling opening die...`);
         
-        // Set currentPlayer to the player who is rolling
+        // ⛔ CRITICAL: Set currentPlayer BEFORE rolling to identify who's rolling
+        // This is needed for handleDiceRoll to know which player's openingRoll to update
         setGameState(prev => ({ ...prev, currentPlayer: playerColor as Player }));
         
         setTimeout(() => {
@@ -873,6 +990,12 @@ function GameAIPageContent() {
       return;
     }
 
+    // Guard: backendGameId must exist
+    if (!backendGameId) {
+      console.error('❌ No gameId - cannot roll dice');
+      return;
+    }
+
     // In normal gameplay, prevent rolling dice for AI player
     if (gameState.currentPlayer === aiPlayerColor) {
       console.log(`⚠️ Cannot roll - it's AI (${aiPlayerColor}) turn`);
@@ -885,10 +1008,25 @@ function GameAIPageContent() {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
-    // ✅ For game rolls, just roll the dice visually - use actual dice.js results
-    if (diceRollerRef.current?.rollDice) {
-      setIsRolling(true);
-      diceRollerRef.current.rollDice();
+    // ✅ ANTI-CHEAT: Get dice from backend FIRST
+    console.log('🎲 Getting backend dice first...');
+    setIsWaitingForBackend(true);
+
+    try {
+      const diceResponse = await gamePersistenceAPI.rollDice(backendGameId);
+      console.log('🎲 Backend dice:', diceResponse.dice, 'source:', diceResponse.source);
+
+      setIsWaitingForBackend(false);
+
+      // Show dice animation with backend values
+      if (diceRollerRef.current?.setDiceValues) {
+        setIsRolling(true);
+        diceRollerRef.current.setDiceValues(diceResponse.dice);
+      }
+    } catch (error) {
+      console.error('❌ Failed to get backend dice:', error);
+      setIsRolling(false);
+      setIsWaitingForBackend(false);
     }
   };
 
@@ -924,30 +1062,43 @@ function GameAIPageContent() {
     }
   };
 
-  const handleDone = () => {
-    // ⛔ TIMER LOGIC - DO NOT MODIFY! ⛔
+  const handleDone = async () => {
     const currentPlayer = gameState.currentPlayer;
     
-    // ✅ Clear dice visually before ending turn
     if (diceRollerRef.current?.clearDice) {
       diceRollerRef.current.clearDice();
     }
     
-    // ✅ 1. Stop current player's timer
-    console.log(`⏱️ Stopping ${currentPlayer} timer`);
     if (currentPlayer === 'white') {
       whiteTimer.stopCountdown();
     } else {
       blackTimer.stopCountdown();
     }
     
-    // ✅ 2. End turn (this switches currentPlayer)
-    handleEndTurn();
+    if (backendGameId && user) {
+      try {
+        const response = await gamePersistenceAPI.axios.post(`/game/${backendGameId}/end-turn`);
+        
+        setCanUserPlay(false);
+        setWaitingForOpponent(true);
+        
+        setGameState(prev => ({
+          ...prev,
+          currentPlayer: response.data.nextPlayer,
+          gamePhase: 'waiting',
+          diceValues: [],
+        }));
+        
+      } catch (error) {
+        console.error('❌ Failed to end turn:', error);
+        handleEndTurn();
+      }
+    } else {
+      handleEndTurn();
+    }
     
-    // ✅ 3. Start next player's timer after small delay
     setTimeout(() => {
       const nextPlayer = currentPlayer === 'white' ? 'black' : 'white';
-      console.log(`⏱️ Starting ${nextPlayer} timer`);
       
       if (nextPlayer === 'white') {
         whiteTimer.startCountdown();
@@ -981,6 +1132,7 @@ function GameAIPageContent() {
 
   const handleColorSelect = (color: 'white' | 'black', selectedMaxSets: number) => {
     setPlayerColor(color);
+    setAiPlayerColor(color === 'white' ? 'black' : 'white'); // Set AI to opposite color
     setMaxSets(selectedMaxSets);
     
     // Show set start animation for first set
@@ -988,6 +1140,17 @@ function GameAIPageContent() {
       showWinMessage(`Start Set 1 of ${selectedMaxSets}`);
     }, 500);
   };
+
+  // ==========================================
+  // Helper function to trigger AI dice roll
+  // ==========================================
+  const triggerAIDiceRollFn = useCallback(() => {
+    if (diceRollerRef.current?.rollDice && !isRolling && !isWaitingForBackend) {
+      console.log('🎲 Triggering AI dice roll...');
+      setIsRolling(true);
+      diceRollerRef.current.rollDice();
+    }
+  }, [isRolling, isWaitingForBackend]);
 
   // Create game in backend when player selects color
   useEffect(() => {
@@ -1013,6 +1176,64 @@ function GameAIPageContent() {
     }
   }, [playerColor, user, backendGameId, createAIGame]);
 
+  // Save opening roll results to backend when both players have rolled
+  useEffect(() => {
+    if (!backendGameId || !user) return;
+    
+    // Check if opening roll is complete (both players rolled)
+    if (
+      gameState.gamePhase === 'waiting' &&
+      gameState.openingRoll.white !== null &&
+      gameState.openingRoll.black !== null &&
+      !openingRollEndedRef.current // Only execute once
+    ) {
+      // Prevent duplicate execution (React Strict Mode calls useEffect twice)
+      if (openingRollEndedRef.current) return;
+      
+      openingRollEndedRef.current = true;
+      
+      const saveOpeningRoll = async () => {
+        try {
+          const updatedGameState = {
+            openingRoll: gameState.openingRoll,
+            currentPlayer: gameState.currentPlayer,
+            phase: 'waiting',
+            points: gameState.boardState.points,
+            bar: gameState.boardState.bar,
+            off: gameState.boardState.off,
+            diceValues: [],
+          };
+          
+          await gamePersistenceAPI.axios.patch(
+            `/game/${backendGameId}/state`,
+            { gameState: updatedGameState }
+          );
+          
+          const response = await gamePersistenceAPI.axios.post(`/game/${backendGameId}/end-turn`);
+          
+          setGameState(prev => ({
+            ...prev,
+            currentPlayer: response.data.nextPlayer,
+            gamePhase: 'waiting',
+            diceValues: [],
+          }));
+          
+          if (response.data.nextPlayer === aiPlayerColor) {
+            setTimeout(() => {
+              triggerAIDiceRollFn();
+            }, 1000);
+          }
+          
+        } catch (error) {
+          console.error('❌ Failed to save opening roll:', error);
+          openingRollEndedRef.current = false;
+        }
+      };
+      
+      saveOpeningRoll();
+    }
+  }, [backendGameId, user, gameState.gamePhase, gameState.openingRoll, gameState.currentPlayer, gameState.boardState, aiPlayerColor, triggerAIDiceRollFn]);
+
   // Record moves to backend
   useEffect(() => {
     if (!backendGameId || !user || gameState.moveHistory.length === 0) return;
@@ -1036,6 +1257,12 @@ function GameAIPageContent() {
             ? whiteTimerValueRef.current  // Already in seconds
             : blackTimerValueRef.current; // Already in seconds
           
+          // ✅ NO CONVERSION - Backend uses same format as frontend now!
+          console.log('📤 Sending board state to backend (no conversion)');
+          console.log('  Points[0]:', gameState.boardState.points[0]);
+          console.log('  Points[5]:', gameState.boardState.points[5]);
+          console.log('  Points[23]:', gameState.boardState.points[23]);
+          
           await gamePersistenceAPI.recordMove(backendGameId, {
             playerColor: latestMove.player.toUpperCase() as APIPlayerColor,
             moveNumber: gameState.moveHistory.length,
@@ -1044,8 +1271,11 @@ function GameAIPageContent() {
             diceUsed: latestMove.diceValue,
             isHit: latestMove.hitChecker ? true : false,
             boardStateAfter: {
-              ...gameState.boardState,
-              currentPlayer: gameState.currentPlayer, // Include current player
+              points: gameState.boardState.points, // ✅ Direct - no conversion!
+              bar: gameState.boardState.bar,
+              off: gameState.boardState.off,
+              currentPlayer: gameState.currentPlayer,
+              diceValues: gameState.diceValues, // ✅ Include dice values!
             },
             timeRemaining: playerTimeRemaining, // In seconds!
             moveTime: Date.now() - turnStartTime, // Duration in milliseconds
@@ -1150,7 +1380,9 @@ function GameAIPageContent() {
     aiPlayerColor,
     diceRollerReady: !!diceRollerRef.current?.rollDice,
     onRollNeeded: useCallback(() => {
-      // Set currentPlayer to AI color
+      console.log('🎲 AI opening roll requested for:', aiPlayerColor);
+      
+      // ✅ CRITICAL: Set currentPlayer to AI so handleDiceRoll knows which openingRoll to update
       setGameState(prev => ({ ...prev, currentPlayer: aiPlayerColor }));
       
       // Roll the dice
@@ -1193,6 +1425,11 @@ function GameAIPageContent() {
 
   // Auto-execute AI moves when in moving phase
   // ✅ این حالا توی useAIGameLogic hook اجرا میشه با delay های مناسب
+
+  // ==========================================
+  // 🚨 GAME RECOVERY SYSTEM
+  // ==========================================
+  // Auto-recovery disabled - user controls all actions manually
 
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';

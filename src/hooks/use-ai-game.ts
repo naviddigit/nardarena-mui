@@ -72,10 +72,11 @@ export function useAIGame(options: UseAIGameOptions = {}) {
    */
   const createAIGame = useCallback(async () => {
     try {
+      // aiPlayerColor is already the AI's color (set correctly in page.tsx)
       const game = await gamePersistenceAPI.createGame({
         gameType: 'AI',
         aiDifficulty,
-        aiPlayerColor,
+        aiPlayerColor: aiPlayerColor, // This is correct - aiPlayerColor IS the AI's color
         gameMode: 'CLASSIC',
         timeControl: 1800, // 30 minutes
       });
