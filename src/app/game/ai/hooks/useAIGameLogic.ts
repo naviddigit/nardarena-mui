@@ -28,6 +28,7 @@ interface UseAIGameLogicProps {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   backendGameId: string | null;
+  aiPlayerColor: 'white' | 'black'; // AI player color (not hard-coded!)
   onTurnComplete?: () => void; // ✅ Callback when AI finishes turn
 }
 
@@ -38,7 +39,7 @@ function getRandomDelay(min: number = AI_MOVE_DELAY_MIN, max: number = AI_MOVE_D
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnComplete }: UseAIGameLogicProps) {
+export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlayerColor, onTurnComplete }: UseAIGameLogicProps) {
   const [isExecutingAIMove, setIsExecutingAIMove] = useState(false);
 
   // Load AI delay settings from backend on mount
@@ -59,7 +60,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
   // اجرای خودکار حرکات AI
   useEffect(() => {
     const shouldExecuteAI =
-      gameState.currentPlayer === 'black' &&
+      gameState.currentPlayer === aiPlayerColor &&
       gameState.gamePhase === 'moving' &&
       gameState.validMoves.length > 0 &&
       backendGameId &&
@@ -67,7 +68,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
 
     if (!shouldExecuteAI) return;
 
-    console.log('🤖 AI needs to move! Valid moves:', gameState.validMoves.length);
+    console.log(`🤖 AI (${aiPlayerColor}) needs to move! Valid moves:`, gameState.validMoves.length);
     console.log('🎲 AI dice values:', gameState.diceValues);
 
     const executeAIMoves = async () => {
@@ -80,7 +81,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
           backendGameId,
           {
             ...gameState.boardState,
-            currentPlayer: 'black',
+            currentPlayer: aiPlayerColor,
             phase: 'moving',
           },
           gameState.diceValues
@@ -125,9 +126,10 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
           console.log(`➡️ AI moving from ${move.from} to ${move.to}`);
           
           // Check if this is a hit move first
+          const opponentColor = aiPlayerColor === 'white' ? 'black' : 'white';
           const isHitMove = move.to >= 0 && move.to < 24 && 
                            gameState.boardState.points[move.to].count === 1 && 
-                           gameState.boardState.points[move.to].checkers[0] === 'white';
+                           gameState.boardState.points[move.to].checkers[0] === opponentColor;
 
           if (isHitMove) {
             // STEP 1: Hit the opponent checker first (triggers hit animation)
@@ -145,10 +147,10 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
 
               const newBar = {
                 ...prev.boardState.bar,
-                white: prev.boardState.bar.white + 1,
+                [opponentColor]: prev.boardState.bar[opponentColor] + 1,
               };
 
-              console.log(`💥 Hit white checker at point ${move.to}`);
+              console.log(`💥 Hit ${opponentColor} checker at point ${move.to}`);
 
               return {
                 ...prev,
@@ -182,11 +184,11 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
               }
 
               // Add to destination
-              newPoints[move.to].checkers.push('black');
+              newPoints[move.to].checkers.push(aiPlayerColor);
               newPoints[move.to].count++;
 
               const newBar = move.from === -1 
-                ? { ...prev.boardState.bar, black: prev.boardState.bar.black - 1 }
+                ? { ...prev.boardState.bar, [aiPlayerColor]: prev.boardState.bar[aiPlayerColor] - 1 }
                 : { ...prev.boardState.bar };
 
               return {
@@ -208,7 +210,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
 
               // انتقال مهره از مبدا
               if (move.from === -1) {
-                newBoardState.bar.black--;
+                newBoardState.bar[aiPlayerColor]--;
               } else {
                 if (newBoardState.points[move.from].checkers.length > 0) {
                   newBoardState.points[move.from].checkers.pop();
@@ -218,11 +220,11 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, onTurnC
 
               // قرار دادن مهره در مقصد
               if (move.to >= 0 && move.to < 24) {
-                newBoardState.points[move.to].checkers.push('black');
+                newBoardState.points[move.to].checkers.push(aiPlayerColor);
                 newBoardState.points[move.to].count++;
               } else if (move.to === 24 || move.to === -1) {
-                newBoardState.off.black++;
-                console.log(`🏁 Bore off black checker`);
+                newBoardState.off[aiPlayerColor]++;
+                console.log(`🏁 Bore off ${aiPlayerColor} checker`);
               }
 
               return {

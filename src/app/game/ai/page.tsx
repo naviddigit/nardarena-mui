@@ -343,11 +343,15 @@ function GameAIPageContent() {
     setGameState, // For directly setting state from backend
   } = useGameState(initialBoardState);
 
+  // Calculate AI player color (opposite of human player)
+  const aiPlayerColor = playerColor === 'white' ? 'black' : 'white';
+
   // ✅ استفاده از AI hooks جدید (بعد از useGameState)
   const { isExecutingAIMove } = useAIGameLogic({
     gameState,
     setGameState,
     backendGameId,
+    aiPlayerColor,
     onTurnComplete: () => {
       // ❌ DON'T clear AI dice here - let them stay until player rolls
       // Players need to see what dice AI used!
@@ -893,9 +897,6 @@ function GameAIPageContent() {
   }, [gameState.shouldClearDice, setGameState]);
 
   // Auto-roll for AI in opening phase using modular hook
-  // AI player color is opposite of human player color
-  const aiPlayerColor = playerColor === 'white' ? 'black' : 'white';
-  
   useAIOpeningRoll({
     gameState,
     isAIGame: !!playerColor, // playerColor exists means it's AI game
@@ -917,7 +918,7 @@ function GameAIPageContent() {
 
   // Auto-roll for AI (only in waiting phase, NOT in opening)
   useEffect(() => {
-    if (gameState.currentPlayer === 'black' && diceRollerRef.current) {
+    if (gameState.currentPlayer === aiPlayerColor && diceRollerRef.current) {
       
       if (gameState.gamePhase === 'waiting' && !isRolling && !isWaitingForBackend) {
         const waitingTimeout = setTimeout(async () => {
@@ -931,7 +932,7 @@ function GameAIPageContent() {
           
           // ✅ Roll dice using dice.js (not backend)
           if (diceRollerRef.current?.rollDice) {
-            console.log('🎲 AI rolling dice using dice.js...');
+            console.log(`🎲 AI (${aiPlayerColor}) rolling dice using dice.js...`);
             setIsRolling(true);
             diceRollerRef.current.rollDice();
           } else {
@@ -942,7 +943,7 @@ function GameAIPageContent() {
         return () => clearTimeout(waitingTimeout);
       }
     }
-  }, [gameState.gamePhase, gameState.currentPlayer, isRolling, isWaitingForBackend]);
+  }, [gameState.gamePhase, gameState.currentPlayer, aiPlayerColor, isRolling, isWaitingForBackend]);
 
   // Auto-execute AI moves when in moving phase
   // ✅ این حالا توی useAIGameLogic hook اجرا میشه با delay های مناسب
