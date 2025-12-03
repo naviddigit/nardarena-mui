@@ -33,7 +33,7 @@ export interface RecordMoveDto {
   isHit?: boolean;
   boardStateBefore?: any; // Full board state for replay
   boardStateAfter?: any; // Full board state after move
-  timeRemaining?: number; // milliseconds
+  timeRemaining?: number; // SECONDS remaining on player's clock (NOT milliseconds!)
   moveTime?: number; // milliseconds taken for this move
 }
 
