@@ -608,17 +608,34 @@ function GameAIPageContent() {
   };
 
   const triggerDiceRoll = async () => {
-    // Prevent rolling if already rolling or waiting
-    if (isRolling || isWaitingForBackend) {
+    // In opening phase, allow rolling only if this player hasn't rolled yet
+    if (gameState.gamePhase === 'opening') {
+      // Check if player already rolled
+      if (playerColor === 'white' && gameState.openingRoll.white !== null) {
+        console.log('⚠️ White already rolled, cannot roll again');
+        return;
+      }
+      if (playerColor === 'black' && gameState.openingRoll.black !== null) {
+        console.log('⚠️ Black already rolled, cannot roll again');
+        return;
+      }
+      
+      if (diceRollerRef.current?.rollDice) {
+        console.log(`🎲 ${playerColor} rolling opening die...`);
+        
+        // Set currentPlayer to the player who is rolling
+        setGameState(prev => ({ ...prev, currentPlayer: playerColor as Player }));
+        
+        setTimeout(() => {
+          setIsRolling(true);
+          diceRollerRef.current?.rollDice();
+        }, 100);
+      }
       return;
     }
-
-    // In opening phase, roll normally with frontend
-    if (gameState.gamePhase === 'opening') {
-      if (diceRollerRef.current?.rollDice) {
-        setIsRolling(true);
-        diceRollerRef.current.rollDice();
-      }
+    
+    // Prevent rolling if already rolling or waiting (only in normal gameplay)
+    if (isRolling || isWaitingForBackend) {
       return;
     }
 
@@ -627,8 +644,8 @@ function GameAIPageContent() {
       return;
     }
     
-    // ⛔ CRITICAL: Clear old dice first!
-    if (diceRollerRef.current?.clearDice) {
+    // ⛔ CRITICAL: Clear old dice first (but NOT in opening phase!)
+    if (diceRollerRef.current?.clearDice && gameState.gamePhase !== 'opening') {
       diceRollerRef.current.clearDice();
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -857,21 +874,64 @@ function GameAIPageContent() {
     }
   }, [backendGameId, user, winner, timeoutWinner, scores, gameState.boardState]);
 
+  // Clear dice when opening roll is a tie (shouldClearDice flag)
+  useEffect(() => {
+    if (gameState.shouldClearDice && diceRollerRef.current?.clearDice) {
+      console.log('🔄 Clearing dice for re-roll...');
+      diceRollerRef.current.clearDice();
+      
+      // Reset the flag after clearing
+      setGameState((prev) => ({
+        ...prev,
+        shouldClearDice: false,
+      }));
+      
+      // Both players can roll again after clearing (no auto-roll)
+      console.log('🎲 Dice cleared. Both players can roll again.');
+    }
+  }, [gameState.shouldClearDice, setGameState]);
+
+  // Auto-roll for AI in opening phase (immediately when game starts)
+  useEffect(() => {
+    console.log('🔍 AI opening check:', {
+      phase: gameState.gamePhase,
+      blackRoll: gameState.openingRoll.black,
+      playerColor,
+      hasDiceRoller: !!diceRollerRef.current?.rollDice,
+    });
+    
+    // AI rolls automatically when opening phase starts
+    if (gameState.gamePhase === 'opening' && 
+        gameState.openingRoll.black === null && 
+        playerColor &&
+        diceRollerRef.current?.rollDice) {
+      console.log('🎲 AI auto-rolling opening die immediately...');
+      const openingTimeout = setTimeout(() => {
+        if (gameState.gamePhase === 'opening' && 
+            gameState.openingRoll.black === null && 
+            diceRollerRef.current?.rollDice) {
+          console.log('🎲 Executing AI opening roll...');
+          
+          // Set currentPlayer to black temporarily
+          setGameState(prev => ({ ...prev, currentPlayer: 'black' }));
+          
+          // Roll the dice
+          setTimeout(() => {
+            if (diceRollerRef.current?.rollDice) {
+              setIsRolling(true);
+              diceRollerRef.current.rollDice();
+            }
+          }, 100);
+        }
+      }, 1200); // 1.2 seconds after page loads (after dice box is ready)
+      
+      return () => clearTimeout(openingTimeout);
+    }
+  }, [gameState.gamePhase, gameState.openingRoll.black, playerColor, diceRollerRef.current, setGameState]);
+
   // Auto-roll for AI (only in waiting phase, NOT in opening)
   useEffect(() => {
     if (gameState.currentPlayer === 'black' && diceRollerRef.current) {
-      // In opening phase, AI also needs to roll
-      if (gameState.gamePhase === 'opening' && gameState.openingRoll.white !== null && gameState.openingRoll.black === null) {
-        console.log('🎲 AI rolling opening die...');
-        const openingTimeout = setTimeout(() => {
-          if (diceRollerRef.current?.rollDice) {
-            setIsRolling(true);
-            diceRollerRef.current.rollDice();
-          }
-        }, 1500);
-        
-        return () => clearTimeout(openingTimeout);
-      }
       
       if (gameState.gamePhase === 'waiting' && !isRolling && !isWaitingForBackend) {
         const waitingTimeout = setTimeout(async () => {

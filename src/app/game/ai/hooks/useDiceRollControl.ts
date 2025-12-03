@@ -5,7 +5,7 @@
  * بعد از تست کامل، هیچ تغییری در این فایل ندهید!
  * 
  * قوانین Roll Dice:
- * 1. در opening phase: فقط player (white) میتونه اول roll کنه
+ * 1. در opening phase: هر player میتونه همزمان roll کنه (اگه هنوز roll نکرده)
  * 2. در gameplay عادی: فقط وقتی نوبت player هست و در فاز waiting هست
  * 3. نمیتونه roll کنه اگه:
  *    - در حال rolling باشه (isRolling = true)
@@ -46,7 +46,22 @@ export function useDiceRollControl({
       return { canRoll: false, canRollReason: 'Player color not selected' };
     }
 
-    // اگه در حال rolling هست
+    // Opening phase: هر player میتونه بدون نوبت roll کنه (simultaneous)
+    // ⚠️ Check opening BEFORE isRolling so both players can roll
+    if (gameState.gamePhase === 'opening') {
+      // White player can roll if hasn't rolled yet (regardless of isRolling)
+      if (playerColor === 'white' && gameState.openingRoll.white === null) {
+        return { canRoll: true, canRollReason: 'Opening roll for white (simultaneous)' };
+      }
+      // Black player (AI) can roll if hasn't rolled yet (regardless of isRolling)
+      if (playerColor === 'black' && gameState.openingRoll.black === null) {
+        return { canRoll: true, canRollReason: 'Opening roll for black (simultaneous)' };
+      }
+      // Already rolled
+      return { canRoll: false, canRollReason: 'Already rolled in opening' };
+    }
+
+    // اگه در حال rolling هست (only for normal gameplay)
     if (isRolling) {
       return { canRoll: false, canRollReason: 'Already rolling' };
     }
@@ -59,14 +74,6 @@ export function useDiceRollControl({
     // اگه AI در حال حرکت هست
     if (isExecutingAIMove) {
       return { canRoll: false, canRollReason: 'AI is moving' };
-    }
-
-    // Opening phase: فقط white (player) میتونه اول roll کنه
-    if (gameState.gamePhase === 'opening') {
-      if (playerColor === 'white' && gameState.openingRoll.white === null) {
-        return { canRoll: true, canRollReason: 'Opening roll for white' };
-      }
-      return { canRoll: false, canRollReason: 'Not your turn in opening' };
     }
 
     // Gameplay عادی: باید نوبت player باشه و در فاز waiting باشه

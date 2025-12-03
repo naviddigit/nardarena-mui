@@ -28,46 +28,62 @@ export function useGameState(initialBoardState: BoardState) {
     openingRoll: { white: null, black: null },
     scores: { white: 0, black: 0 },
     setWinner: null,
+    shouldClearDice: false,
   });
 
   const handleDiceRoll = useCallback((results: { value: number }[]) => {
     setGameState((prev) => {
-      // Opening roll: each player rolls one die
+      // Opening roll: both players can roll independently (not turn-based)
       if (prev.gamePhase === 'opening') {
         const dieValue = results[0].value;
         const newOpeningRoll = { ...prev.openingRoll };
         
-        if (prev.openingRoll.white === null) {
-          newOpeningRoll.white = dieValue;
+        // Determine which player rolled based on currentPlayer
+        const rollingPlayer = prev.currentPlayer;
+        
+        // If this player already rolled, ignore (shouldn't happen but safety check)
+        if (newOpeningRoll[rollingPlayer] !== null) {
+          console.log(`⚠️ ${rollingPlayer} already rolled, ignoring duplicate roll`);
+          return prev;
+        }
+        
+        // Record this player's roll
+        newOpeningRoll[rollingPlayer] = dieValue;
+        console.log(`🎲 ${rollingPlayer} rolled:`, dieValue);
+        
+        // Check if both players have rolled
+        if (newOpeningRoll.white !== null && newOpeningRoll.black !== null) {
+          // Check for tie
+          if (newOpeningRoll.white === newOpeningRoll.black) {
+            console.log('🔄 Opening roll tie! Re-rolling...');
+            return {
+              ...prev,
+              openingRoll: { white: null, black: null },
+              currentPlayer: 'white',
+              shouldClearDice: true,
+            };
+          }
+          
+          // Determine winner
+          const starter: Player = newOpeningRoll.white > newOpeningRoll.black ? 'white' : 'black';
+          console.log('🎯 Opening roll winner:', starter);
+          
           return {
             ...prev,
+            currentPlayer: starter,
+            diceValues: [],
+            gamePhase: 'waiting',
+            validMoves: [],
             openingRoll: newOpeningRoll,
-            currentPlayer: 'black',
+            moveHistory: [],
           };
         }
         
-        newOpeningRoll.black = dieValue;
-        
-        // Determine who starts (re-roll if tie)
-        if (newOpeningRoll.white === newOpeningRoll.black) {
-          return {
-            ...prev,
-            openingRoll: { white: null, black: null },
-            currentPlayer: 'white',
-          };
-        }
-        
-        // Winner starts - go to waiting phase so they can roll 2d6
-        const starter: Player = newOpeningRoll.white! > newOpeningRoll.black! ? 'white' : 'black';
-        
+        // Only one player has rolled, stay in opening phase
+        // DON'T change currentPlayer - both can roll anytime
         return {
           ...prev,
-          currentPlayer: starter,
-          diceValues: [],
-          gamePhase: 'waiting',
-          validMoves: [],
           openingRoll: newOpeningRoll,
-          moveHistory: [],
         };
       }
       
@@ -300,6 +316,7 @@ export function useGameState(initialBoardState: BoardState) {
       openingRoll: { white: null, black: null },
       scores: { white: 0, black: 0 },
       setWinner: null,
+      shouldClearDice: false,
     });
   }, [initialBoardState]);
 
@@ -335,6 +352,7 @@ export function useGameState(initialBoardState: BoardState) {
         [winner]: prev.scores[winner] + 1,
       },
       setWinner: winner,
+      shouldClearDice: false,
     }));
   }, [initialBoardState]);
 

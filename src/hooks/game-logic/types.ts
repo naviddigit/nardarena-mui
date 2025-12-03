@@ -30,4 +30,5 @@ export type GameState = {
   openingRoll: { white: number | null; black: number | null };
   scores: { white: number; black: number };
   setWinner: Player | null;
+  shouldClearDice?: boolean; // Flag to clear dice on tie re-rolls
 };

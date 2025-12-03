@@ -352,7 +352,7 @@ export function BackgammonBoard({
         )}
 
         {/* Render checkers - max 5 visible with count label if more */}
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
         {(() => {
           const point = boardState.points[pointIndex];
           if (!point) return null;
@@ -723,8 +723,8 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.white > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          <AnimatePresence mode="popLayout">
-            {barCheckers.white}
+          <AnimatePresence mode="sync">
+            {barCheckers.white.map(checker => checker)}
           </AnimatePresence>
         </Box>
 
@@ -762,8 +762,8 @@ export function BackgammonBoard({
             '&:hover': boardState.bar.black > 0 ? { opacity: 0.8 } : {},
           }}
         >
-          <AnimatePresence mode="popLayout">
-            {barCheckers.black}
+          <AnimatePresence mode="sync">
+            {barCheckers.black.map(checker => checker)}
           </AnimatePresence>
         </Box>
 

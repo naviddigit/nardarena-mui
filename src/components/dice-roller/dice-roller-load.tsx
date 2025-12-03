@@ -221,9 +221,12 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
 
     console.log('🎲 Rolling dice:', diceNotation);
     
-    // ✅ For opening rolls (1d6), override prepare function to keep existing dice
+    // ✅ For opening rolls (1d6), override prepare function AND clear function to keep existing dice
     if (diceNotation === '1d6' && boxRef.current) {
       const originalPrepare = boxRef.current.prepare_dices_for_roll;
+      const originalClear = boxRef.current.clear;
+      
+      // Override prepare to not clear existing dice
       boxRef.current.prepare_dices_for_roll = function(vectors: any) {
         this.iteration = 0;
         for (const i in vectors) {
@@ -231,8 +234,18 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
                   vectors[i].angle, vectors[i].axis);
         }
       };
+      
+      // Override clear to do nothing (keep existing dice)
+      boxRef.current.clear = function() {
+        console.log('🎲 Clear disabled for opening roll');
+      };
+      
+      // Restore original functions after roll
       setTimeout(() => {
-        if (boxRef.current) boxRef.current.prepare_dices_for_roll = originalPrepare;
+        if (boxRef.current) {
+          boxRef.current.prepare_dices_for_roll = originalPrepare;
+          boxRef.current.clear = originalClear;
+        }
       }, 200);
     }
     
@@ -360,9 +373,12 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
 
     console.log('🎲 Forcing dice values:', values);
     
-    // ✅ For opening rolls (1d6), override prepare function to keep existing dice
+    // ✅ For opening rolls (1d6), override prepare function AND clear function to keep existing dice
     if (diceNotation === '1d6' && boxRef.current) {
       const originalPrepare = boxRef.current.prepare_dices_for_roll;
+      const originalClear = boxRef.current.clear;
+      
+      // Override prepare to not clear existing dice
       boxRef.current.prepare_dices_for_roll = function(vectors: any) {
         this.iteration = 0;
         for (const i in vectors) {
@@ -370,8 +386,18 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
                   vectors[i].angle, vectors[i].axis);
         }
       };
+      
+      // Override clear to do nothing (keep existing dice)
+      boxRef.current.clear = function() {
+        console.log('🎲 Clear disabled for opening roll (setDiceValues)');
+      };
+      
+      // Restore original functions after roll
       setTimeout(() => {
-        if (boxRef.current) boxRef.current.prepare_dices_for_roll = originalPrepare;
+        if (boxRef.current) {
+          boxRef.current.prepare_dices_for_roll = originalPrepare;
+          boxRef.current.clear = originalClear;
+        }
       }, 200);
     }
     

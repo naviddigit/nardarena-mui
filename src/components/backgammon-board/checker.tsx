@@ -50,23 +50,24 @@ export function Checker({
     <Box
       component={m.div}
       layoutId={layoutId}
-      initial={false}
+      initial={{ opacity: 0, scale: 0.8 }}
       animate={{ 
         opacity: 1,
+        scale: 1,
       }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ 
         type: 'spring', 
-        stiffness: 200,
-        damping: 25,
-        mass: 0.6,
-        opacity: { duration: 0.2 },
+        stiffness: 300,
+        damping: 30,
+        mass: 0.8,
+        opacity: { duration: 0.3 },
+        scale: { duration: 0.3 },
         layout: { 
           type: 'spring',
-          stiffness: 200,
-          damping: 25,
-          mass: 0.6,
-          duration: 0.5
+          stiffness: 300,
+          damping: 30,
+          mass: 0.8,
         }
       }}
       onClick={(e: React.MouseEvent) => {
