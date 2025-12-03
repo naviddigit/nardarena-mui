@@ -342,6 +342,49 @@ function GameAIPageContent() {
     }, 1200);
     return () => clearTimeout(timer);
   }, []);
+
+  // 🔄 Game Resume: Load existing game from URL
+  useEffect(() => {
+    const loadExistingGame = async () => {
+      // Only try to load if we have urlGameId, user is logged in, and playerColor not set yet
+      if (urlGameId && user && !playerColor) {
+        try {
+          const game = await gamePersistenceAPI.getGame(urlGameId);
+          
+          // Check if game is still active
+          if (game.status === 'ACTIVE' && game.gameState) {
+            // Determine player color based on user ID
+            const isWhitePlayer = game.whitePlayerId === user.id;
+            const isBlackPlayer = game.blackPlayerId === user.id;
+            
+            if (isWhitePlayer || isBlackPlayer) {
+              const resumedPlayerColor = isWhitePlayer ? 'white' : 'black';
+              
+              // Restore game state
+              setPlayerColor(resumedPlayerColor);
+              setBackendGameId(game.id);
+              
+              // Restore board state
+              setGameState((prev) => ({
+                ...prev,
+                boardState: game.gameState,
+                currentPlayer: game.gameState.currentPlayer || 'white',
+                gamePhase: game.gameState.phase || 'waiting',
+                diceValues: game.gameState.diceValues || [],
+              }));
+              
+              console.log('✅ Game resumed:', game.id, 'Player:', resumedPlayerColor);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to load game:', error);
+          // If game not found or error, just continue with normal flow (show color selection)
+        }
+      }
+    };
+    
+    loadExistingGame();
+  }, [urlGameId, user, playerColor]);
   
   const initialBoardState = useMemo(() => createInitialBoardState(), []);
   const { 
@@ -900,6 +943,20 @@ function GameAIPageContent() {
 
   // Clear dice when opening roll is a tie (shouldClearDice flag)
   useEffect(() => {
+
+  // 🏆 Check for game winner after each move
+  useEffect(() => {
+    const whiteWon = gameState.boardState.off.white === 15;
+    const blackWon = gameState.boardState.off.black === 15;
+    
+    if (whiteWon && !winner) {
+      setWinner('white');
+      setResultDialogOpen(true);
+    } else if (blackWon && !winner) {
+      setWinner('black');
+      setResultDialogOpen(true);
+    }
+  }, [gameState.boardState.off.white, gameState.boardState.off.black, winner]);
     if (gameState.shouldClearDice && diceRollerRef.current?.clearDice) {
       console.log('🔄 Clearing dice for re-roll...');
       diceRollerRef.current.clearDice();
