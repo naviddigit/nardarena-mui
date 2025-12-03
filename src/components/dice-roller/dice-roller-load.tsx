@@ -220,6 +220,22 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
 
     console.log('🎲 Rolling dice:', diceNotation);
+    
+    // ✅ For opening rolls (1d6), override prepare function to keep existing dice
+    if (diceNotation === '1d6' && boxRef.current) {
+      const originalPrepare = boxRef.current.prepare_dices_for_roll;
+      boxRef.current.prepare_dices_for_roll = function(vectors: any) {
+        this.iteration = 0;
+        for (const i in vectors) {
+          this.create_dice(vectors[i].set, vectors[i].pos, vectors[i].velocity,
+                  vectors[i].angle, vectors[i].axis);
+        }
+      };
+      setTimeout(() => {
+        if (boxRef.current) boxRef.current.prepare_dices_for_roll = originalPrepare;
+      }, 200);
+    }
+    
     setIsRolling(true);
 
     // Play dice roll sound
@@ -271,15 +287,26 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
 
       box.roll(vectors, null, (result: number[]) => {
         clearTimeout(rollTimeout);
-        console.log('🎲 Roll complete! Results:', result);
         
-        if (!result || result.length === 0) {
+        // ✅ For opening rolls (1d6), box.roll returns ALL dice on scene
+        // We only want the LAST die that was just rolled
+        let actualResult = result;
+        const expectedCount = parseInt(diceNotation.match(/(\d+)d/)?.[1] || '1', 10);
+        if (diceNotation === '1d6' && result.length > expectedCount) {
+          console.log('🎲 Opening roll - filtering results. Got:', result, 'Expected:', expectedCount);
+          actualResult = result.slice(-expectedCount); // Take only the last N dice
+          console.log('🎲 Filtered to:', actualResult);
+        }
+        
+        console.log('🎲 Roll complete! Results:', actualResult);
+        
+        if (!actualResult || actualResult.length === 0) {
           console.error('🎲 Invalid roll result');
           setIsRolling(false);
           return;
         }
         
-        const results: DiceResult[] = result.map((value) => ({
+        const results: DiceResult[] = actualResult.map((value) => ({
           value,
           type: 'd6',
         }));
@@ -333,10 +360,19 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
 
     console.log('🎲 Forcing dice values:', values);
     
-    // ✅ CRITICAL: Clear any existing dice first!
-    if (boxRef.current.clear) {
-      console.log('🎲 Clearing old dice before setting new values');
-      boxRef.current.clear();
+    // ✅ For opening rolls (1d6), override prepare function to keep existing dice
+    if (diceNotation === '1d6' && boxRef.current) {
+      const originalPrepare = boxRef.current.prepare_dices_for_roll;
+      boxRef.current.prepare_dices_for_roll = function(vectors: any) {
+        this.iteration = 0;
+        for (const i in vectors) {
+          this.create_dice(vectors[i].set, vectors[i].pos, vectors[i].velocity,
+                  vectors[i].angle, vectors[i].axis);
+        }
+      };
+      setTimeout(() => {
+        if (boxRef.current) boxRef.current.prepare_dices_for_roll = originalPrepare;
+      }, 200);
     }
     
     setIsRolling(true);
@@ -391,16 +427,25 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       box.roll(vectors, values, (result: number[]) => {
         clearTimeout(rollTimeout);
         
+        // ✅ For opening rolls (1d6), box.roll returns ALL dice on scene
+        // We only want the LAST die that was just rolled
+        let actualResult = result;
+        if (diceNotation === '1d6' && result.length > values.length) {
+          console.log('🎲 Opening roll - filtering results. Got:', result, 'Expected:', values.length);
+          actualResult = result.slice(-values.length); // Take only the last N dice
+          console.log('🎲 Filtered to:', actualResult);
+        }
+        
         // ⚠️ Check if dice.js returned wrong values (it often does!)
         const requestedSorted = [...values].sort().join(',');
-        const receivedSorted = [...result].sort().join(',');
+        const receivedSorted = [...actualResult].sort().join(',');
         
         if (requestedSorted !== receivedSorted) {
           console.warn('⚠️ dice.js returned wrong values!');
-          console.warn('   Requested:', values, 'Got:', result);
+          console.warn('   Requested:', values, 'Got:', actualResult);
           console.warn('   ✅ Using requested values (correct)');
         } else {
-          console.log('🎲 Roll complete! Requested:', values, 'Got:', result);
+          console.log('🎲 Roll complete! Requested:', values, 'Got:', actualResult);
         }
         
         setIsRolling(false);

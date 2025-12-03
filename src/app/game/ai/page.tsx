@@ -596,15 +596,14 @@ function GameAIPageContent() {
   }, [gameState.gamePhase, gameState.boardState.off, winner, currentSet, maxSets, startNewSet, whiteTimer, blackTimer, playSound]);
 
   const handleDiceRollComplete = async (results: { value: number; type: string }[]) => {
-    if (skipBackendDice) {
-      setSkipBackendDice(false);
-      return;
-    }
-
-    // For opening roll, use frontend dice
-    if (gameState.gamePhase === 'opening') {
-      handleDiceRollWithTimestamp(results);
-      return;
+    // Apply dice results to game state
+    handleDiceRollWithTimestamp(results);
+    
+    // If it's a normal game roll (not opening), we should inform backend
+    // but we DON'T need to wait for it - dice are already rolled visually
+    if (gameState.gamePhase !== 'opening') {
+      // Just log the dice values - backend doesn't need to validate them
+      console.log('🎲 Dice rolled:', results.map(r => r.value));
     }
   };
 
@@ -634,33 +633,10 @@ function GameAIPageContent() {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
-    // For game rolls, get backend dice FIRST, then show them
-    setIsWaitingForBackend(true);
-    try {
-      const diceResponse = await gamePersistenceAPI.rollDice();
-      
-      // IMPORTANT: Apply dice to game state FIRST
-      const results = diceResponse.dice.map((value) => ({
-        value,
-        type: 'die',
-        }));
-      handleDiceRollWithTimestamp(results);
-      
-      // Then show animation (visual only)
-      setSkipBackendDice(true);
-      setIsWaitingForBackend(false);
-      
-      if (diceRollerRef.current?.setDiceValues) {
-        setIsRolling(true);
-        await new Promise(resolve => setTimeout(resolve, 10));
-        diceRollerRef.current.setDiceValues(diceResponse.dice);
-      } else {
-        setIsRolling(false);
-      }
-    } catch (error) {
-      console.error('❌ Failed to get backend dice:', error);
-      setIsRolling(false);
-      setIsWaitingForBackend(false);
+    // ✅ For game rolls, just roll the dice visually - use actual dice.js results
+    if (diceRollerRef.current?.rollDice) {
+      setIsRolling(true);
+      diceRollerRef.current.rollDice();
     }
   };
 
@@ -907,37 +883,13 @@ function GameAIPageContent() {
             await new Promise(resolve => setTimeout(resolve, 500)); // ✅ Increased to 500ms
           }
           
-          // Get backend dice directly
-          setIsWaitingForBackend(true);
-          try {
-            const diceResponse = await gamePersistenceAPI.rollDice();
-            console.log('\ud83c\udfb2 Backend returned dice for AI:', diceResponse.dice);
-            
-            setSkipBackendDice(true);
-            setIsWaitingForBackend(false);
-            
-            // ✅ IMMEDIATELY apply dice to game state
-            const results = diceResponse.dice.map((value) => ({
-              value,
-              type: 'die',
-            }));
-            handleDiceRollWithTimestamp(results);
-            
-            // Small delay to ensure state updates
-            await new Promise(resolve => setTimeout(resolve, 50));
-            
-            // Now trigger visual animation (this is just for show)
-            if (diceRollerRef.current?.setDiceValues) {
-              console.log('\ud83c\udfb2 Triggering AI dice animation with values:', diceResponse.dice);
-              setIsRolling(true);
-              diceRollerRef.current.setDiceValues(diceResponse.dice);
-            } else {
-              setIsRolling(false);
-            }
-          } catch (error) {
-            console.error('❌ Failed to get AI dice:', error);
-            setIsRolling(false);
-            setIsWaitingForBackend(false);
+          // ✅ Roll dice using dice.js (not backend)
+          if (diceRollerRef.current?.rollDice) {
+            console.log('🎲 AI rolling dice using dice.js...');
+            setIsRolling(true);
+            diceRollerRef.current.rollDice();
+          } else {
+            console.error('❌ Dice roller not available for AI');
           }
         }, 2000);
         
