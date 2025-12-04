@@ -497,73 +497,63 @@ function GameAIPageContent() {
                 }
                 
                 console.log('🔍 Found moves - White:', whiteLastMove?.moveNumber, 'Black:', blackLastMove?.moveNumber);
-                console.log('🔍 Found moves - White:', whiteLastMove?.moveNumber, 'Black:', blackLastMove?.moveNumber);
                 
-                // ⏱️ TIMER CALCULATION - Read carefully!
-                // Logic: Each player starts with gameTimeControl seconds
-                // After each move, save their remaining time
-                // On resume: if it's their turn, subtract time since their last move
+                // ⏱️ TIMER RESTORATION - Read from gameState.remainingTime (server-side source of truth)
+                const gameState = game.gameState;
+                const currentPlayerInGame = (gameState.currentPlayer?.toLowerCase() || 'white') as Player;
                 
-                // Restore white timer
-                if (whiteLastMove && whiteLastMove.timeRemaining != null) {
-                  // timeRemaining is in SECONDS (not milliseconds!)
-                  const lastKnownTime = whiteLastMove.timeRemaining;
+                // ✅ Get remaining time from gameState (not from moves!)
+                const whiteRemaining = gameState.remainingTime?.white ?? gameTimeControl;
+                const blackRemaining = gameState.remainingTime?.black ?? gameTimeControl;
+                
+                console.log('⏱️ Timer from gameState:', {
+                  white: whiteRemaining,
+                  black: blackRemaining,
+                  currentPlayer: currentPlayerInGame,
+                  turnStartTime: gameState.turnStartTime,
+                });
+                
+                // ⏱️ If it's current player's turn AND they have a turnStartTime, calculate elapsed
+                if (gameState.turnStartTime && gameState.phase !== 'opening') {
+                  const turnStartTime = new Date(gameState.turnStartTime).getTime();
+                  const elapsedSeconds = Math.floor((now - turnStartTime) / 1000);
                   
-                  // If white is current player, they've been "thinking" since their last move
-                  if (currentPlayerInGame === 'white' && whiteLastMove.createdAt) {
-                    const lastMoveTime = new Date(whiteLastMove.createdAt).getTime();
-                    const elapsedSeconds = Math.floor((now - lastMoveTime) / 1000);
-                    const actualTime = Math.max(0, lastKnownTime - elapsedSeconds);
-                    
+                  if (currentPlayerInGame === 'white') {
+                    const actualTime = Math.max(0, whiteRemaining - elapsedSeconds);
                     setWhiteTimerInit(actualTime);
                     whiteTimerValueRef.current = actualTime;
-                    console.log('⏱️ White timer RESTORED:', actualTime, 's (was', lastKnownTime, 's, elapsed', elapsedSeconds, 's since last move)');
+                    setBlackTimerInit(blackRemaining);
+                    blackTimerValueRef.current = blackRemaining;
+                    console.log(`⏱️ White timer: ${actualTime}s (${whiteRemaining}s - ${elapsedSeconds}s elapsed since roll)`);
+                    console.log(`⏱️ Black timer: ${blackRemaining}s (waiting)`);
                   } else {
-                    // Not white's turn - use their last saved time as-is
-                    setWhiteTimerInit(lastKnownTime);
-                    whiteTimerValueRef.current = lastKnownTime;
-                    console.log('⏱️ White timer RESTORED:', lastKnownTime, 's (waiting - no time loss)');
-                  }
-                } else {
-                  // White hasn't moved yet - full time
-                  setWhiteTimerInit(gameTimeControl);
-                  whiteTimerValueRef.current = gameTimeControl;
-                  console.log('⏱️ White timer DEFAULT:', gameTimeControl, 's (no moves yet)');
-                }
-                
-                // Restore black timer  
-                if (blackLastMove && blackLastMove.timeRemaining != null) {
-                  // timeRemaining is in SECONDS (not milliseconds!)
-                  const lastKnownTime = blackLastMove.timeRemaining;
-                  
-                  // If black is current player, they've been "thinking" since their last move
-                  if (currentPlayerInGame === 'black' && blackLastMove.createdAt) {
-                    const lastMoveTime = new Date(blackLastMove.createdAt).getTime();
-                    const elapsedSeconds = Math.floor((now - lastMoveTime) / 1000);
-                    const actualTime = Math.max(0, lastKnownTime - elapsedSeconds);
-                    
+                    const actualTime = Math.max(0, blackRemaining - elapsedSeconds);
+                    setWhiteTimerInit(whiteRemaining);
+                    whiteTimerValueRef.current = whiteRemaining;
                     setBlackTimerInit(actualTime);
                     blackTimerValueRef.current = actualTime;
-                    console.log('⏱️ Black timer RESTORED:', actualTime, 's (was', lastKnownTime, 's, elapsed', elapsedSeconds, 's since last move)');
-                  } else {
-                    // Not black's turn - use their last saved time as-is
-                    setBlackTimerInit(lastKnownTime);
-                    blackTimerValueRef.current = lastKnownTime;
-                    console.log('⏱️ Black timer RESTORED:', lastKnownTime, 's (waiting - no time loss)');
+                    console.log(`⏱️ White timer: ${whiteRemaining}s (waiting)`);
+                    console.log(`⏱️ Black timer: ${actualTime}s (${blackRemaining}s - ${elapsedSeconds}s elapsed since roll)`);
                   }
                 } else {
-                  // Black hasn't moved yet - full time
-                  setBlackTimerInit(gameTimeControl);
-                  blackTimerValueRef.current = gameTimeControl;
-                  console.log('⏱️ Black timer DEFAULT:', gameTimeControl, 's (no moves yet)');
+                  // No turn in progress or opening phase - use saved times as-is
+                  setWhiteTimerInit(whiteRemaining);
+                  whiteTimerValueRef.current = whiteRemaining;
+                  setBlackTimerInit(blackRemaining);
+                  blackTimerValueRef.current = blackRemaining;
+                  console.log('⏱️ Timers restored from gameState (no active turn)');
                 }
               } else {
                 // No moves at all - use game time control for both
-                setWhiteTimerInit(gameTimeControl);
-                setBlackTimerInit(gameTimeControl);
-                whiteTimerValueRef.current = gameTimeControl;
-                blackTimerValueRef.current = gameTimeControl;
-                console.log('⏱️ Both timers:', gameTimeControl, 's (no moves yet, using game timeControl)');
+                const gameState = game.gameState;
+                const whiteRemaining = gameState.remainingTime?.white ?? gameTimeControl;
+                const blackRemaining = gameState.remainingTime?.black ?? gameTimeControl;
+                
+                setWhiteTimerInit(whiteRemaining);
+                setBlackTimerInit(blackRemaining);
+                whiteTimerValueRef.current = whiteRemaining;
+                blackTimerValueRef.current = blackRemaining;
+                console.log('⏱️ Both timers from gameState:', whiteRemaining, 's /', blackRemaining, 's');
               }
               
               console.log('✅ Game resumed:', game.id, 'Player:', resumedPlayerColor, 'AI:', resumedAIColor);
