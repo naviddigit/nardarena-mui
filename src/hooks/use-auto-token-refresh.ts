@@ -18,11 +18,8 @@ export function useAutoTokenRefresh() {
                                  sessionStorage.getItem('refreshToken');
 
         if (!refreshTokenValue) {
-          console.warn('No refresh token found, skipping auto-refresh');
           return;
         }
-
-        console.log('[Auto-Refresh] Refreshing access token...');
 
         const response = await axios.post(`${CONFIG.site.serverUrl}/api/auth/refresh`, {
           refreshToken: refreshTokenValue,
@@ -38,8 +35,6 @@ export function useAutoTokenRefresh() {
           sessionStorage.setItem('jwt_refresh_token', newRefreshToken);
           sessionStorage.setItem('refreshToken', newRefreshToken); // Backwards compatibility
         }
-
-        console.log('[Auto-Refresh] Token refreshed successfully');
       } catch (error) {
         console.error('[Auto-Refresh] Failed to refresh token:', error);
         // Don't clear session here - let the 401 interceptor handle it
@@ -54,8 +49,6 @@ export function useAutoTokenRefresh() {
       // Refresh every 1 hour (3600000 ms)
       // Token expires after 4 hours, so this gives us 3 refresh opportunities
       const REFRESH_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
-
-      console.log('[Auto-Refresh] Starting auto-refresh every 1 hour');
       
       // Set up interval
       refreshIntervalRef.current = setInterval(refreshToken, REFRESH_INTERVAL);
@@ -63,7 +56,6 @@ export function useAutoTokenRefresh() {
       // Cleanup on unmount
       return () => {
         if (refreshIntervalRef.current) {
-          console.log('[Auto-Refresh] Stopping auto-refresh');
           clearInterval(refreshIntervalRef.current);
         }
       };

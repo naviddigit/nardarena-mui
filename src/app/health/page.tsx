@@ -11,6 +11,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import axios from 'src/utils/axios';
+import { API_BASE_URL } from 'src/config/api.config';
 
 // ----------------------------------------------------------------------
 
@@ -39,7 +40,7 @@ export default function HealthCheckPage() {
 
   const checkHealth = async () => {
     try {
-      const response = await axios.get('http://localhost:3002/api/health');
+      const response = await axios.get(`${API_BASE_URL}/health`);
       setHealth({
         frontend: 'healthy',
         backend: 'healthy',

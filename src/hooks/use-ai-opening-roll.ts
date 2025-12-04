@@ -37,7 +37,6 @@ export function useAIOpeningRoll({
     // ✅ CRITICAL: Reset hasRolled when both rolls are null (tie happened)
     if (gameState.openingRoll.white === null && gameState.openingRoll.black === null) {
       hasRolledRef.current = false;
-      console.log('🔄 Opening roll reset (tie) - AI can roll again');
     }
 
     // Skip if not AI game
@@ -74,8 +73,6 @@ export function useAIOpeningRoll({
     }
 
     // All conditions met - trigger AI roll
-    console.log(`🤖 AI (${aiPlayerColor}) will roll - human (${humanColor}) already rolled: ${gameState.openingRoll[humanColor]}`);
-
     timeoutRef.current = setTimeout(() => {
       // Double-check conditions before executing
       if (
@@ -83,11 +80,8 @@ export function useAIOpeningRoll({
         gameState.openingRoll[aiPlayerColor] === null &&
         gameState.selectedPoint === null
       ) {
-        console.log(`🎲 Executing AI (${aiPlayerColor}) opening roll`);
         hasRolledRef.current = true; // Mark as rolled ONLY when actually rolling
         onRollNeeded();
-      } else {
-        console.log('⏭️ AI roll cancelled - conditions changed');
       }
     }, 1500); // 1.5 seconds to give player time
 

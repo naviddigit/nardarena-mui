@@ -1,11 +1,10 @@
 import axios from 'axios';
+import { API_BASE_URL } from 'src/config/api.config';
 
 // ----------------------------------------------------------------------
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 const axiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,7 +12,11 @@ const axiosInstance = axios.create({
 
 // Add token to requests
 axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  // Try sessionStorage first (jwt_access_token), then localStorage
+  const sessionToken = typeof window !== 'undefined' ? sessionStorage.getItem('jwt_access_token') : null;
+  const localToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const token = sessionToken || localToken;
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

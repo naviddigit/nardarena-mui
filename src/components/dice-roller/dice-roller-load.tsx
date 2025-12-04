@@ -52,21 +52,17 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // Responsive sizes
+  // Responsive sizes - container and canvas should match to prevent overflow
   const containerSize = isMobile ? 150 : 170;
   const canvasWidth = isMobile ? 180 : 260;
-
   useEffect(() => {
     let mounted = true;
     let initTimeout: NodeJS.Timeout;
-
-    console.log('🎲 Starting to load scripts...');
     
     const loadScript = (src: string): Promise<void> => {
       return new Promise((resolve, reject) => {
         const existing = document.querySelector(`script[src="${src}"]`);
         if (existing) {
-          console.log('🎲 Script already loaded:', src);
           resolve();
           return;
         }
@@ -75,7 +71,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         script.src = src;
         script.async = false;
         script.onload = () => {
-          console.log('✅ Loaded:', src);
           resolve();
         };
         script.onerror = () => {
@@ -121,15 +116,12 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
             break;
           } catch (error) {
             attempt++;
-            console.log(`🎲 Script loading attempt ${attempt} failed, retrying...`);
             if (attempt >= maxRetries) throw error;
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
         
         if (!mounted) return;
-        
-        console.log('🎲 All scripts loaded, waiting for container...');
         
         // Wait for container to be ready
         await waitForContainer();
@@ -144,8 +136,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         if (!containerRef.current) {
           throw new Error('Container not available');
         }
-
-        console.log('🎲 Creating dice_box...');
         
         // Add small delay to ensure DOM is fully ready
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -160,7 +150,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         
         boxRef.current = box;
         
-        console.log('🎲 Dice box ready!');
         if (mounted) {
           setIsReady(true);
           setHasFailed(false);
@@ -174,7 +163,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
           // Retry up to 3 times with exponential backoff
           if (initAttempts < 3) {
             const delay = Math.pow(2, initAttempts) * 1000;
-            console.log(`🎲 Retrying initialization in ${delay}ms...`);
             initTimeout = setTimeout(() => {
               if (mounted) initializeDice();
             }, delay);
@@ -218,8 +206,8 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       console.error('🎲 DICE library not available');
       return;
     }
-
-    console.log('🎲 Rolling dice:', diceNotation);
+    
+    setIsRolling(true);
     
     // ✅ For opening rolls (1d6), override prepare function AND clear function to keep existing dice
     if (diceNotation === '1d6' && boxRef.current) {
@@ -237,7 +225,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       
       // Override clear to do nothing (keep existing dice)
       boxRef.current.clear = function() {
-        console.log('🎲 Clear disabled for opening roll');
+        // Keep existing dice during opening roll
       };
       
       // Restore original functions after roll
@@ -264,7 +252,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
 
     try {
       const notation = window.DICE.parse_notation(diceNotation);
-      console.log('🎲 Parsed notation:', notation);
       
       if (!notation || notation.set.length === 0) {
         console.error('🎲 Invalid dice notation');
@@ -283,8 +270,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         return;
       }
       
-      console.log('🎲 Generated vectors:', vectors);
-
       // Roll with timeout fallback
       const rollTimeout = setTimeout(() => {
         console.error('🎲 Roll timeout - forcing completion');
@@ -306,12 +291,8 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         let actualResult = result;
         const expectedCount = parseInt(diceNotation.match(/(\d+)d/)?.[1] || '1', 10);
         if (diceNotation === '1d6' && result.length > expectedCount) {
-          console.log('🎲 Opening roll - filtering results. Got:', result, 'Expected:', expectedCount);
           actualResult = result.slice(-expectedCount); // Take only the last N dice
-          console.log('🎲 Filtered to:', actualResult);
         }
-        
-        console.log('🎲 Roll complete! Results:', actualResult);
         
         if (!actualResult || actualResult.length === 0) {
           console.error('🎲 Invalid roll result');
@@ -341,7 +322,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
           value,
           type: 'd6',
         }));
-        console.log('🎲 Using fallback results:', fallbackResults);
         onRollComplete?.(results);
       } catch (fallbackError) {
         console.error('🎲 Fallback also failed:', fallbackError);
@@ -371,8 +351,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       return;
     }
 
-    console.log('🎲 Forcing dice values:', values);
-    
     // ✅ For opening rolls (1d6), override prepare function AND clear function to keep existing dice
     if (diceNotation === '1d6' && boxRef.current) {
       const originalPrepare = boxRef.current.prepare_dices_for_roll;
@@ -389,7 +367,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       
       // Override clear to do nothing (keep existing dice)
       boxRef.current.clear = function() {
-        console.log('🎲 Clear disabled for opening roll (setDiceValues)');
+        // Keep existing dice during opening roll
       };
       
       // Restore original functions after roll
@@ -434,7 +412,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         return;
       }
 
-      console.log('🎲 Generated vectors:', vectors);
+
 
       // Roll with forced values (pass as second parameter to box.roll)
       const rollTimeout = setTimeout(() => {
@@ -494,13 +472,10 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
   // Reload dice.js file (for hot-reload during development)
   const reloadDiceScript = async () => {
     try {
-      console.log('🔄 Reloading dice.js...');
-      
       // Remove old dice.js script
       const oldScript = document.querySelector('script[src="/dice.js"]');
       if (oldScript) {
         oldScript.remove();
-        console.log('🗑️ Removed old dice.js');
       }
       
       // Clear current box
@@ -520,7 +495,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         const oldCanvas = containerRef.current.querySelector('canvas');
         if (oldCanvas) {
           oldCanvas.remove();
-          console.log('🗑️ Removed old canvas');
         }
       }
       
@@ -534,8 +508,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       script.async = false;
       
       script.onload = async () => {
-        console.log('✅ dice.js reloaded');
-        
         // Wait for DICE to be available
         await new Promise(resolve => setTimeout(resolve, 300));
         
@@ -552,7 +524,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
             boxRef.current = box;
             setIsReady(true);
             setHasFailed(false);
-            console.log('✅ Dice box reinitialized and ready!');
           } catch (error) {
             console.error('❌ Failed to reinitialize dice box:', error);
           }
@@ -575,7 +546,6 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     setDiceValues,
     clearDice: () => {
       if (boxRef.current && boxRef.current.clear) {
-        console.log('🎲 Clearing dice...');
         boxRef.current.clear();
       }
     },
@@ -593,6 +563,10 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
           overflow: 'hidden',
           '& canvas': {
             display: 'block',
+            width: '100% !important',
+            height: '100% !important',
+            maxWidth: '100%',
+            maxHeight: '100%',
           },
         }}
       />

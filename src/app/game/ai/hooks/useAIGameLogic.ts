@@ -49,7 +49,6 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
         const delays = await gamePersistenceAPI.getAIMoveDelays();
         AI_MOVE_DELAY_MIN = delays.min;
         AI_MOVE_DELAY_MAX = delays.max;
-        console.log('⚙️ AI delays loaded:', delays);
       } catch (error) {
         console.warn('⚠️ Failed to load AI delays, using defaults');
       }

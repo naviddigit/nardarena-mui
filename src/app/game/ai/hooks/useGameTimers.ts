@@ -53,33 +53,21 @@ export function useGameTimers({
   useEffect(() => {
     if (winner || !playerColor || isExecutingAIMove) return; // ✅ Don't control timers during AI execution
 
-    console.log('⏱️ [useGameTimers] Checking timer state:', {
-      currentPlayer: gameState.currentPlayer,
-      gamePhase: gameState.gamePhase,
-      whiteTimerCounting: whiteTimer.counting,
-      blackTimerCounting: blackTimer.counting,
-      isExecutingAIMove,
-    });
-
     // White's turn: start white timer, stop black timer
     if (gameState.currentPlayer === 'white' && gameState.gamePhase === 'waiting') {
       if (!whiteTimer.counting) {
-        console.log('⏱️ Starting white timer (white\'s turn)');
         whiteTimer.startCountdown();
       }
       if (blackTimer.counting) {
-        console.log('⏱️ Stopping black timer (not black\'s turn)');
         blackTimer.stopCountdown();
       }
     }
     // Black's turn: start black timer, stop white timer
     else if (gameState.currentPlayer === 'black' && gameState.gamePhase === 'waiting') {
       if (!blackTimer.counting) {
-        console.log('⏱️ Starting black timer (black\'s turn)');
         blackTimer.startCountdown();
       }
       if (whiteTimer.counting) {
-        console.log('⏱️ Stopping white timer (not white\'s turn)');
         whiteTimer.stopCountdown();
       }
     }
@@ -90,12 +78,10 @@ export function useGameTimers({
     if (winner) return;
 
     if (whiteTimer.countdown <= 0) {
-      console.log('⏱️ White timer expired - Black wins!');
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
       onTimeout('black');
     } else if (blackTimer.countdown <= 0) {
-      console.log('⏱️ Black timer expired - White wins!');
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
       onTimeout('white');
@@ -105,7 +91,6 @@ export function useGameTimers({
   // ✅ 3. Stop all timers when game ends
   useEffect(() => {
     if (winner) {
-      console.log('⏱️ Game ended - stopping all timers');
       whiteTimer.stopCountdown();
       blackTimer.stopCountdown();
     }

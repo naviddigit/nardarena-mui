@@ -78,7 +78,6 @@ export function useDiceRollControl({
 
     // Gameplay عادی: باید نوبت player باشه و در فاز waiting باشه
     if (gameState.currentPlayer === playerColor && gameState.gamePhase === 'waiting') {
-      console.log('✅ Can roll! currentPlayer:', gameState.currentPlayer, 'playerColor:', playerColor, 'phase:', gameState.gamePhase);
       return { canRoll: true, canRollReason: 'Your turn to roll' };
     }
 
@@ -89,12 +88,10 @@ export function useDiceRollControl({
 
     // اگه نوبت opponent هست
     if (gameState.currentPlayer !== playerColor) {
-      console.log('🚫 Cannot roll - opponent turn. currentPlayer:', gameState.currentPlayer, 'playerColor:', playerColor, 'phase:', gameState.gamePhase);
       return { canRoll: false, canRollReason: 'Opponent turn' };
     }
 
     // هیچکدوم از شرایط برقرار نیست
-    console.log('❓ Unknown state. currentPlayer:', gameState.currentPlayer, 'playerColor:', playerColor, 'phase:', gameState.gamePhase);
     return { canRoll: false, canRollReason: 'Unknown state' };
   }, [gameState.gamePhase, gameState.currentPlayer, gameState.openingRoll.white, playerColor, isRolling, isWaitingForBackend, isExecutingAIMove]);
 
