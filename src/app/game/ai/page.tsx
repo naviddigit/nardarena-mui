@@ -941,12 +941,18 @@ function GameAIPageContent() {
   };
 
   const triggerDiceRoll = async () => {
+    console.log('🎲 triggerDiceRoll called. Phase:', gameState.gamePhase, 'Player:', playerColor, 'Current:', gameState.currentPlayer);
+    
     if (backendGameId && user && gameState.gamePhase !== 'opening') {
       try {
+        console.log('🔐 Checking authorization with backend...');
         const canPlayResponse = await gamePersistenceAPI.axios.get(`/game/${backendGameId}/can-play`);
         const { canRollNewDice } = canPlayResponse.data;
         
+        console.log('🔐 Authorization response:', canPlayResponse.data);
+        
         if (!canRollNewDice) {
+          console.log('⛔ Cannot roll new dice - backend says no');
           return;
         }
         
@@ -1187,13 +1193,15 @@ function GameAIPageContent() {
   useEffect(() => {
     if (!backendGameId || !user) return;
     
-    // ⚠️ ONLY save opening roll if we're actively IN opening phase
-    // Don't re-save if we loaded a game that already completed opening roll
+    // ✅ FIX: Check for waiting phase AFTER opening roll (not during opening)
+    // This is because gamePhase changes to 'waiting' immediately after winner determined
     if (
-      gameState.gamePhase === 'opening' && // Must be actively in opening phase
       gameState.openingRoll.white !== null &&
       gameState.openingRoll.black !== null &&
-      !openingRollEndedRef.current // Only execute once
+      !openingRollEndedRef.current && // Only execute once
+      gameState.gamePhase === 'waiting' && // ✅ Must be in waiting (after opening)
+      gameState.diceValues.length === 0 && // ✅ No dice rolled yet (confirms just after opening)
+      gameState.moveHistory.length === 0 // ✅ No moves made yet
     ) {
       // Prevent duplicate execution (React Strict Mode calls useEffect twice)
       if (openingRollEndedRef.current) return;
@@ -1202,6 +1210,11 @@ function GameAIPageContent() {
       
       const saveOpeningRoll = async () => {
         try {
+          console.log('💾 Saving opening roll to backend...', {
+            openingRoll: gameState.openingRoll,
+            winner: gameState.currentPlayer,
+          });
+          
           const updatedGameState = {
             openingRoll: gameState.openingRoll,
             currentPlayer: gameState.currentPlayer,
@@ -1378,8 +1391,24 @@ function GameAIPageContent() {
         ...prev,
         shouldClearDice: false,
       }));
+      
+      // ✅ After tie, automatically trigger player to roll again
+      // (Player is always white who starts first)
+      if (gameState.gamePhase === 'opening' && playerColor === 'white') {
+        console.log('🔄 Tie detected - auto-triggering player roll after 1 second');
+        setTimeout(() => {
+          if (gameState.openingRoll.white === null && diceRollerRef.current?.rollDice) {
+            console.log('🎲 Auto-rolling for player after tie');
+            setGameState(prev => ({ ...prev, currentPlayer: 'white' }));
+            setTimeout(() => {
+              setIsRolling(true);
+              diceRollerRef.current?.rollDice();
+            }, 100);
+          }
+        }, 1000);
+      }
     }
-  }, [gameState.shouldClearDice, setGameState]);
+  }, [gameState.shouldClearDice, gameState.gamePhase, gameState.openingRoll.white, playerColor, setGameState]);
 
   // Auto-roll for AI in opening phase using modular hook
   useAIOpeningRoll({
