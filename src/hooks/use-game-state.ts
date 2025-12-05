@@ -7,14 +7,39 @@ import {
   executeMove,
   type GameState,
   type Player,
+  type GamePhase,
   type ValidMove,
   type MoveHistory,
 } from './game-logic';
 
 // Re-export types for external use
-export type { GameState, Player, ValidMove, MoveHistory };
+export type { GameState, Player, GamePhase, ValidMove, MoveHistory };
 
 // ----------------------------------------------------------------------
+
+/**
+ * ⛔ CRITICAL GAME RULES - OPENING ROLL ⛔
+ * 
+ * Opening Roll Purpose:
+ * - ONLY used to determine who starts the game (highest roll wins)
+ * - These dice values are NOT used for actual gameplay
+ * - After winner is determined, dice must be cleared
+ * - Winner must roll NEW dice (2d6) to start playing
+ * 
+ * Opening Roll Flow:
+ * 1. Each player rolls 1d6 (can be simultaneous or sequential)
+ * 2. If tie → both re-roll (clear dice first)
+ * 3. If different → higher roll wins
+ * 4. Clear opening roll dice from board
+ * 5. Winner enters 'waiting' phase
+ * 6. Winner rolls NEW 2d6 to start playing
+ * 
+ * Opening Roll applies to:
+ * - First set of match only (ست اول)
+ * - Next sets: previous set winner starts directly (no opening roll)
+ * 
+ * ⚠️ DO NOT modify this logic without explicit approval!
+ */
 
 export function useGameState(initialBoardState: BoardState) {
   const [gameState, setGameState] = useState<GameState>({
@@ -68,11 +93,15 @@ export function useGameState(initialBoardState: BoardState) {
           const starter: Player = newOpeningRoll.white > newOpeningRoll.black ? 'white' : 'black';
           console.log('🎯 Opening roll winner:', starter);
           
+          // ⚠️ CRITICAL: Opening roll dice are ONLY for determining who starts
+          // They are NOT used in actual gameplay!
+          // Winner must roll NEW dice to start the game
+          
           return {
             ...prev,
             currentPlayer: starter,
-            diceValues: [],
-            gamePhase: 'waiting',
+            diceValues: [], // ✅ No dice - winner must roll new ones
+            gamePhase: 'waiting', // ✅ Winner must roll dice
             validMoves: [],
             openingRoll: newOpeningRoll,
             moveHistory: [],

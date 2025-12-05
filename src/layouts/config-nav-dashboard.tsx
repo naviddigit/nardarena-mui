@@ -68,8 +68,9 @@ export const navData = [
     subheader: 'Game',
     items: [
       { title: 'Play AI', path: '/game/ai', icon: ICONS.ecommerce },
+      { title: 'Rankings', path: paths.dashboard.rankings, icon: ICONS.analytics },
       { title: 'Online Game', path: paths.dashboard.two, icon: ICONS.chat },
-      { title: 'Tournaments', path: paths.dashboard.three, icon: ICONS.analytics },
+      { title: 'Tournaments', path: paths.dashboard.three, icon: ICONS.tour },
     ],
   },
   /**
@@ -85,6 +86,7 @@ export const navData = [
         children: [
           { title: 'Dashboard', path: paths.dashboard.admin.root },
           { title: 'Users', path: paths.dashboard.admin.users },
+          { title: 'Bot Users', path: paths.dashboard.admin.botUsers },
           { title: 'Games', path: paths.dashboard.admin.games },
           { title: 'Wallet Settings', path: paths.dashboard.admin.walletSettings },
           { title: 'Game Settings', path: paths.dashboard.admin.gameSettings },

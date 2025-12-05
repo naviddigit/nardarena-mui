@@ -30,6 +30,7 @@ import { PlayerBalanceCard } from './player-balance-card';
 import { PlayerStatWidget } from './player-stat-widget';
 import { GameHistoryTable } from './game-history-table';
 import { WalletHistoryTable } from './wallet-history-table';
+import { RankingWidget } from './ranking-widget';
 
 // ----------------------------------------------------------------------
 
@@ -299,10 +300,12 @@ export default function DashboardView() {
 
         {/* Game History */}
         <Box id="history" sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Recent Games
-          </Typography>
-          <GameHistoryTable />
+          <GameHistoryTable limit={5} showViewAll />
+        </Box>
+
+        {/* Player Rankings */}
+        <Box sx={{ mb: 4 }}>
+          <RankingWidget period="weekly" limit={10} />
         </Box>
 
         {/* Wallet History */}

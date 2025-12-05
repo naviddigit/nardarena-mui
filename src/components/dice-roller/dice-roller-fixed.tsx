@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -23,7 +23,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   useEffect(() => {
     if (!containerRef.current || boxRef.current) return;
 
-    console.log('🎲 Initializing dice box...');
     const container = containerRef.current;
     
     // Create dice box (exactly like original)
@@ -59,8 +58,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
       box.camera.position.z = wh;
     };
     reinit();
-
-    console.log('🎲 Dimensions:', { cw: box.cw, ch: box.ch, w: box.w, h: box.h, scale: box.scale });
 
     // Gravity and physics
     box.world.gravity.set(0, 0, -9.8 * 800);
@@ -262,7 +259,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
       if (box.running === threadid && box.check_if_throw_finished()) {
         box.running = false;
         const values = box.get_dice_values();
-        console.log('🎲 Dice finished!', values);
         if (box.callback) box.callback(values);
       }
 
@@ -299,8 +295,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
 
     // Initial render
     box.renderer.render(box.scene, box.camera);
-    console.log('🎲 Initial render complete');
-
     // Add a test cube to see if anything renders
     const testGeometry = new THREE.BoxGeometry(50, 50, 50);
     const testMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -308,8 +302,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
     testCube.position.set(0, 0, 100);
     box.scene.add(testCube);
     box.renderer.render(box.scene, box.camera);
-    console.log('🎲 Test cube added');
-
     boxRef.current = box;
 
     return () => {
@@ -323,7 +315,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   const rollDice = () => {
     if (!boxRef.current || isRolling) return;
 
-    console.log('🎲 Rolling dice:', diceNotation);
     setIsRolling(true);
 
     const box = boxRef.current;
@@ -361,7 +352,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
 
     // Roll!
     box.roll(vectors, (values: number[]) => {
-      console.log('🎲 Roll complete:', values);
       const results: DiceResult[] = values.map((value) => ({ value, type: 'd6' }));
       setIsRolling(false);
       onRollComplete?.(results);
@@ -396,3 +386,4 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
     </Box>
   );
 }
+

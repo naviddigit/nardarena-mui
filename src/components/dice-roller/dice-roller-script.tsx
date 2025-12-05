@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
@@ -31,37 +31,29 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
 
   const handleScriptLoad = () => {
     const newCount = scriptsLoaded + 1;
-    console.log('🎲 Script loaded, count:', newCount);
     setScriptsLoaded(newCount);
   };
 
   // Initialize dice box when all scripts are loaded
   useEffect(() => {
-    console.log('🎲 useEffect triggered:', { scriptsLoaded, hasContainer: !!containerRef.current, hasBox: !!boxRef.current });
-    
     if (scriptsLoaded < 4 || !containerRef.current || boxRef.current) return;
     if (!window.DICE || !window.THREE || !window.CANNON) {
-      console.log('🎲 Missing globals:', { DICE: !!window.DICE, THREE: !!window.THREE, CANNON: !!window.CANNON });
       return;
     }
 
-    console.log('🎲 Initializing DICE box...');
     const container = containerRef.current;
     
     try {
       const box = new window.DICE.dice_box(container);
       box.diceToRoll = diceNotation;
       boxRef.current = box;
-      console.log('🎲 DICE box initialized successfully');
-    } catch (error) {
-      console.error('🎲 Error initializing DICE:', error);
-    }
+      } catch (error) {
+      }
   }, [scriptsLoaded, diceNotation]);
 
   const rollDice = () => {
     if (!boxRef.current || isRolling) return;
 
-    console.log('🎲 Rolling dice:', diceNotation);
     setIsRolling(true);
 
     const box = boxRef.current;
@@ -83,7 +75,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
       const vectors = box.generate_vectors(notation, vector, boost);
       
       box.roll(vectors, null, (result: number[]) => {
-        console.log('🎲 Roll complete:', result);
         const results: DiceResult[] = result.map((value) => ({
           value,
           type: 'd6',
@@ -92,7 +83,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
         onRollComplete?.(results);
       });
     } catch (error) {
-      console.error('🎲 Error rolling dice:', error);
       setIsRolling(false);
     }
   };
@@ -100,10 +90,10 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   return (
     <>
       {/* Load scripts in order */}
-      <Script src="/libs/three.min.js" onLoad={handleScriptLoad} onError={(e) => console.error('❌ three.min.js failed', e)} />
-      <Script src="/libs/cannon.min.js" onLoad={handleScriptLoad} onError={(e) => console.error('❌ cannon.min.js failed', e)} />
-      <Script src="/libs/teal.js" onLoad={handleScriptLoad} onError={(e) => console.error('❌ teal.js failed', e)} />
-      <Script src="/dice.js" onLoad={handleScriptLoad} onError={(e) => console.error('❌ dice.js failed', e)} />
+      <Script src="/libs/three.min.js" onLoad={handleScriptLoad} onError={(e) => } />
+      <Script src="/libs/cannon.min.js" onLoad={handleScriptLoad} onError={(e) => } />
+      <Script src="/libs/teal.js" onLoad={handleScriptLoad} onError={(e) => } />
+      <Script src="/dice.js" onLoad={handleScriptLoad} onError={(e) => } />
 
       <Box sx={{ position: 'relative', width: '100%', height: 400 }}>
         <Box
@@ -136,3 +126,5 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
     </>
   );
 }
+
+

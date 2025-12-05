@@ -4,6 +4,8 @@ import type { BoardState } from 'src/components/backgammon-board';
 
 export type Player = 'white' | 'black';
 
+export type GamePhase = 'opening' | 'waiting' | 'rolling' | 'moving' | 'finished';
+
 export type ValidMove = {
   from: number;
   to: number;
@@ -24,7 +26,7 @@ export type GameState = {
   currentPlayer: Player;
   diceValues: number[];
   selectedPoint: number | null;
-  gamePhase: 'opening' | 'waiting' | 'rolling' | 'moving' | 'finished';
+  gamePhase: GamePhase;
   validMoves: ValidMove[];
   moveHistory: MoveHistory[];
   openingRoll: { white: number | null; black: number | null };

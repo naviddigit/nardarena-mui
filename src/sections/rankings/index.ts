@@ -1,0 +1,1 @@
+export { RankingsView } from './view';

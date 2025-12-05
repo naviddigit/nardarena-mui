@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -160,7 +160,6 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
   }, []);
 
   const rollDice = () => {
-    console.log('🎲 rollDice called!');
     if (isRolling || !sceneRef.current || !worldRef.current) return;
 
     setIsRolling(true);
@@ -256,14 +255,12 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
       });
 
       if (allFinished) {
-        console.log('🎲 Dice settled!');
         const results: DiceResult[] = dicesRef.current.map((die) => {
           const value = getDieValue(die.mesh.quaternion);
           return { value, type: `d${diceSides}` };
         });
 
         setIsRolling(false);
-        console.log('🎲 Results:', results);
         onRollComplete?.(results);
         return;
       }
@@ -370,3 +367,4 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
     </Box>
   );
 }
+

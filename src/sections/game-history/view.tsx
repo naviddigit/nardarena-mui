@@ -1,16 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { Box, Stack, Button, Chip, Avatar, Typography, IconButton } from '@mui/material';
 
 import { alpha } from '@mui/material/styles';
 
+import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { DataTable, type DataTableColumn } from 'src/components/data-table';
 import { API_BASE_URL } from 'src/config/api.config';
-import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
@@ -24,73 +23,74 @@ type GameHistoryItem = {
   reward: number;
 };
 
-interface GameHistoryTableProps {
-  limit?: number;
-  showViewAll?: boolean;
-}
-
-// ----------------------------------------------------------------------
-
-export function GameHistoryTable({ limit = 5, showViewAll = true }: GameHistoryTableProps) {
-  const router = useRouter();
+export function GameHistoryView() {
   const [filter, setFilter] = useState<'all' | 'AI' | 'Online'>('all');
   const [history, setHistory] = useState<GameHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const token =
-          sessionStorage.getItem('jwt_access_token') || localStorage.getItem('accessToken');
-        const response = await fetch(`${API_BASE_URL}/game/history/me?limit=${limit}`, {
+    fetchHistory();
+  }, [page, rowsPerPage]);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      const token =
+        sessionStorage.getItem('jwt_access_token') || localStorage.getItem('accessToken');
+      const offset = page * rowsPerPage;
+      const response = await fetch(
+        `${API_BASE_URL}/game/history/me?limit=${rowsPerPage}&offset=${offset}`,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setTotalRows(data.total || data.games.length);
+
+        const transformedGames = data.games.map((game: any) => {
+          const isWhitePlayer = game.whitePlayer?.id === game.whitePlayerId;
+          const userWon = game.winner === (isWhitePlayer ? 'WHITE' : 'BLACK');
+          const opponent =
+            game.gameType === 'AI'
+              ? `AI ${game.gameState?.aiDifficulty || 'Medium'}`
+              : (isWhitePlayer
+                  ? game.blackPlayer?.displayName
+                  : game.whitePlayer?.displayName) || 'Unknown';
+
+          return {
+            id: game.id,
+            date: new Date(game.createdAt).toLocaleString('en-US', {
+              timeZone: 'UTC',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            }),
+            opponent,
+            gameType: game.gameType as 'AI' | 'Online',
+            result: !game.winner ? 'draw' : userWon ? 'win' : 'loss',
+            score: `${game.whiteSetsWon || 0}-${game.blackSetsWon || 0}`,
+            reward: 0,
+          };
         });
 
-        if (response.ok) {
-          const data = await response.json();
-
-          const transformedGames = data.games.map((game: any) => {
-            const isWhitePlayer = game.whitePlayer?.id === game.whitePlayerId;
-            const userWon = game.winner === (isWhitePlayer ? 'WHITE' : 'BLACK');
-            const opponent =
-              game.gameType === 'AI'
-                ? `AI ${game.gameState?.aiDifficulty || 'Medium'}`
-                : (isWhitePlayer
-                    ? game.blackPlayer?.displayName
-                    : game.whitePlayer?.displayName) || 'Unknown';
-
-            return {
-              id: game.id,
-              date: new Date(game.createdAt).toLocaleString('en-US', {
-                timeZone: 'UTC',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-              }),
-              opponent,
-              gameType: game.gameType as 'AI' | 'Online',
-              result: !game.winner ? 'draw' : userWon ? 'win' : 'loss',
-              score: `${game.whiteSetsWon || 0}-${game.blackSetsWon || 0}`,
-              reward: 0,
-            };
-          });
-
-          setHistory(transformedGames);
-        }
-      } catch (error) {
-        console.error('Failed to fetch game history:', error);
-      } finally {
-        setLoading(false);
+        setHistory(transformedGames);
       }
-    };
-
-    fetchHistory();
-  }, [limit]);
+    } catch (error) {
+      console.error('Failed to fetch game history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredHistory =
     filter === 'all' ? history : history.filter((item) => item.gameType === filter);
@@ -234,29 +234,57 @@ export function GameHistoryTable({ limit = 5, showViewAll = true }: GameHistoryT
       >
         Online
       </Button>
-      {showViewAll && (
-        <Button
-          size="small"
-          variant="text"
-          color="primary"
-          endIcon={<Iconify icon="solar:alt-arrow-right-linear" />}
-          onClick={() => router.push(paths.dashboard.gameHistory)}
-        >
-          View All
-        </Button>
-      )}
     </Stack>
   );
 
   return (
-    <DataTable
-      title="Recent Games"
-      action={filterButtons}
-      columns={columns}
-      rows={filteredHistory}
-      loading={loading}
-      skeletonRows={limit}
-      emptyMessage="No game history available"
-    />
+    <DashboardContent maxWidth="xl">
+      {/* Header */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+        <Box>
+          <Typography variant="h4" sx={{ mb: 0.5 }}>
+            Game History
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Complete history of all your games
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            px: 2,
+            py: 1,
+            borderRadius: 1.5,
+            bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+          }}
+        >
+          <Iconify icon="solar:history-bold-duotone" width={24} sx={{ color: 'info.main' }} />
+          <Typography variant="subtitle2" color="info.main">
+            {totalRows} Total Games
+          </Typography>
+        </Box>
+      </Stack>
+
+      {/* Table */}
+      <DataTable
+        action={filterButtons}
+        columns={columns}
+        rows={filteredHistory}
+        loading={loading}
+        skeletonRows={rowsPerPage}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalRows={totalRows}
+        onPageChange={setPage}
+        onRowsPerPageChange={(newRowsPerPage) => {
+          setRowsPerPage(newRowsPerPage);
+          setPage(0);
+        }}
+        emptyMessage="No game history available"
+        rowsPerPageOptions={[10, 25, 50, 100]}
+      />
+    </DashboardContent>
   );
 }

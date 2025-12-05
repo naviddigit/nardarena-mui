@@ -31,6 +31,8 @@ export interface AdminUser {
   avatar: string | null;
   role: 'USER' | 'ADMIN';
   status: 'ACTIVE' | 'BANNED' | 'SUSPENDED';
+  isBot: boolean;
+  country: string | null;
   createdAt: string;
   lastLoginAt: string | null;
   stats: {
@@ -86,7 +88,8 @@ class AdminAPIService {
     limit = 50,
     search?: string,
     sortBy?: string,
-    sortOrder?: 'asc' | 'desc'
+    sortOrder?: 'asc' | 'desc',
+    country?: string
   ): Promise<{
     users: AdminUser[];
     pagination: {
@@ -100,8 +103,17 @@ class AdminAPIService {
     if (search) params.search = search;
     if (sortBy) params.sortBy = sortBy;
     if (sortOrder) params.sortOrder = sortOrder;
+    if (country) params.country = country;
 
     const response = await axios.get('/api/admin/users', { params });
+    return response.data;
+  }
+
+  /**
+   * Get real users count by country
+   */
+  async getUsersByCountry(): Promise<Record<string, number>> {
+    const response = await axios.get('/api/admin/users/by-country');
     return response.data;
   }
 

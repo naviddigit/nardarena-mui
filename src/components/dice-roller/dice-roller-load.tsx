@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ⛔ CRITICAL - DO NOT MODIFY AFTER TESTING! ⛔
  * 
  * Dice roller component with 3D physics rendering.

@@ -61,6 +61,20 @@ export interface GameHistory {
   createdAt: string;
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  avatar?: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  gamesPlayed: number;
+  winRate: number;
+  totalEarnings: number;
+  points: number;
+}
+
 // ----------------------------------------------------------------------
 
 /**
@@ -105,6 +119,23 @@ export async function getGameHistory(params?: {
   return response.data;
 }
 
+/**
+ * Get leaderboard/rankings
+ */
+export async function getLeaderboard(
+  period: 'weekly' | 'monthly' | 'all-time' = 'weekly',
+  limit: number = 10
+): Promise<{
+  leaderboard: LeaderboardEntry[];
+  total: number;
+  period: string;
+}> {
+  const response = await axiosInstance.get('/game/leaderboard', {
+    params: { period, limit },
+  });
+  return response.data;
+}
+
 // ----------------------------------------------------------------------
 
 export const gameStatsApi = {
@@ -112,4 +143,5 @@ export const gameStatsApi = {
   getMonthlyStats,
   getCurrentMonthStats,
   getGameHistory,
+  getLeaderboard,
 };

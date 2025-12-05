@@ -1,0 +1,1 @@
+export { GameHistoryView } from './view';

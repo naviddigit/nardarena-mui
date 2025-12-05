@@ -12,6 +12,7 @@ import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import Chip from '@mui/material/Chip';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { fDate } from 'src/utils/format-time';
@@ -28,6 +29,24 @@ import { AdminUserQuickEditForm } from './admin-user-quick-edit-form';
 import { AdminResetPasswordForm } from './admin-reset-password-form';
 
 // ----------------------------------------------------------------------
+
+const COUNTRIES = [
+  { code: 'US', name: 'United States', flag: '🇺🇸' },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
+  { code: 'IR', name: 'Iran', flag: '🇮🇷' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+  { code: 'FR', name: 'France', flag: '🇫🇷' },
+  { code: 'IT', name: 'Italy', flag: '🇮🇹' },
+  { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+  { code: 'RU', name: 'Russia', flag: '🇷🇺' },
+  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+  { code: 'CN', name: 'China', flag: '🇨🇳' },
+  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
+  { code: 'IN', name: 'India', flag: '🇮🇳' },
+  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
+  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
+];
 
 type Props = {
   row: AdminUser;
@@ -95,12 +114,41 @@ export function AdminUserTableRow({ row, selected, onSelectRow, onRefresh }: Pro
 
         <TableCell>
           <Stack spacing={2} direction="row" alignItems="center">
-            <Avatar alt={row.displayName || row.username} src={row.avatar || undefined} />
+            <Box sx={{ position: 'relative' }}>
+              <Avatar alt={row.displayName || row.username} src={row.avatar || undefined} />
+              {row.isBot && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: -2,
+                    right: -2,
+                    bgcolor: 'warning.main',
+                    borderRadius: '50%',
+                    width: 20,
+                    height: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid',
+                    borderColor: 'background.paper',
+                  }}
+                >
+                  <Iconify icon="solar:cpu-bolt-bold" width={12} sx={{ color: 'warning.darker' }} />
+                </Box>
+              )}
+            </Box>
 
             <Stack sx={{ typography: 'body2', flex: '1 1 auto', alignItems: 'flex-start' }}>
-              <Link color="inherit" sx={{ cursor: 'pointer' }}>
-                {row.displayName || row.username}
-              </Link>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Link color="inherit" sx={{ cursor: 'pointer' }}>
+                  {row.displayName || row.username}
+                </Link>
+                {row.isBot && (
+                  <Label variant="soft" color="warning" sx={{ ml: 0.5 }}>
+                    BOT
+                  </Label>
+                )}
+              </Stack>
               <Box component="span" sx={{ color: 'text.disabled' }}>
                 @{row.username}
               </Box>
@@ -109,6 +157,17 @@ export function AdminUserTableRow({ row, selected, onSelectRow, onRefresh }: Pro
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.email}</TableCell>
+
+        <TableCell>
+          {row.country && (
+            <Chip
+              label={`${COUNTRIES.find((c) => c.code === row.country)?.flag || ''} ${row.country}`}
+              size="small"
+              variant="soft"
+              color="default"
+            />
+          )}
+        </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label
@@ -134,7 +193,7 @@ export function AdminUserTableRow({ row, selected, onSelectRow, onRefresh }: Pro
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          {row.stats?.gamesPlayed || 0} / {row.stats?.gamesWon || 0}
+          {row.stats?.gamesWon || 0} / {row.stats?.gamesPlayed || 0}
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.createdAt)}</TableCell>
