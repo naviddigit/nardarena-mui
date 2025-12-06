@@ -78,11 +78,11 @@ import type { GameResponse, PlayerColor as APIPlayerColor } from 'src/services/g
 import { toast } from 'src/components/snackbar';
 
 // Import AI hooks
-import { useGameTimers } from './hooks/useGameTimers';
 import { useAIGameLogic } from './hooks/useAIGameLogic';
 import { useDiceRoller } from './hooks/useDiceRoller';
 import { useDiceRollControl } from './hooks/useDiceRollControl';
 import { useAIAutoRoll } from './hooks/useAIAutoRoll';
+import { GameTimer, useGameTimers } from './components/GameTimer';
 
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
@@ -282,13 +282,9 @@ function GameAIPageContent() {
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
   const [shareToast, setShareToast] = useState(false);
   
-  // Timer initial values (will be restored from backend if resuming)
-  const [whiteTimerInit, setWhiteTimerInit] = useState(1800);
-  const [blackTimerInit, setBlackTimerInit] = useState(1800);
-  
-  // 🔑 Refs to track ACTUAL timer values (updated every second)
-  const whiteTimerValueRef = useRef(1800);
-  const blackTimerValueRef = useRef(1800);
+  // ⏱️ Timer values from database (restored on page load)
+  const [whiteTimerSeconds, setWhiteTimerSeconds] = useState(1800);
+  const [blackTimerSeconds, setBlackTimerSeconds] = useState(1800);
   
   // AI player color state (opposite of human player)
   const [aiPlayerColor, setAiPlayerColor] = useState<'white' | 'black'>('black');
@@ -493,10 +489,9 @@ function GameAIPageContent() {
                 }
               }
               
-              setWhiteTimerInit(whiteTime);
-              setBlackTimerInit(blackTime);
-              whiteTimerValueRef.current = whiteTime;
-              blackTimerValueRef.current = blackTime;
+              // ✅ Set timer values (component will use these)
+              setWhiteTimerSeconds(whiteTime);
+              setBlackTimerSeconds(blackTime);
               
               console.log('⏱️ Timers restored from database:', {
                 white: whiteTime,
@@ -517,31 +512,8 @@ function GameAIPageContent() {
               } catch (error) {
               }
               
-              // ⏱️ Start timer ONLY for HUMAN player if it's their turn (NOT during opening)
-              if (restoredPhase !== 'opening') {
-                setTimeout(() => {
-                  const currentPlayerAfterLoad = (game.gameState.currentPlayer?.toLowerCase() || 'white') as Player;
-                  
-                  // Only start timer if it's HUMAN player's turn
-                  // ✅ Use local resumedPlayerColor instead of state (state might not be updated yet)
-                  if (currentPlayerAfterLoad === resumedPlayerColor) {
-                    if (resumedPlayerColor === 'white') {
-                      whiteTimer.startCountdown();
-                    } else {
-                      blackTimer.startCountdown();
-                    }
-                  } else {
-                    // ✅ It's AI turn - start AI timer
-                    if (resumedAIColor === 'white') {
-                      whiteTimer.startCountdown();
-                    } else {
-                      blackTimer.startCountdown();
-                    }
-                  }
-                  
-                  // ⚠️ NEVER trigger AI on refresh - AI should only be triggered by game events, not page load
-                }, 500);
-              }
+              // ✅ Timers will automatically start based on gamePhase and currentPlayer
+              // No manual timer start needed - GameTimer component handles it
             }
           }
         } catch (error) {
@@ -568,10 +540,20 @@ function GameAIPageContent() {
     setGameState, // For directly setting state from backend
   } = useGameState(initialBoardState);
 
-  // Timer for White player (restored from backend or default 30 minutes)
-  const whiteTimer = useCountdownSeconds(whiteTimerInit);
-  // Timer for Black player (restored from backend or default 30 minutes)
-  const blackTimer = useCountdownSeconds(blackTimerInit);
+  // ⏱️ Timer management hook
+  const {
+    whiteTimeRef,
+    blackTimeRef,
+    isWhiteActive,
+    isBlackActive,
+    handleWhiteTick,
+    handleBlackTick,
+  } = useGameTimers(
+    whiteTimerSeconds,
+    blackTimerSeconds,
+    gameState.currentPlayer,
+    gameState.gamePhase
+  );
 
   // ✅ Define handleDone before useAIGameLogic (AI needs this function)
   const handleDone = useCallback(async () => {
@@ -581,12 +563,6 @@ function GameAIPageContent() {
       diceRollerRef.current.clearDice();
     }
     
-    if (currentPlayer === 'white') {
-      whiteTimer.stopCountdown();
-    } else {
-      blackTimer.stopCountdown();
-    }
-    
     if (backendGameId && user) {
       try {
         // ✅ RECORD ALL MOVES FIRST (before ending turn)
@@ -594,9 +570,10 @@ function GameAIPageContent() {
         for (let i = moveCounter; i < gameState.moveHistory.length; i++) {
           const move = gameState.moveHistory[i];
           
+          // ✅ Get current timer value from refs
           const playerTimeRemaining = move.player === 'white' 
-            ? whiteTimerValueRef.current
-            : blackTimerValueRef.current;
+            ? whiteTimeRef.current
+            : blackTimeRef.current;
           
           await gamePersistenceAPI.recordMove(backendGameId, {
             playerColor: move.player.toUpperCase() as APIPlayerColor,
@@ -613,8 +590,8 @@ function GameAIPageContent() {
               diceValues: gameState.diceValues,
               // ✅ Add timer values to gameState for backend
               remainingTime: {
-                white: whiteTimerValueRef.current,
-                black: blackTimerValueRef.current,
+                white: whiteTimeRef.current,
+                black: blackTimeRef.current,
               },
             },
             timeRemaining: playerTimeRemaining,
@@ -641,13 +618,6 @@ function GameAIPageContent() {
           console.error('❌ Server did NOT return nextRoll! Cannot end turn.');
           console.error('Response:', response.data);
           toast.error('Server error: Next dice not generated. Please try again.');
-          
-          // ✅ Restart timer so player can try again
-          if (currentPlayer === 'white') {
-            whiteTimer.startCountdown();
-          } else {
-            blackTimer.startCountdown();
-          }
           return; // ⛔ STOP - Don't switch turns!
         }
         
@@ -678,25 +648,12 @@ function GameAIPageContent() {
         console.error('Failed to end turn:', error);
         const errorMsg = error instanceof Error ? error.message : 'Failed to end turn';
         toast.error(errorMsg);
-        
-        // ✅ Restart timer on error
-        if (currentPlayer === 'white') {
-          whiteTimer.startCountdown();
-        } else {
-          blackTimer.startCountdown();
-        }
       }
     } else {
       // Frontend-only mode
       handleEndTurn();
-      
-      if (currentPlayer === 'white') {
-        setTimeout(() => blackTimer.startCountdown(), 100);
-      } else {
-        setTimeout(() => whiteTimer.startCountdown(), 100);
-      }
     }
-  }, [gameState, backendGameId, user, moveCounter, whiteTimer, blackTimer, handleEndTurn, turnStartTime]);
+  }, [gameState, backendGameId, user, moveCounter, handleEndTurn, turnStartTime, whiteTimeRef, blackTimeRef]);
 
   // ✅ استفاده از AI hooks جدید (بعد از useGameState)
   const { isExecutingAIMove } = useAIGameLogic({
@@ -708,48 +665,6 @@ function GameAIPageContent() {
     onTurnComplete: () => {
       // ❌ DON'T clear AI dice here - let them stay until player rolls
       // Players need to see what dice AI used!
-      
-      // ✅ Stop AI timer and start player timer (based on actual colors)
-      
-      if (aiPlayerColor === 'black') {
-        // AI is black → stop black, start white
-        console.log('AI turn complete - stopping black timer, starting white (player) timer');
-        blackTimer.stopCountdown();
-        setTimeout(() => {
-          whiteTimer.startCountdown();
-        }, 100);
-      } else {
-        // AI is white → stop white, start black
-        console.log('AI turn complete - stopping white timer, starting black (player) timer');
-        whiteTimer.stopCountdown();
-        setTimeout(() => {
-          blackTimer.startCountdown();
-        }, 100);
-      }
-    },
-  });
-  
-  // ✅ Update refs whenever countdown changes (track actual values)
-  useEffect(() => {
-    whiteTimerValueRef.current = whiteTimer.countdown;
-  }, [whiteTimer.countdown]);
-  
-  useEffect(() => {
-    blackTimerValueRef.current = blackTimer.countdown;
-  }, [blackTimer.countdown]);
-
-  // ✅ استفاده از Timer hook (مدیریت خودکار تایمرها)
-  useGameTimers({
-    gameState,
-    playerColor,
-    whiteTimer,
-    blackTimer,
-    winner,
-    isExecutingAIMove, // ✅ Pass AI execution state to prevent timer conflicts
-    onTimeout: (timeoutWinner) => {
-      setWinner(timeoutWinner);
-      setTimeoutWinner(true);
-      setResultDialogOpen(true);
     },
   });
 
@@ -896,30 +811,15 @@ function GameAIPageContent() {
       
       if (!hasValidBarMoves) {
         // Player has checkers on bar but can't enter - skip turn automatically
-        
-        // Stop current player's timer
-        if (gameState.currentPlayer === 'white') {
-          whiteTimer.stopCountdown();
-        } else {
-          blackTimer.stopCountdown();
-        }
+        // Timers are automatically controlled by GameTimer component
         
         // Wait a bit to show the situation, then end turn
         setTimeout(() => {
           handleEndTurn();
-          
-          // Start next player's timer
-          setTimeout(() => {
-            if (gameState.currentPlayer === 'white') {
-              blackTimer.startCountdown();
-            } else {
-              whiteTimer.startCountdown();
-            }
-          }, 100);
         }, 1500); // 1.5 second delay so player can see they're blocked
       }
     }
-  }, [gameState.gamePhase, gameState.validMoves, gameState.currentPlayer, gameState.boardState.bar, winner, whiteTimer, blackTimer, handleEndTurn]);
+  }, [gameState.gamePhase, gameState.validMoves, gameState.currentPlayer, gameState.boardState.bar, winner, handleEndTurn]);
 
   // Check for set winner and start new set
   useEffect(() => {
@@ -932,9 +832,7 @@ function GameAIPageContent() {
       
       playSound('move');
       
-      // Stop both timers
-      whiteTimer.stopCountdown();
-      blackTimer.stopCountdown();
+      // Timers automatically stop when gamePhase becomes 'finished'
       
       // Update scores
       setScores((prev) => {
@@ -971,16 +869,9 @@ function GameAIPageContent() {
               
               startNewSet(currentSetWinner); // Winner starts next set
               
-              // Reset both timers to initial time
-              whiteTimer.resetCountdown();
-              blackTimer.resetCountdown();
-              
-              // Start timer for the winner (who will move first)
-              if (currentSetWinner === 'white') {
-                whiteTimer.startCountdown();
-              } else {
-                blackTimer.startCountdown();
-              }
+              // Reset timer values for new set
+              setWhiteTimerSeconds(1800);
+              setBlackTimerSeconds(1800);
               
               // Reset the processed flag for next set
               setWinnerProcessedRef.current = false;
@@ -993,7 +884,7 @@ function GameAIPageContent() {
         return newScore;
       });
     }
-  }, [gameState.gamePhase, gameState.boardState.off, winner, currentSet, maxSets, startNewSet, whiteTimer, blackTimer, playSound]);
+  }, [gameState.gamePhase, gameState.boardState.off, winner, currentSet, maxSets, startNewSet, playSound]);
 
   const handleDiceRollComplete = async (results: { value: number; type: string }[]) => {
     // ✅ ANTI-CHEAT: Use backend dice, NOT physics results!
@@ -1173,15 +1064,13 @@ function GameAIPageContent() {
     setCurrentSet(1);
     setBackendGameId(null); // Reset backend game ID for new game
     setMoveCounter(0); // Reset move counter
-    whiteTimer.setCountdown(1800);
-    blackTimer.setCountdown(1800);
-    whiteTimer.stopCountdown();
-    blackTimer.stopCountdown();
+    setWhiteTimerSeconds(1800);
+    setBlackTimerSeconds(1800);
     // Reset game state to initial
     if (resetGame) {
       resetGame();
     }
-  }, [resetGame, whiteTimer, blackTimer]);
+  }, [resetGame]);
 
   const handleBackToDashboard = () => {
     router.push('/');
@@ -1251,7 +1140,7 @@ function GameAIPageContent() {
       const saveOpeningRoll = async () => {
         try {
           // ✅ Determine winner from opening roll (HIGHER dice wins in Nard!)
-          const openingWinner = gameState.openingRoll.white! > gameState.openingRoll.black! ? 'white' : 'black';
+          const openingWinner: Player = gameState.openingRoll.white! > gameState.openingRoll.black! ? 'white' : 'black';
           console.log(`🎯 Opening roll: white=${gameState.openingRoll.white}, black=${gameState.openingRoll.black}, winner=${openingWinner}`);
           console.log(`📊 In Nard, HIGHER dice wins! Winner: ${openingWinner}`);
           
@@ -1285,17 +1174,13 @@ function GameAIPageContent() {
           
           console.log('💾 Saving nextRoll to state:', response.data.nextRoll);
           
-          setGameState(prev => {
-            const newState = {
-              ...prev,
-              currentPlayer: openingWinner,
-              gamePhase: 'waiting',
-              diceValues: [],
-              nextRoll: response.data.nextRoll, // ✅ Save dice for winner
-            };
-            console.log('💾 New state after opening roll:', newState);
-            return newState;
-          });
+          setGameState(prev => ({
+            ...prev,
+            currentPlayer: openingWinner as Player,
+            gamePhase: 'waiting',
+            diceValues: [],
+            nextRoll: response.data.nextRoll, // ✅ Save dice for winner
+          }));
           
         } catch (error) {
           console.error('❌ Error saving opening roll:', error);
@@ -1568,6 +1453,30 @@ function GameAIPageContent() {
         </Stack>
       </Stack>
 
+      {/* ⏱️ Hidden Timer Components - Update refs every second */}
+      <div style={{ display: 'none' }}>
+        <GameTimer
+          initialSeconds={whiteTimerSeconds}
+          isActive={isWhiteActive}
+          onTick={handleWhiteTick}
+          onTimeUp={() => {
+            setWinner('black');
+            setTimeoutWinner(true);
+            setResultDialogOpen(true);
+          }}
+        />
+        <GameTimer
+          initialSeconds={blackTimerSeconds}
+          isActive={isBlackActive}
+          onTick={handleBlackTick}
+          onTimeUp={() => {
+            setWinner('white');
+            setTimeoutWinner(true);
+            setResultDialogOpen(true);
+          }}
+        />
+      </div>
+
       {/* Player 1 (Opponent - Top) */}
       <Box 
         component={m.div}
@@ -1596,7 +1505,7 @@ function GameAIPageContent() {
           canDone={false} // AI handles its own turns
           onUndo={handleUndo}
           canUndo={false} // AI cannot undo
-          timeRemaining={playerColor === 'white' ? blackTimer.countdown : whiteTimer.countdown}
+          timeRemaining={playerColor === 'white' ? blackTimeRef.current : whiteTimeRef.current}
           isWinner={winner === (playerColor === 'white' ? 'black' : 'white')}
           isLoser={winner === playerColor}
         />
@@ -1705,7 +1614,7 @@ function GameAIPageContent() {
           }
           onUndo={handleUndo}
           canUndo={gameState.currentPlayer === playerColor && gameState.gamePhase === 'moving' && gameState.moveHistory.length > 0}
-          timeRemaining={playerColor === 'white' ? whiteTimer.countdown : blackTimer.countdown}
+          timeRemaining={playerColor === 'white' ? whiteTimeRef.current : blackTimeRef.current}
           isWinner={winner === playerColor}
           isLoser={winner !== null && winner !== playerColor}
         />
