@@ -456,103 +456,43 @@ function GameAIPageContent() {
                 }, 500);
               }
               
-              // 🕐 Restore timers from MOVES (not moveHistory - it has wrong structure)
-              // Use game.timeControl as base timer if available (in seconds)
+              // 🕐 TIMER RESTORATION - Chess Clock Style
+              // ✅ Read from database and calculate elapsed time
               const gameTimeControl = (game as any).timeControl || 1800;
+              const whiteTimeDB = (game as any).whiteTimeRemaining;
+              const blackTimeDB = (game as any).blackTimeRemaining;
+              const lastUpdate = (game as any).updatedAt;
               
-              // ✅ Use game.moves (GameMove[]) instead of game.moveHistory (Json[])
-              const gameMoves = (game as any).moves || [];
+              // Calculate elapsed time since last update (if current player's timer was running)
+              const now = Date.now();
+              const lastUpdateTime = lastUpdate ? new Date(lastUpdate).getTime() : now;
+              const elapsedSeconds = Math.floor((now - lastUpdateTime) / 1000);
               
-              if (gameMoves && gameMoves.length > 0) {
-                const now = Date.now();
-                const currentPlayerInGame = game.gameState.currentPlayer?.toLowerCase() || 'white';
-                
-                // Find last moves for each player
-                let whiteLastMove = null;
-                let blackLastMove = null;
-                
-                // Iterate from end to find last move of each player
-                for (let i = gameMoves.length - 1; i >= 0; i--) {
-                  const move = gameMoves[i];
-                  
-                  // ✅ Now using correct field: playerColor (not player)
-                  if (!move.playerColor) {
-                    continue;
-                  }
-                  
-                  // ✅ Handle both uppercase and lowercase
-                  const movePlayer = move.playerColor.toString().toLowerCase();
-                  
-                  if (movePlayer === 'white' && !whiteLastMove) {
-                    whiteLastMove = move;
-                  }
-                  if (movePlayer === 'black' && !blackLastMove) {
-                    blackLastMove = move;
-                  }
-                  
-                  // Stop if we found both
-                  if (whiteLastMove && blackLastMove) break;
-                }
-                
-                // ⏱️ TIMER CALCULATION - Read carefully!
-                // Logic: Each player starts with gameTimeControl seconds
-                // After each move, save their remaining time
-                // On resume: if it's their turn, subtract time since their last move
-                
-                // Restore white timer
-                if (whiteLastMove && whiteLastMove.timeRemaining != null) {
-                  // timeRemaining is in SECONDS (not milliseconds!)
-                  const lastKnownTime = whiteLastMove.timeRemaining;
-                  
-                  // If white is current player, they've been "thinking" since their last move
-                  if (currentPlayerInGame === 'white' && whiteLastMove.createdAt) {
-                    const lastMoveTime = new Date(whiteLastMove.createdAt).getTime();
-                    const elapsedSeconds = Math.floor((now - lastMoveTime) / 1000);
-                    const actualTime = Math.max(0, lastKnownTime - elapsedSeconds);
-                    
-                    setWhiteTimerInit(actualTime);
-                    whiteTimerValueRef.current = actualTime;
-                  } else {
-                    // Not white's turn - use their last saved time as-is
-                    setWhiteTimerInit(lastKnownTime);
-                    whiteTimerValueRef.current = lastKnownTime;
-                  }
-                } else {
-                  // White hasn't moved yet - full time
-                  setWhiteTimerInit(gameTimeControl);
-                  whiteTimerValueRef.current = gameTimeControl;
-                }
-                
-                // Restore black timer  
-                if (blackLastMove && blackLastMove.timeRemaining != null) {
-                  // timeRemaining is in SECONDS (not milliseconds!)
-                  const lastKnownTime = blackLastMove.timeRemaining;
-                  
-                  // If black is current player, they've been "thinking" since their last move
-                  if (currentPlayerInGame === 'black' && blackLastMove.createdAt) {
-                    const lastMoveTime = new Date(blackLastMove.createdAt).getTime();
-                    const elapsedSeconds = Math.floor((now - lastMoveTime) / 1000);
-                    const actualTime = Math.max(0, lastKnownTime - elapsedSeconds);
-                    
-                    setBlackTimerInit(actualTime);
-                    blackTimerValueRef.current = actualTime;
-                  } else {
-                    // Not black's turn - use their last saved time as-is
-                    setBlackTimerInit(lastKnownTime);
-                    blackTimerValueRef.current = lastKnownTime;
-                  }
-                } else {
-                  // Black hasn't moved yet - full time
-                  setBlackTimerInit(gameTimeControl);
-                  blackTimerValueRef.current = gameTimeControl;
-                }
-              } else {
-                // No moves at all - use game time control for both
-                setWhiteTimerInit(gameTimeControl);
-                setBlackTimerInit(gameTimeControl);
-                whiteTimerValueRef.current = gameTimeControl;
-                blackTimerValueRef.current = gameTimeControl;
+              const currentPlayerInGame = game.gameState.currentPlayer?.toLowerCase() || 'white';
+              
+              // Use database values if available, otherwise use timeControl
+              let whiteTime = whiteTimeDB !== null && whiteTimeDB !== undefined ? whiteTimeDB : gameTimeControl;
+              let blackTime = blackTimeDB !== null && blackTimeDB !== undefined ? blackTimeDB : gameTimeControl;
+              
+              // ✅ Subtract elapsed time ONLY from current player (their timer was running)
+              if (currentPlayerInGame === 'white') {
+                whiteTime = Math.max(0, whiteTime - elapsedSeconds);
+              } else if (currentPlayerInGame === 'black') {
+                blackTime = Math.max(0, blackTime - elapsedSeconds);
               }
+              
+              setWhiteTimerInit(whiteTime);
+              setBlackTimerInit(blackTime);
+              whiteTimerValueRef.current = whiteTime;
+              blackTimerValueRef.current = blackTime;
+              
+              console.log('⏱️ Timers restored from database:', {
+                white: whiteTime,
+                black: blackTime,
+                elapsedSeconds,
+                currentPlayer: currentPlayerInGame,
+                fromDatabase: whiteTimeDB !== null || blackTimeDB !== null,
+              });
               
               try {
                 const canPlayResponse = await gamePersistenceAPI.axios.get(`/game/${game.id}/can-play`);
@@ -572,8 +512,16 @@ function GameAIPageContent() {
                   const currentPlayerAfterLoad = (game.gameState.currentPlayer?.toLowerCase() || 'white') as Player;
                   
                   // Only start timer if it's HUMAN player's turn
+                  // ✅ Use local resumedPlayerColor instead of state (state might not be updated yet)
                   if (currentPlayerAfterLoad === resumedPlayerColor) {
                     if (resumedPlayerColor === 'white') {
+                      whiteTimer.startCountdown();
+                    } else {
+                      blackTimer.startCountdown();
+                    }
+                  } else {
+                    // ✅ It's AI turn - start AI timer
+                    if (resumedAIColor === 'white') {
                       whiteTimer.startCountdown();
                     } else {
                       blackTimer.startCountdown();
@@ -652,6 +600,11 @@ function GameAIPageContent() {
               off: gameState.boardState.off,
               currentPlayer: gameState.currentPlayer,
               diceValues: gameState.diceValues,
+              // ✅ Add timer values to gameState for backend
+              remainingTime: {
+                white: whiteTimerValueRef.current,
+                black: blackTimerValueRef.current,
+              },
             },
             timeRemaining: playerTimeRemaining,
             moveTime: Date.now() - turnStartTime,
@@ -829,6 +782,34 @@ function GameAIPageContent() {
     checkConnection: checkBackendConnection,
     intervalSeconds: 5, // هر 5 ثانیه چک کن
   });
+
+  // ✅ Real-time timer sync to backend (every 1 second for accuracy)
+  useEffect(() => {
+    if (!backendGameId || !user || winner) {
+      return; // Only sync when game is active
+    }
+
+    const syncTimers = async () => {
+      try {
+        await gamePersistenceAPI.axios.patch(`/game/${backendGameId}/timers`, {
+          whiteTimeRemaining: whiteTimerValueRef.current,
+          blackTimeRemaining: blackTimerValueRef.current,
+        });
+        console.log('⏱️ Timers synced to backend:', {
+          white: whiteTimerValueRef.current,
+          black: blackTimerValueRef.current,
+        });
+      } catch (error) {
+        console.error('Failed to sync timers:', error);
+      }
+    };
+
+    // Sync immediately, then every 1 second (more accurate, prevents data loss on refresh)
+    syncTimers();
+    const interval = setInterval(syncTimers, 1000);
+
+    return () => clearInterval(interval);
+  }, [backendGameId, user, winner]);
 
   // Wrapper to restrict AI checker interaction
   const handlePointClick = useCallback((pointIndex: number, targetIndex?: number) => {
