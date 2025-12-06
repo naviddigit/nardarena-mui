@@ -107,9 +107,12 @@ export function useAIAutoRoll({
       return;
     }
 
-    // ✅ شرط 7: بررسی وجود diceRollerRef
-    if (!diceRollerRef.current) {
-      console.log('⛔ AI Auto-roll: Dice roller not ready');
+    // ✅ شرط 7: بررسی وجود diceRollerRef و آماده بودن آن
+    if (!diceRollerRef.current || !diceRollerRef.current.isReady) {
+      console.log('⛔ AI Auto-roll: Dice roller not ready', {
+        hasRef: !!diceRollerRef.current,
+        isReady: diceRollerRef.current?.isReady,
+      });
       return;
     }
 
@@ -124,7 +127,7 @@ export function useAIAutoRoll({
       dice: aiDiceFromBackend,
     });
 
-    // ✅ تاخیر 2 ثانیه برای طبیعی‌تر بودن
+    // ✅ فوری شروع (بدون delay اضافه - ستینگ سیستم سرعت AI را کنترل می‌کند)
     autoRollTimeoutRef.current = setTimeout(async () => {
       // ✅ چک مجدد قبل از اجرا (ممکنه state تغییر کرده باشه)
       if (isRolling || isWaitingForBackend || isExecutingAIMove) {
@@ -152,7 +155,7 @@ export function useAIAutoRoll({
         console.error('❌ AI failed to get dice from backend:', error);
         setIsWaitingForBackend(false);
       }
-    }, 2000);
+    }, 100);
 
     // Cleanup
     return () => {
@@ -171,6 +174,7 @@ export function useAIAutoRoll({
     isExecutingAIMove,
     backendGameId,
     diceRollerRef,
+    diceRollerRef.current?.isReady, // ✅ وقتی dice roller آماده شد، دوباره چک میکنه
     setIsRolling,
     setIsWaitingForBackend,
   ]);

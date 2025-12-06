@@ -58,6 +58,7 @@ export interface GameResponse {
   winner?: PlayerColor;
   whiteSetsWon: number;
   blackSetsWon: number;
+  endReason?: 'NORMAL_WIN' | 'TIMEOUT' | 'RESIGNATION' | 'DISCONNECT';
   createdAt: string;
   startedAt?: string;
   endedAt?: string;

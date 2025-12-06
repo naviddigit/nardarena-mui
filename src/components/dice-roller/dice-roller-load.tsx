@@ -190,7 +190,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
     
     if (isRolling) {
-      console.log('🎲 Already rolling, please wait');
+      // Already rolling
       return;
     }
     
@@ -243,9 +243,9 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     try {
       const audio = new Audio('/dice-main/assets/nc93322.mp3');
       audio.volume = 0.5;
-      audio.play().catch((err) => console.log('Audio play failed:', err));
+      audio.play().catch(() => {});
     } catch (error) {
-      console.log('Audio not supported:', error);
+      // Audio not supported
     }
 
     const box = boxRef.current;
@@ -276,7 +276,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         setIsRolling(false);
         // Generate random fallback results
         const fallbackResults = notation.set.map(() => Math.floor(Math.random() * 6) + 1);
-        const results: DiceResult[] = fallbackResults.map((value) => ({
+        const results: DiceResult[] = fallbackResults.map((value: number) => ({
           value,
           type: 'd6',
         }));
@@ -337,7 +337,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
     
     if (isRolling) {
-      console.log('🎲 Already rolling, please wait');
+      // Already rolling
       return;
     }
     
@@ -385,9 +385,9 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     try {
       const audio = new Audio('/dice-main/assets/nc93322.mp3');
       audio.volume = 0.5;
-      audio.play().catch((err) => console.log('Audio play failed:', err));
+      audio.play().catch(() => {});
     } catch (error) {
-      console.log('Audio not supported:', error);
+      // Audio not supported
     }
 
     const box = boxRef.current;
@@ -425,6 +425,19 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         onRollComplete?.(results);
       }, 5000);
 
+      // ✅ Save current dice count BEFORE roll (for fixing faces later)
+      // ⚠️ SPECIAL CASE: If rolling 2d6 but box has 0 dice (after opening clear), 
+      //    we should expect 2 NEW dice, not slice from old ones
+      let diceCountBeforeRoll = box.dices ? box.dices.length : 0;
+      
+      console.log(`🔍 Before roll: diceNotation=${diceNotation}, box.dices.length=${diceCountBeforeRoll}`);
+      
+      // ✅ FIX: If we're rolling 2d6 and box is empty (after opening clear), set count to 0
+      if (diceNotation === '2d6' && diceCountBeforeRoll < 2) {
+        console.log(`🔧 Rolling 2d6 after clear: diceCountBeforeRoll reset from ${diceCountBeforeRoll} → 0`);
+        diceCountBeforeRoll = 0;
+      }
+
       // Pass forced values as the second parameter
       // IMPORTANT: Use 'values' parameter directly, NOT the 'result' from callback
       // because shift_dice_faces in dice.js doesn't always work correctly
@@ -435,42 +448,50 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         // We only want the LAST die that was just rolled
         let actualResult = result;
         if (diceNotation === '1d6' && result.length > values.length) {
-          console.log('🎲 Opening roll - filtering results. Got:', result, 'Expected:', values.length);
           actualResult = result.slice(-values.length); // Take only the last N dice
-          console.log('🎲 Filtered to:', actualResult);
         }
         
-        // ✅ Check dice.js physics result vs requested values
+        // ✅ IMMEDIATE FIX: Correct dice faces RIGHT NOW in callback, before rendering
         const requestedSorted = [...values].sort().join(',');
         const receivedSorted = [...actualResult].sort().join(',');
         
         if (requestedSorted !== receivedSorted) {
-          console.warn('⚠️ Physics showed wrong faces:', actualResult, '→ Expected:', values);
-          console.log('🎲 Using correct backend values:', values, '✅');
+          console.log(`🎲 Old: [${actualResult}] → New: [${values}]`);
           
-          // ✅ FIX: Manually set dice faces to correct values after roll
-          // For opening rolls, fix the LAST die only
-          setTimeout(() => {
-            try {
-              if (box && box.dices && box.dices.length > 0) {
-                // For 1d6 (opening roll), only fix the LAST die that was just rolled
-                const startIndex = diceNotation === '1d6' ? box.dices.length - 1 : box.dices.length - values.length;
-                const dicesToFix = box.dices.slice(startIndex);
+          // Get the dice that were just rolled
+          const allDice = box.dices;
+          const lastNDice = allDice.slice(-actualResult.length);
+          
+          for (let i = 0; i < lastNDice.length; i++) {
+            const die = lastNDice[i];
+            const physicsValue = actualResult[i];
+            const backendValue = values[i];
+            
+            if (physicsValue !== backendValue) {
+              const geom = die.geometry;
+              const shift = backendValue - physicsValue;
+              
+              // Correct each face's materialIndex
+              for (let j = 0; j < geom.faces.length; j++) {
+                const face = geom.faces[j];
+                if (face.materialIndex === 0) continue; // Skip non-face materials
                 
-                dicesToFix.forEach((die: any, index: number) => {
-                  if (die && die.shift_dice_faces) {
-                    const correctValue = values[index];
-                    console.log(`🔧 Fixing die ${index + 1}: ${actualResult[index]} → ${correctValue}`);
-                    die.shift_dice_faces(correctValue);
-                  }
-                });
+                // Apply shift with wrapping (1-6 for d6)
+                let newMatIndex = face.materialIndex - 1 + shift;
+                while (newMatIndex > 6) newMatIndex -= 6;
+                while (newMatIndex < 1) newMatIndex += 6;
+                
+                face.materialIndex = newMatIndex + 1;
               }
-            } catch (fixError) {
-              console.warn('Could not fix dice faces:', fixError);
+              
+              geom.elementsNeedUpdate = true;
             }
-          }, 100); // Small delay to let physics settle
+          }
+          
+          // Force immediate re-render
+          box.renderer.render(box.scene, box.camera);
         } else {
-          console.log('🎲 Roll complete! Backend dice:', values, '- Physics matched! ✅');
+          console.log(`🎲 Dice: [${values}]`);
         }
         
         setIsRolling(false);
@@ -561,7 +582,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
   };
 
-  // Expose rollDice, clearDice, setDiceValues, and reloadDiceScript methods via ref
+  // Expose rollDice, clearDice, setDiceValues, reloadDiceScript and isReady via ref
   useImperativeHandle(ref, () => ({
     rollDice,
     setDiceValues,
@@ -571,6 +592,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       }
     },
     reloadDice: reloadDiceScript,
+    isReady,
   }));
 
   return (

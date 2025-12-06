@@ -25,6 +25,8 @@ interface UseDiceRollControlProps {
   isRolling: boolean;
   isWaitingForBackend: boolean;
   isExecutingAIMove: boolean;
+  whiteTimerSeconds?: number;
+  blackTimerSeconds?: number;
 }
 
 interface UseDiceRollControlReturn {
@@ -38,10 +40,20 @@ export function useDiceRollControl({
   isRolling,
   isWaitingForBackend,
   isExecutingAIMove,
+  whiteTimerSeconds = Infinity,
+  blackTimerSeconds = Infinity,
 }: UseDiceRollControlProps): UseDiceRollControlReturn {
   
   const { canRoll, canRollReason } = useMemo(() => {
-    // اگه player هنوز انتخاب نشده
+    // Check if player's timer has expired
+    if (playerColor === 'white' && whiteTimerSeconds <= 0) {
+      return { canRoll: false, canRollReason: 'Time expired' };
+    }
+    if (playerColor === 'black' && blackTimerSeconds <= 0) {
+      return { canRoll: false, canRollReason: 'Time expired' };
+    }
+    
+    // If player color not selected yet
     if (!playerColor) {
       return { canRoll: false, canRollReason: 'Player color not selected' };
     }
@@ -93,7 +105,17 @@ export function useDiceRollControl({
 
     // هیچکدوم از شرایط برقرار نیست
     return { canRoll: false, canRollReason: 'Unknown state' };
-  }, [gameState.gamePhase, gameState.currentPlayer, gameState.openingRoll.white, playerColor, isRolling, isWaitingForBackend, isExecutingAIMove]);
+  }, [
+    gameState.gamePhase,
+    gameState.currentPlayer,
+    gameState.openingRoll.white,
+    playerColor,
+    isRolling,
+    isWaitingForBackend,
+    isExecutingAIMove,
+    whiteTimerSeconds,
+    blackTimerSeconds,
+  ]);
 
   return { canRoll, canRollReason };
 }

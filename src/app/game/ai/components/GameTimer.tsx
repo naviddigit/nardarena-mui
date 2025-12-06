@@ -24,11 +24,28 @@ interface GameTimerProps {
 export function GameTimer({ initialSeconds, isActive, onTimeUp, onTick }: GameTimerProps) {
   const [seconds, setSeconds] = useState(initialSeconds);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeUpCalledRef = useRef<boolean>(false);
 
   // Reset timer when initialSeconds changes (on page load/refresh)
   useEffect(() => {
+    // ✅ Validate initialSeconds
+    if (typeof initialSeconds !== 'number' || isNaN(initialSeconds) || initialSeconds < 0) {
+      return;
+    }
+    
     setSeconds(initialSeconds);
-  }, [initialSeconds]);
+    
+    // If timer is already at 0 or negative, trigger onTimeUp immediately (only once)
+    if (initialSeconds <= 0 && onTimeUp && !timeUpCalledRef.current) {
+      timeUpCalledRef.current = true;
+      onTimeUp();
+    }
+    
+    // Reset flag if timer goes above 0 (for new game/set)
+    if (initialSeconds > 0) {
+      timeUpCalledRef.current = false;
+    }
+  }, [initialSeconds, onTimeUp]);
 
   // Start/stop countdown based on isActive
   useEffect(() => {
@@ -42,8 +59,9 @@ export function GameTimer({ initialSeconds, isActive, onTimeUp, onTick }: GameTi
             onTick(newValue);
           }
           
-          // Check if time is up
-          if (newValue === 0 && onTimeUp) {
+          // Check if time is up (only call once)
+          if (newValue === 0 && onTimeUp && !timeUpCalledRef.current) {
+            timeUpCalledRef.current = true;
             onTimeUp();
           }
           
@@ -94,6 +112,19 @@ export function useGameTimers(
 ) {
   const whiteTimeRef = useRef(whiteInitial);
   const blackTimeRef = useRef(blackInitial);
+
+  // ✅ Update refs when initial values change (from database load)
+  useEffect(() => {
+    if (typeof whiteInitial === 'number' && !isNaN(whiteInitial) && whiteInitial >= 0) {
+      whiteTimeRef.current = whiteInitial;
+    }
+  }, [whiteInitial]);
+
+  useEffect(() => {
+    if (typeof blackInitial === 'number' && !isNaN(blackInitial) && blackInitial >= 0) {
+      blackTimeRef.current = blackInitial;
+    }
+  }, [blackInitial]);
 
   // Only active if game is in play (not opening, not finished)
   const isWhiteActive = currentPlayer === 'white' && gamePhase !== 'opening' && gamePhase !== 'game-over';

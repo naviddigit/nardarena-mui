@@ -418,11 +418,15 @@ var DICE = (function() {
     that.dice_box.prototype.roll = function(vectors, values, callback) {
         this.prepare_dices_for_roll(vectors);
         if (values != undefined && values.length) {
+            console.log('🎲 [dice.js] roll() with forced values:', values);
             vars.use_adapvite_timestep = false;
             var res = this.emulate_throw();
+            console.log('🎲 [dice.js] emulate_throw() result:', res);
             this.prepare_dices_for_roll(vectors);
-            for (var i in res)
+            for (var i in res) {
+                console.log(`🎲 [dice.js] shift_dice_faces: dice ${i}, value ${values[i]}, current ${res[i]}`);
                 shift_dice_faces(this.dices[i], values[i], res[i]);
+            }
         }
         this.callback = callback;
         this.running = (new Date()).getTime();

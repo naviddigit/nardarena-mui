@@ -82,6 +82,17 @@ export function useAIGame(options: UseAIGameOptions = {}) {
       });
 
       console.log('✅ AI Game created:', game.id, 'Difficulty:', aiDifficulty, 'AI Color:', aiPlayerColor);
+      
+      // 🎲 Log pre-generated dice received from backend
+      console.log('\n=================================================');
+      console.log('🎲 Pre-generated dice received from backend:');
+      console.log('=================================================');
+      console.log(`📋 Opening Roll (1d6):`);
+      console.log(`   🎲 White Player: ${game.openingDiceWhite}`);
+      console.log(`   🎲 Black Player: ${game.openingDiceBlack}`);
+      console.log(`📋 Winner's First Roll (2d6): [${game.firstRollDice[0]}, ${game.firstRollDice[1]}]`);
+      console.log('=================================================\n');
+      
       lastGameStateRef.current = game.gameState;
       
       return game;

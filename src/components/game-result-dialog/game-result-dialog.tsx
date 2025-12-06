@@ -60,39 +60,78 @@ export function GameResultDialog({
       }}
       PaperProps={{
         sx: {
-          borderRadius: 3,
+          borderRadius: { xs: 2, sm: 3 },
           boxShadow: (theme) => theme.customShadows.dialog,
+          mx: { xs: 2, sm: 3 },
+          maxWidth: { xs: '90%', sm: '600px' },
         },
       }}
     >
-      <DialogContent sx={{ p: 4 }}>
-        <Stack spacing={4} alignItems="center">
+      <DialogContent sx={{ p: { xs: 2.5, sm: 4 } }}>
+        <Stack spacing={{ xs: 3, sm: 4 }} alignItems="center">
           {/* Victory Title */}
           <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="h3" sx={{ mb: 1 }}>
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                mb: 1,
+                fontSize: { xs: '1.75rem', sm: '2.5rem' }
+              }}
+            >
               {isTimeout ? '⏰ Time Out!' : '🎉 Victory! 🎉'}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {isTimeout ? 'Game ended due to timeout' : 'Set completed'}
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                mb: isTimeout ? 1 : 0
+              }}
+            >
+              {isTimeout ? 'Game ended - Time expired' : 'Match completed'}
             </Typography>
+            
+            {/* Additional timeout info */}
+            {isTimeout && (
+              <Box
+                sx={{
+                  mt: 2,
+                  p: { xs: 1.5, sm: 2 },
+                  bgcolor: 'error.lighter',
+                  borderRadius: 2,
+                  border: (theme) => `1px solid ${theme.palette.error.light}`,
+                }}
+              >
+                <Typography 
+                  variant="body2" 
+                  color="error.dark"
+                  sx={{ 
+                    fontWeight: 500,
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' }
+                  }}
+                >
+                  {loser.name} ran out of time and lost the match
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           {/* Players Score Display */}
           <Stack
             direction="column"
-            spacing={3}
+            spacing={{ xs: 2, sm: 3 }}
             alignItems="stretch"
-            sx={{ width: '100%', py: 2 }}
+            sx={{ width: '100%', py: { xs: 1, sm: 2 } }}
           >
             {/* Winner */}
             <Stack
               direction="row"
-              spacing={2}
+              spacing={{ xs: 1.5, sm: 2 }}
               alignItems="center"
               sx={{
                 bgcolor: 'background.neutral',
                 borderRadius: 2,
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
               }}
             >
               <Box sx={{ position: 'relative' }}>
@@ -100,8 +139,8 @@ export function GameResultDialog({
                   src={winner.avatarUrl}
                   alt={winner.name}
                   sx={{
-                    width: 60,
-                    height: 60,
+                    width: { xs: 50, sm: 60 },
+                    height: { xs: 50, sm: 60 },
                     border: (theme) => `4px solid ${theme.palette.success.main}`,
                     boxShadow: (theme) => theme.customShadows.success,
                   }}
@@ -113,23 +152,23 @@ export function GameResultDialog({
                     right: -4,
                     bgcolor: 'warning.main',
                     borderRadius: '50%',
-                    width: 28,
-                    height: 28,
+                    width: { xs: 24, sm: 28 },
+                    height: { xs: 24, sm: 28 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     boxShadow: 3,
                   }}
                 >
-                  <Iconify icon="solar:cup-star-bold" width={18} sx={{ color: 'common.white' }} />
+                  <Iconify icon="solar:cup-star-bold" width={{ xs: 16, sm: 18 }} sx={{ color: 'common.white' }} />
                 </Box>
               </Box>
               <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'success.main' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'success.main', fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
                   {winner.name}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {isTimeout ? 'Winner by timeout' : 'Winner'}
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  {isTimeout ? 'Won - Opponent ran out of time' : 'Winner'}
                 </Typography>
               </Box>
               <Typography
@@ -138,6 +177,7 @@ export function GameResultDialog({
                   fontWeight: 700,
                   fontFamily: 'monospace',
                   color: 'success.main',
+                  fontSize: { xs: '1.5rem', sm: '1.75rem' }
                 }}
               >
                 {winner.score}
@@ -145,8 +185,8 @@ export function GameResultDialog({
             </Stack>
 
             {/* Score Info */}
-            <Box sx={{ textAlign: 'center', py: 1 }}>
-              <Typography variant="body2" color="text.secondary">
+            <Box sx={{ textAlign: 'center', py: { xs: 0.5, sm: 1 } }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 Set {currentSet} of {maxSets}
               </Typography>
             </Box>
@@ -154,12 +194,12 @@ export function GameResultDialog({
             {/* Loser */}
             <Stack
               direction="row"
-              spacing={2}
+              spacing={{ xs: 1.5, sm: 2 }}
               alignItems="center"
               sx={{
                 bgcolor: 'background.neutral',
                 borderRadius: 2,
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
               }}
             >
               <Box sx={{ position: 'relative' }}>
@@ -167,8 +207,8 @@ export function GameResultDialog({
                   src={loser.avatarUrl}
                   alt={loser.name}
                   sx={{
-                    width: 60,
-                    height: 60,
+                    width: { xs: 50, sm: 60 },
+                    height: { xs: 50, sm: 60 },
                     border: (theme) => `4px solid ${theme.palette.error.main}`,
                     boxShadow: (theme) => theme.customShadows.error,
                   }}
@@ -180,8 +220,8 @@ export function GameResultDialog({
                     right: -4,
                     bgcolor: 'error.main',
                     borderRadius: '50%',
-                    width: 28,
-                    height: 28,
+                    width: { xs: 24, sm: 28 },
+                    height: { xs: 24, sm: 28 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -190,17 +230,17 @@ export function GameResultDialog({
                 >
                   <Iconify
                     icon="solar:close-circle-bold"
-                    width={18}
+                    width={{ xs: 16, sm: 18 }}
                     sx={{ color: 'common.white' }}
                   />
                 </Box>
               </Box>
               <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'error.main' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'error.main', fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
                   {loser.name}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {isTimeout ? 'Lost by timeout' : 'Defeated'}
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  {isTimeout ? 'Lost - Time expired' : 'Defeated'}
                 </Typography>
               </Box>
               <Typography
@@ -209,6 +249,7 @@ export function GameResultDialog({
                   fontWeight: 700,
                   fontFamily: 'monospace',
                   color: 'error.main',
+                  fontSize: { xs: '1.5rem', sm: '1.75rem' }
                 }}
               >
                 {loser.score}
@@ -217,7 +258,7 @@ export function GameResultDialog({
           </Stack>
 
           {/* Action Buttons */}
-          <Stack spacing={2} sx={{ width: '100%' }}>
+          <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ width: '100%' }}>
             <Button
               fullWidth
               variant="contained"
@@ -226,8 +267,9 @@ export function GameResultDialog({
               onClick={onRematch}
               startIcon={<Iconify icon="solar:refresh-bold" />}
               sx={{
-                py: 1.5,
+                py: { xs: 1.25, sm: 1.5 },
                 fontWeight: 600,
+                fontSize: { xs: '0.95rem', sm: '1rem' }
               }}
             >
               Play Again
@@ -240,8 +282,9 @@ export function GameResultDialog({
               onClick={onBackToDashboard}
               startIcon={<Iconify icon="solar:home-2-bold" />}
               sx={{
-                py: 1.5,
+                py: { xs: 1.25, sm: 1.5 },
                 fontWeight: 600,
+                fontSize: { xs: '0.95rem', sm: '1rem' }
               }}
             >
               Back to Dashboard
