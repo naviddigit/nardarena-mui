@@ -59,8 +59,27 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, redirect to login
         console.error('Token refresh failed:', refreshError);
-        sessionStorage.clear();
-        window.location.href = '/auth/jwt/sign-in';
+        
+        // 🎮 Save current game URL before clearing session (if in game page)
+        const currentPath = window.location.pathname;
+        const currentSearch = window.location.search;
+        if (currentPath.includes('/game/') && currentSearch.includes('gameId=')) {
+          sessionStorage.setItem('returnUrl', `${currentPath}${currentSearch}`);
+        }
+        
+        // Clear tokens and redirect to LOGIN (not dashboard!)
+        sessionStorage.removeItem('jwt_access_token');
+        sessionStorage.removeItem('jwt_refresh_token');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
+        localStorage.removeItem('jwt_access_token');
+        localStorage.removeItem('jwt_refresh_token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        
+        // ✅ CRITICAL: Redirect to LOGIN page when token expires
+        console.log('🚪 Token expired - redirecting to login...');
+        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }

@@ -33,4 +33,5 @@ export type GameState = {
   scores: { white: number; black: number };
   setWinner: Player | null;
   shouldClearDice?: boolean; // Flag to clear dice on tie re-rolls
+  nextRoll?: { white: number[] | null; black: number[] | null }; // Dice pre-rolled by backend after Done
 };

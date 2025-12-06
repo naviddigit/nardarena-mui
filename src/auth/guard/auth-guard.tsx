@@ -10,6 +10,7 @@ import { CONFIG } from 'src/config-global';
 import { SplashScreen } from 'src/components/loading-screen';
 
 import { useAuthContext } from '../hooks';
+import { STORAGE_KEY } from '../context/jwt/constant';
 
 // ----------------------------------------------------------------------
 
@@ -43,9 +44,12 @@ export function AuthGuard({ children }: Props) {
       return;
     }
 
-    if (!authenticated) {
+    // 🔒 CRITICAL: Double-check actual token in storage
+    // AuthContext might have cached state even after logout
+    const actualToken = sessionStorage.getItem(STORAGE_KEY);
+    
+    if (!authenticated || !actualToken) {
       const href = `${paths.auth.signIn}?${createQueryString('returnTo', pathname)}`;
-
       router.replace(href);
       return;
     }

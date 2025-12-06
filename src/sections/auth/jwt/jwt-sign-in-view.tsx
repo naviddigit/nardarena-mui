@@ -71,7 +71,14 @@ export function JwtSignInView() {
       await signInWithPassword({ email: data.email, password: data.password });
       await checkUserSession?.();
 
-      router.refresh();
+      // 🎮 Check if there's a saved return URL (from game redirect)
+      const returnUrl = sessionStorage.getItem('returnUrl');
+      if (returnUrl) {
+        sessionStorage.removeItem('returnUrl');
+        router.push(returnUrl);
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       console.error(error);
       setErrorMsg(error instanceof Error ? error.message : error);
@@ -106,7 +113,7 @@ export function JwtSignInView() {
           color="inherit"
           sx={{ alignSelf: 'flex-end' }}
         >
-          Forgot password?
+          Forgot password1111?
         </Link>
 
         <Field.Text
@@ -136,7 +143,7 @@ export function JwtSignInView() {
         loading={isSubmitting}
         loadingIndicator="Sign in..."
       >
-        Sign in
+        Sign in111
       </LoadingButton>
     </Stack>
   );

@@ -57,6 +57,13 @@ export function tokenExpired(exp: number) {
 
   setTimeout(() => {
     try {
+      // 🎮 Don't auto-logout if user is in game - let axios interceptor handle refresh
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('/game/')) {
+        console.log('⏰ Token expired but user in game - axios will handle refresh');
+        return;
+      }
+      
       sessionStorage.removeItem(STORAGE_KEY);
       window.location.href = paths.auth.signIn;
     } catch (error) {

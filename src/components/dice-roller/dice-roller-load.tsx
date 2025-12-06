@@ -440,22 +440,21 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
           console.log('🎲 Filtered to:', actualResult);
         }
         
-        // ⚠️ Check if dice.js returned wrong values (it often does!)
+        // ✅ Check dice.js physics result vs requested values
         const requestedSorted = [...values].sort().join(',');
         const receivedSorted = [...actualResult].sort().join(',');
         
         if (requestedSorted !== receivedSorted) {
-          console.warn('⚠️ dice.js returned wrong values!');
-          console.warn('   Requested:', values, 'Got:', actualResult);
-          console.warn('   ✅ Using requested values (correct)');
+          console.warn('⚠️ Physics showed wrong faces:', actualResult, '→ Expected:', values);
+          console.log('🎲 Using correct backend values:', values, '✅');
         } else {
-          console.log('🎲 Roll complete! Requested:', values, 'Got:', actualResult);
+          console.log('🎲 Roll complete! Backend dice:', values, '- Physics matched! ✅');
         }
         
         setIsRolling(false);
         
-        // ✅ ALWAYS use the values we requested, NOT what dice.js returned
-        // dice.js shift_dice_faces doesn't work reliably!
+        // ✅ ALWAYS use the values we requested from backend, NOT what dice.js physics returned
+        // This ensures anti-cheat: dice values come from backend, not client physics
         const results: DiceResult[] = values.map((value) => ({
           value,
           type: 'd6',

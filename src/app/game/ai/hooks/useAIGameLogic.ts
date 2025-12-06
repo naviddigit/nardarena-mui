@@ -29,6 +29,7 @@ interface UseAIGameLogicProps {
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   backendGameId: string | null;
   aiPlayerColor: 'white' | 'black'; // AI player color (not hard-coded!)
+  handleDone: () => void; // ✅ Done function from page
   onTurnComplete?: () => void; // ✅ Callback when AI finishes turn
 }
 
@@ -39,7 +40,7 @@ function getRandomDelay(min: number = AI_MOVE_DELAY_MIN, max: number = AI_MOVE_D
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlayerColor, onTurnComplete }: UseAIGameLogicProps) {
+export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlayerColor, handleDone, onTurnComplete }: UseAIGameLogicProps) {
   const [isExecutingAIMove, setIsExecutingAIMove] = useState(false);
 
   // Load AI delay settings from backend on mount
@@ -272,7 +273,22 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
           console.log(`⏱️ Waiting ${doneDelay}ms before finishing turn (clicking Done)...`);
           await new Promise(resolve => setTimeout(resolve, doneDelay));
 
-          console.log('✅ AI moves complete! Turn switched to player');
+          // 7️⃣ ✅ AI moves are already saved by makeAIMove - NO NEED to call handleDone!
+          // makeAIMove already: saves moves, switches turn, generates dice for human
+          console.log('✅ AI moves complete - makeAIMove already handled everything');
+          
+          // ✅ Calculate human player color (opposite of AI)
+          const humanPlayerColor = aiPlayerColor === 'white' ? 'black' : 'white';
+          
+          // ✅ Just update frontend state to match backend
+          setGameState(prev => ({
+            ...prev,
+            currentPlayer: humanPlayerColor,
+            gamePhase: 'waiting',
+            diceValues: [],
+          }));
+
+          console.log('✅ AI turn complete! Switched to player');
           
           // ✅ Call timer switch callback
           if (onTurnComplete) {

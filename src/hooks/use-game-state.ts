@@ -89,9 +89,10 @@ export function useGameState(initialBoardState: BoardState) {
             };
           }
           
-          // Determine winner
+          // Determine winner (HIGHER dice wins in Nard!)
           const starter: Player = newOpeningRoll.white > newOpeningRoll.black ? 'white' : 'black';
-          console.log('🎯 Opening roll winner:', starter);
+          console.log('🎯 Opening roll winner:', starter, '(higher dice wins)');
+          console.log(`📊 White: ${newOpeningRoll.white}, Black: ${newOpeningRoll.black} → Winner: ${starter}`);
           
           // ⚠️ CRITICAL: Opening roll dice are ONLY for determining who starts
           // They are NOT used in actual gameplay!
