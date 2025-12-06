@@ -449,10 +449,14 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
           console.log('🎲 Using correct backend values:', values, '✅');
           
           // ✅ FIX: Manually set dice faces to correct values after roll
+          // For opening rolls, fix the LAST die only
           setTimeout(() => {
             try {
               if (box && box.dices && box.dices.length > 0) {
-                const dicesToFix = box.dices.slice(-values.length); // Last N dice
+                // For 1d6 (opening roll), only fix the LAST die that was just rolled
+                const startIndex = diceNotation === '1d6' ? box.dices.length - 1 : box.dices.length - values.length;
+                const dicesToFix = box.dices.slice(startIndex);
+                
                 dicesToFix.forEach((die: any, index: number) => {
                   if (die && die.shift_dice_faces) {
                     const correctValue = values[index];
