@@ -63,7 +63,6 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { useGameState, type Player, type GamePhase } from 'src/hooks/use-game-state';
 import { calculateValidMoves } from 'src/hooks/game-logic/validation';
-import { useCountdownSeconds } from 'src/hooks/use-countdown';
 import { useSound } from 'src/hooks/use-sound';
 import { useAIGame } from 'src/hooks/use-ai-game';
 import { useAIOpeningRoll } from 'src/hooks/use-ai-opening-roll';
@@ -282,9 +281,10 @@ function GameAIPageContent() {
   const [aiDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'>('MEDIUM');
   const [shareToast, setShareToast] = useState(false);
   
-  // ⏱️ Timer values from database (restored on page load)
-  const [whiteTimerSeconds, setWhiteTimerSeconds] = useState(1800);
-  const [blackTimerSeconds, setBlackTimerSeconds] = useState(1800);
+  // ⏱️ Timer values from database (default: 30 minutes = 1800 seconds)
+  const gameTimeControl = 1800; // Will be read from GameSettings in backend
+  const [whiteTimerSeconds, setWhiteTimerSeconds] = useState(gameTimeControl);
+  const [blackTimerSeconds, setBlackTimerSeconds] = useState(gameTimeControl);
   
   // AI player color state (opposite of human player)
   const [aiPlayerColor, setAiPlayerColor] = useState<'white' | 'black'>('black');
@@ -454,7 +454,7 @@ function GameAIPageContent() {
               
               // 🕐 TIMER RESTORATION - Chess Clock Style
               // ✅ Read from database and calculate elapsed time from lastDoneAt
-              const gameTimeControl = (game as any).timeControl || 1800;
+              const dbTimeControl = (game as any).timeControl || gameTimeControl;
               const whiteTimeDB = (game as any).whiteTimeRemaining;
               const blackTimeDB = (game as any).blackTimeRemaining;
               const lastDoneAt = game.gameState.lastDoneAt; // Time when opponent pressed Done
@@ -462,8 +462,8 @@ function GameAIPageContent() {
               const currentPlayerInGame = game.gameState.currentPlayer?.toLowerCase() || 'white';
               
               // Use database values if available, otherwise use timeControl
-              let whiteTime = whiteTimeDB !== null && whiteTimeDB !== undefined ? whiteTimeDB : gameTimeControl;
-              let blackTime = blackTimeDB !== null && blackTimeDB !== undefined ? blackTimeDB : gameTimeControl;
+              let whiteTime = whiteTimeDB !== null && whiteTimeDB !== undefined ? whiteTimeDB : dbTimeControl;
+              let blackTime = blackTimeDB !== null && blackTimeDB !== undefined ? blackTimeDB : dbTimeControl;
               
               // ✅ Calculate elapsed time ONLY if we have lastDoneAt (opponent finished their turn)
               if (lastDoneAt) {
@@ -870,8 +870,8 @@ function GameAIPageContent() {
               startNewSet(currentSetWinner); // Winner starts next set
               
               // Reset timer values for new set
-              setWhiteTimerSeconds(1800);
-              setBlackTimerSeconds(1800);
+              setWhiteTimerSeconds(gameTimeControl);
+              setBlackTimerSeconds(gameTimeControl);
               
               // Reset the processed flag for next set
               setWinnerProcessedRef.current = false;
@@ -1064,8 +1064,8 @@ function GameAIPageContent() {
     setCurrentSet(1);
     setBackendGameId(null); // Reset backend game ID for new game
     setMoveCounter(0); // Reset move counter
-    setWhiteTimerSeconds(1800);
-    setBlackTimerSeconds(1800);
+    setWhiteTimerSeconds(gameTimeControl);
+    setBlackTimerSeconds(gameTimeControl);
     // Reset game state to initial
     if (resetGame) {
       resetGame();
