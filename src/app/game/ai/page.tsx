@@ -457,16 +457,11 @@ function GameAIPageContent() {
               }
               
               // 🕐 TIMER RESTORATION - Chess Clock Style
-              // ✅ Read from database and calculate elapsed time
+              // ✅ Read from database and calculate elapsed time from lastDoneAt
               const gameTimeControl = (game as any).timeControl || 1800;
               const whiteTimeDB = (game as any).whiteTimeRemaining;
               const blackTimeDB = (game as any).blackTimeRemaining;
-              const lastUpdate = (game as any).updatedAt;
-              
-              // Calculate elapsed time since last update (if current player's timer was running)
-              const now = Date.now();
-              const lastUpdateTime = lastUpdate ? new Date(lastUpdate).getTime() : now;
-              const elapsedSeconds = Math.floor((now - lastUpdateTime) / 1000);
+              const lastDoneAt = game.gameState.lastDoneAt; // Time when opponent pressed Done
               
               const currentPlayerInGame = game.gameState.currentPlayer?.toLowerCase() || 'white';
               
@@ -474,11 +469,28 @@ function GameAIPageContent() {
               let whiteTime = whiteTimeDB !== null && whiteTimeDB !== undefined ? whiteTimeDB : gameTimeControl;
               let blackTime = blackTimeDB !== null && blackTimeDB !== undefined ? blackTimeDB : gameTimeControl;
               
-              // ✅ Subtract elapsed time ONLY from current player (their timer was running)
-              if (currentPlayerInGame === 'white') {
-                whiteTime = Math.max(0, whiteTime - elapsedSeconds);
-              } else if (currentPlayerInGame === 'black') {
-                blackTime = Math.max(0, blackTime - elapsedSeconds);
+              // ✅ Calculate elapsed time ONLY if we have lastDoneAt (opponent finished their turn)
+              if (lastDoneAt) {
+                const now = Date.now();
+                const lastDoneTime = new Date(lastDoneAt).getTime();
+                const elapsedSeconds = Math.floor((now - lastDoneTime) / 1000);
+                
+                // Subtract elapsed time ONLY from current player (their timer started when opponent pressed Done)
+                if (currentPlayerInGame === 'white') {
+                  whiteTime = Math.max(0, whiteTime - elapsedSeconds);
+                  console.log('⏱️ White timer adjusted for elapsed time:', {
+                    fromDB: whiteTimeDB,
+                    elapsedSeconds,
+                    finalTime: whiteTime,
+                  });
+                } else if (currentPlayerInGame === 'black') {
+                  blackTime = Math.max(0, blackTime - elapsedSeconds);
+                  console.log('⏱️ Black timer adjusted for elapsed time:', {
+                    fromDB: blackTimeDB,
+                    elapsedSeconds,
+                    finalTime: blackTime,
+                  });
+                }
               }
               
               setWhiteTimerInit(whiteTime);
@@ -489,7 +501,6 @@ function GameAIPageContent() {
               console.log('⏱️ Timers restored from database:', {
                 white: whiteTime,
                 black: blackTime,
-                elapsedSeconds,
                 currentPlayer: currentPlayerInGame,
                 fromDatabase: whiteTimeDB !== null || blackTimeDB !== null,
               });
@@ -783,33 +794,8 @@ function GameAIPageContent() {
     intervalSeconds: 5, // هر 5 ثانیه چک کن
   });
 
-  // ✅ Real-time timer sync to backend (every 1 second for accuracy)
-  useEffect(() => {
-    if (!backendGameId || !user || winner) {
-      return; // Only sync when game is active
-    }
-
-    const syncTimers = async () => {
-      try {
-        await gamePersistenceAPI.axios.patch(`/game/${backendGameId}/timers`, {
-          whiteTimeRemaining: whiteTimerValueRef.current,
-          blackTimeRemaining: blackTimerValueRef.current,
-        });
-        console.log('⏱️ Timers synced to backend:', {
-          white: whiteTimerValueRef.current,
-          black: blackTimerValueRef.current,
-        });
-      } catch (error) {
-        console.error('Failed to sync timers:', error);
-      }
-    };
-
-    // Sync immediately, then every 1 second (more accurate, prevents data loss on refresh)
-    syncTimers();
-    const interval = setInterval(syncTimers, 1000);
-
-    return () => clearInterval(interval);
-  }, [backendGameId, user, winner]);
+  // ✅ Timer sync happens ONLY on Done button press (in handleDone)
+  // No interval needed - reduces server load and prevents unnecessary syncs
 
   // Wrapper to restrict AI checker interaction
   const handlePointClick = useCallback((pointIndex: number, targetIndex?: number) => {
