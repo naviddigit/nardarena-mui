@@ -447,6 +447,24 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         if (requestedSorted !== receivedSorted) {
           console.warn('⚠️ Physics showed wrong faces:', actualResult, '→ Expected:', values);
           console.log('🎲 Using correct backend values:', values, '✅');
+          
+          // ✅ FIX: Manually set dice faces to correct values after roll
+          setTimeout(() => {
+            try {
+              if (box && box.dices && box.dices.length > 0) {
+                const dicesToFix = box.dices.slice(-values.length); // Last N dice
+                dicesToFix.forEach((die: any, index: number) => {
+                  if (die && die.shift_dice_faces) {
+                    const correctValue = values[index];
+                    console.log(`🔧 Fixing die ${index + 1}: ${actualResult[index]} → ${correctValue}`);
+                    die.shift_dice_faces(correctValue);
+                  }
+                });
+              }
+            } catch (fixError) {
+              console.warn('Could not fix dice faces:', fixError);
+            }
+          }, 100); // Small delay to let physics settle
         } else {
           console.log('🎲 Roll complete! Backend dice:', values, '- Physics matched! ✅');
         }
