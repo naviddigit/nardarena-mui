@@ -68,6 +68,7 @@ import { useSound } from 'src/hooks/use-sound';
 import { useAIGame } from 'src/hooks/use-ai-game';
 import { useAIOpeningRoll } from 'src/hooks/use-ai-opening-roll';
 import { useGameRecovery } from 'src/hooks/use-game-recovery';
+import { useBackendConnection } from 'src/hooks/use-backend-connection';
 import { _mock } from 'src/_mock';
 import { BoardThemeProvider } from 'src/contexts/board-theme-context';
 import { useAuthContext } from 'src/auth/hooks';
@@ -811,6 +812,23 @@ function GameAIPageContent() {
       isExecutingAIMove,
     });
   }, [canRoll, canRollReason, gameState.gamePhase, gameState.currentPlayer, playerColor, aiPlayerColor, isRolling, isWaitingForBackend, isExecutingAIMove]);
+
+  // ✅ Monitor backend connection
+  const checkBackendConnection = useCallback(async () => {
+    try {
+      // یه API ساده که سریع جواب میده
+      await gamePersistenceAPI.axios.get('/health');
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }, []);
+
+  const { isConnected: isBackendConnected } = useBackendConnection({
+    enabled: !!backendGameId, // فقط وقتی بازی شروع شده
+    checkConnection: checkBackendConnection,
+    intervalSeconds: 5, // هر 5 ثانیه چک کن
+  });
 
   // Wrapper to restrict AI checker interaction
   const handlePointClick = useCallback((pointIndex: number, targetIndex?: number) => {
