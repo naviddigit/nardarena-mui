@@ -81,6 +81,7 @@ import { useGameTimers } from './hooks/useGameTimers';
 import { useAIGameLogic } from './hooks/useAIGameLogic';
 import { useDiceRoller } from './hooks/useDiceRoller';
 import { useDiceRollControl } from './hooks/useDiceRollControl';
+import { useAIAutoRoll } from './hooks/useAIAutoRoll';
 
 import { Iconify } from 'src/components/iconify';
 import { PlayerCard } from 'src/components/player-card';
@@ -796,6 +797,21 @@ function GameAIPageContent() {
     isExecutingAIMove,
   });
 
+  // 🐛 Debug canRoll
+  useEffect(() => {
+    console.log('🎯 canRoll status:', {
+      canRoll,
+      canRollReason,
+      gamePhase: gameState.gamePhase,
+      currentPlayer: gameState.currentPlayer,
+      playerColor,
+      aiPlayerColor,
+      isRolling,
+      isWaitingForBackend,
+      isExecutingAIMove,
+    });
+  }, [canRoll, canRollReason, gameState.gamePhase, gameState.currentPlayer, playerColor, aiPlayerColor, isRolling, isWaitingForBackend, isExecutingAIMove]);
+
   // Wrapper to restrict AI checker interaction
   const handlePointClick = useCallback((pointIndex: number, targetIndex?: number) => {
     // Only allow interaction during user's turn
@@ -1233,17 +1249,19 @@ function GameAIPageContent() {
     if (!backendGameId || !user) return;
     
     // ⚠️ Save when BOTH rolled AND haven't saved yet
+    // ✅ REMOVED gamePhase === 'opening' check because use-game-state changes it to 'waiting' immediately!
     if (
       gameState.openingRoll.white !== null &&
       gameState.openingRoll.black !== null &&
       gameState.openingRoll.white !== gameState.openingRoll.black && // ✅ Not a tie
-      !openingRollEndedRef.current && // Only execute once
-      gameState.gamePhase === 'opening' // ✅ CRITICAL: Only run during opening phase, NOT after refresh!
+      !openingRollEndedRef.current // Only execute once
     ) {
       // Prevent duplicate execution (React Strict Mode calls useEffect twice)
       if (openingRollEndedRef.current) return;
       
       openingRollEndedRef.current = true;
+      
+      console.log('🎯 Opening roll conditions met, saving to backend...');
       
       const saveOpeningRoll = async () => {
         try {
@@ -1280,13 +1298,19 @@ function GameAIPageContent() {
             throw new Error('Backend did not generate dice for winner');
           }
           
-          setGameState(prev => ({
-            ...prev,
-            currentPlayer: openingWinner,
-            gamePhase: 'waiting',
-            diceValues: [],
-            nextRoll: response.data.nextRoll, // ✅ Save dice for winner
-          }));
+          console.log('💾 Saving nextRoll to state:', response.data.nextRoll);
+          
+          setGameState(prev => {
+            const newState = {
+              ...prev,
+              currentPlayer: openingWinner,
+              gamePhase: 'waiting',
+              diceValues: [],
+              nextRoll: response.data.nextRoll, // ✅ Save dice for winner
+            };
+            console.log('💾 New state after opening roll:', newState);
+            return newState;
+          });
           
         } catch (error) {
           console.error('❌ Error saving opening roll:', error);
@@ -1418,63 +1442,18 @@ function GameAIPageContent() {
     }, [setGameState, setIsRolling, aiPlayerColor]),
   });
 
-  // Auto-roll for AI (only in waiting phase, NOT in opening)
-  useEffect(() => {
-    if (gameState.currentPlayer === aiPlayerColor && diceRollerRef.current) {
-      
-      // ✅ AI auto-rolls when it's their turn in waiting phase
-      if (gameState.gamePhase === 'waiting' && !isRolling && !isWaitingForBackend && !isExecutingAIMove) {
-        
-        // ✅ CRITICAL: Check if AI actually HAS dice in nextRoll!
-        // If nextRoll[aiPlayerColor] is null/empty, AI shouldn't roll!
-        const aiDiceFromBackend = gameState.nextRoll?.[aiPlayerColor];
-        if (!aiDiceFromBackend || !Array.isArray(aiDiceFromBackend) || aiDiceFromBackend.length === 0) {
-          console.log('⛔ AI auto-roll BLOCKED - no dice in nextRoll for', aiPlayerColor);
-          console.log('📋 nextRoll:', gameState.nextRoll);
-          return;
-        }
-        
-        console.log('✅ AI auto-roll ALLOWED - dice available:', aiDiceFromBackend);
-        
-        const waitingTimeout = setTimeout(async () => {
-          // ✅ DOUBLE CHECK: Make sure it's STILL AI's turn (not player's turn after Done)
-          if (isRolling || isWaitingForBackend || isExecutingAIMove) return;
-          if (gameState.currentPlayer !== aiPlayerColor) {
-            console.log('⛔ AI roll cancelled - not AI turn anymore');
-            return;
-          }
-          
-          // ✅ Clear old dice visually first
-          if (diceRollerRef.current?.clearDice) {
-            diceRollerRef.current.clearDice();
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-          
-          // ✅ AI MUST get dice from backend (not generate locally!)
-          if (backendGameId) {
-            try {
-              setIsWaitingForBackend(true);
-              const diceResponse = await gamePersistenceAPI.rollDice(backendGameId);
-              setIsWaitingForBackend(false);
-              
-              console.log('🤖 AI got dice from backend:', diceResponse.dice);
-              
-              // Show dice animation with backend values
-              if (diceRollerRef.current?.setDiceValues) {
-                setIsRolling(true);
-                diceRollerRef.current.setDiceValues(diceResponse.dice);
-              }
-            } catch (error) {
-              console.error('❌ AI failed to get dice from backend');
-              setIsWaitingForBackend(false);
-            }
-          }
-        }, 2000);
-        
-        return () => clearTimeout(waitingTimeout);
-      }
-    }
-  }, [gameState.gamePhase, gameState.currentPlayer, gameState.nextRoll, aiPlayerColor, isRolling, isWaitingForBackend, isExecutingAIMove, gameState.openingRoll, backendGameId]);
+  // ✅ AI Auto-roll using modular hook
+  useAIAutoRoll({
+    gameState,
+    aiPlayerColor,
+    isRolling,
+    isWaitingForBackend,
+    isExecutingAIMove,
+    backendGameId,
+    diceRollerRef,
+    setIsRolling,
+    setIsWaitingForBackend,
+  });
 
   // Auto-execute AI moves when in moving phase
   // ✅ این حالا توی useAIGameLogic hook اجرا میشه با delay های مناسب
