@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL } from 'src/config/api.config';
+import { API_BASE_URL } from '../config/api.config';
 
 // ----------------------------------------------------------------------
 
