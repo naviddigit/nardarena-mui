@@ -313,9 +313,13 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
   }, [
     gameState.currentPlayer,
     gameState.gamePhase,
-    gameState.validMoves.length,
+    // ❌ REMOVED: gameState.validMoves.length
+    // این باعث می‌شد وقتی board state تغییر می‌کنه و validMoves دوباره محاسبه میشه،
+    // useEffect دوباره trigger بشه و AI 2 بار بازی کنه!
+    // validMoves.length فقط در شرط داخل useEffect چک میشه.
     backendGameId,
     isExecutingAIMove,
+    aiPlayerColor, // ✅ ADDED: برای safety، چون در شرط استفاده میشه
   ]);
 
   return { isExecutingAIMove };
