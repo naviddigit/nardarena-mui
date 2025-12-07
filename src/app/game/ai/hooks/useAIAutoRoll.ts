@@ -52,6 +52,7 @@ export function useAIAutoRoll({
   setIsWaitingForBackend,
 }: UseAIAutoRollProps) {
   const autoRollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasRolledRef = useRef(false); // ✅ Track if AI already rolled for current turn
 
   // ✅ استفاده از hook ماژولار برای دریافت تاس فقط از backend
   const { rollDiceFromBackend } = useBackendDiceOnly({
@@ -74,6 +75,7 @@ export function useAIAutoRoll({
         currentPlayer: gameState.currentPlayer,
         aiPlayerColor,
       });
+      hasRolledRef.current = false; // ✅ Reset when turn changes
       return;
     }
 
@@ -82,6 +84,7 @@ export function useAIAutoRoll({
       console.log('⛔ AI Auto-roll: Not in waiting phase', {
         phase: gameState.gamePhase,
       });
+      hasRolledRef.current = false; // ✅ Reset when phase changes
       return;
     }
 
@@ -92,6 +95,12 @@ export function useAIAutoRoll({
         isWaitingForBackend,
         isExecutingAIMove,
       });
+      return;
+    }
+
+    // ✅ جلوگیری از roll مجدد در همان turn
+    if (hasRolledRef.current) {
+      console.log('⛔ AI Auto-roll: Already rolled for this turn');
       return;
     }
 
@@ -141,6 +150,9 @@ export function useAIAutoRoll({
       }
 
       try {
+        // ✅ علامت‌گذاری که roll انجام شد
+        hasRolledRef.current = true;
+        
         // ✅ پاک کردن تاس‌های قبلی
         if (diceRollerRef.current?.clearDice) {
           diceRollerRef.current.clearDice();
@@ -154,6 +166,7 @@ export function useAIAutoRoll({
       } catch (error) {
         console.error('❌ AI failed to get dice from backend:', error);
         setIsWaitingForBackend(false);
+        hasRolledRef.current = false; // ✅ Reset on error so it can retry
       }
     }, 100);
 
@@ -167,15 +180,16 @@ export function useAIAutoRoll({
   }, [
     gameState.gamePhase,
     gameState.currentPlayer,
-    gameState.nextRoll,
+    // ❌ REMOVED: gameState.nextRoll
+    // این باعث می‌شد هر بار که nextRoll update بشه، useEffect دوباره trigger بشه
+    // و AI 2 بار roll کنه! حالا از hasRolledRef استفاده می‌کنیم.
     aiPlayerColor,
     isRolling,
     isWaitingForBackend,
     isExecutingAIMove,
     backendGameId,
-    diceRollerRef,
-    diceRollerRef.current?.isReady, // ✅ وقتی dice roller آماده شد، دوباره چک میکنه
-    setIsRolling,
-    setIsWaitingForBackend,
+    // ❌ REMOVED: diceRollerRef.current?.isReady
+    // این هم باعث unnecessary re-renders می‌شد
+    rollDiceFromBackend,
   ]);
 }
