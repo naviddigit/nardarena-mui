@@ -485,16 +485,26 @@ function GameAIPageContent() {
               }));
             }
             
-            // Set winner and scores
+            // Set winner and scores ONLY if match is actually over
             const gameWinner = game.winner?.toLowerCase() as 'white' | 'black' | null;
             if (gameWinner) {
-              setWinner(gameWinner);
+              const whiteSets = game.whiteSetsWon || 0;
+              const blackSets = game.blackSetsWon || 0;
+              
               setScores({
-                white: game.whiteSetsWon || 0,
-                black: game.blackSetsWon || 0,
+                white: whiteSets,
+                black: blackSets,
               });
-              setTimeoutWinner(game.endReason === 'TIMEOUT');
-              setResultDialogOpen(true);
+              
+              // Only show winner dialog if someone actually won the MATCH (not just one set)
+              const setsToWin = Math.ceil(maxSets / 2);
+              const matchIsOver = whiteSets >= setsToWin || blackSets >= setsToWin;
+              
+              if (matchIsOver) {
+                setWinner(gameWinner);
+                setTimeoutWinner(game.endReason === 'TIMEOUT');
+                setResultDialogOpen(true);
+              }
             }
             
             setLoading(false);
@@ -1339,14 +1349,26 @@ function GameAIPageContent() {
           [currentSetWinner]: prev[currentSetWinner] + 1,
         };
         
-        const setsToWin = Math.ceil(maxSets / 2); // For 3 sets: need 2, for 5: need 3, for 9: need 5
+        // Calculate sets needed to win (more than 50% of total sets)
+        // 1 set: need 1 | 3 sets: need 2 | 5 sets: need 3 | 9 sets: need 5
+        const setsToWin = Math.ceil(maxSets / 2);
+        
+        console.log('🏆 Set winner check:', {
+          currentSetWinner,
+          newScore,
+          maxSets,
+          setsToWin,
+          matchOver: newScore[currentSetWinner] >= setsToWin,
+        });
         
         if (newScore[currentSetWinner] >= setsToWin) {
-          // Match over - this player won the match
-          setWinner(currentSetWinner); // Set the winner state
+          // Match over - this player won the required number of sets
+          setWinner(currentSetWinner);
           setTimeoutWinner(false);
           setResultDialogOpen(true);
           playSound('move');
+          
+          console.log(`🎉 MATCH WON by ${currentSetWinner}! Won ${newScore[currentSetWinner]} sets out of ${maxSets}`);
         } else {
           // Start next set after delay
           
