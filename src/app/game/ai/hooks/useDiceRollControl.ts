@@ -88,8 +88,14 @@ export function useDiceRollControl({
       return { canRoll: false, canRollReason: 'AI is moving' };
     }
 
-    // Gameplay عادی: باید نوبت player باشه و در فاز waiting باشه
-    if (gameState.currentPlayer === playerColor && gameState.gamePhase === 'waiting') {
+    // ✅ اگه تاس ریخته شده (diceValues موجود است) - نباید بتونه دوباره roll کنه
+    if (gameState.diceValues && gameState.diceValues.length > 0) {
+      return { canRoll: false, canRollReason: 'Dice already rolled' };
+    }
+
+    // Gameplay عادی: باید نوبت player باشه و در فاز waiting یا playing باشه
+    if (gameState.currentPlayer === playerColor && 
+        (gameState.gamePhase === 'waiting' || gameState.gamePhase === 'playing')) {
       return { canRoll: true, canRollReason: 'Your turn to roll' };
     }
 
@@ -109,6 +115,7 @@ export function useDiceRollControl({
     gameState.gamePhase,
     gameState.currentPlayer,
     gameState.openingRoll.white,
+    gameState.diceValues,
     playerColor,
     isRolling,
     isWaitingForBackend,

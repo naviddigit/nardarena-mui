@@ -27,6 +27,7 @@ export type DiceResult = {
 type DiceRollerProps = {
   diceNotation?: string;
   onRollComplete?: (results: DiceResult[]) => void;
+  initialDiceValues?: number[];
 };
 
 declare global {
@@ -39,7 +40,7 @@ declare global {
 }
 
 export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerComponent(
-  { diceNotation = '2d6', onRollComplete },
+  { diceNotation = '2d6', onRollComplete, initialDiceValues },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +49,8 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
   const [isRolling, setIsRolling] = useState(false);
   const [initAttempts, setInitAttempts] = useState(0);
   const [hasFailed, setHasFailed] = useState(false);
+  const [lastDiceValues, setLastDiceValues] = useState<number[] | null>(initialDiceValues || null);
+  const hasRestoredDiceRef = useRef(false);
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -181,6 +184,28 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       if (initTimeout) clearTimeout(initTimeout);
     };
   }, [initAttempts]);
+
+  // ✅ Restore dice after page refresh (show last rolled dice without animation)
+  useEffect(() => {
+    if (!isReady || hasRestoredDiceRef.current) {
+      return;
+    }
+
+    // Check if we have dice values to restore (from props or state)
+    const diceToRestore = initialDiceValues || lastDiceValues;
+    
+    if (!diceToRestore || diceToRestore.length === 0) {
+      return;
+    }
+
+    console.log('🎲 Restoring dice after refresh:', diceToRestore);
+    hasRestoredDiceRef.current = true;
+    
+    // Show dice without animation after a short delay
+    setTimeout(() => {
+      showStaticDice(diceToRestore);
+    }, 500);
+  }, [isReady, initialDiceValues, lastDiceValues]);
 
   const rollDice = () => {
     // Comprehensive checks before rolling
@@ -330,7 +355,12 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
   };
 
   // Force dice to show specific values (for testing/debugging)
-  const setDiceValues = (values: number[]) => {
+  const setDiceValues = (values: number[], skipAnimation = false) => {
+    console.log('🎲 setDiceValues called:', { values, diceNotation, valuesLength: values.length, skipAnimation });
+    
+    // ✅ Save dice values for restoration after refresh
+    setLastDiceValues(values);
+    
     if (!isReady) {
       console.error('🎲 Dice system not ready yet');
       return;
@@ -351,8 +381,12 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       return;
     }
 
-    // ✅ For opening rolls (1d6), override prepare function AND clear function to keep existing dice
-    if (diceNotation === '1d6' && boxRef.current) {
+    // ✅ For opening rolls (1d6), check if we need to keep existing dice
+    // Only keep dice if there's already 1 die on board (second opening roll)
+    const shouldKeepExistingDice = diceNotation === '1d6' && boxRef.current && boxRef.current.dices && boxRef.current.dices.length === 1;
+    
+    if (shouldKeepExistingDice) {
+      console.log('🎲 Second opening roll - keeping first die');
       const originalPrepare = boxRef.current.prepare_dices_for_roll;
       const originalClear = boxRef.current.clear;
       
@@ -367,7 +401,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       
       // Override clear to do nothing (keep existing dice)
       boxRef.current.clear = function() {
-        // Keep existing dice during opening roll
+        console.log('🎲 Clear blocked - keeping first die');
       };
       
       // Restore original functions after roll
@@ -377,6 +411,8 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
           boxRef.current.clear = originalClear;
         }
       }, 200);
+    } else if (diceNotation === '1d6') {
+      console.log('🎲 First opening roll - should have NO dice on board. Current dice:', boxRef.current?.dices?.length || 0);
     }
     
     setIsRolling(true);
@@ -412,7 +448,11 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
         return;
       }
 
-
+      console.log('🎲 [setDiceValues] Vectors generated:', { 
+        count: vectors.length, 
+        diceNotation, 
+        valuesLength: values.length 
+      });
 
       // Roll with forced values (pass as second parameter to box.roll)
       const rollTimeout = setTimeout(() => {
@@ -441,8 +481,86 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       // Pass forced values as the second parameter
       // IMPORTANT: Use 'values' parameter directly, NOT the 'result' from callback
       // because shift_dice_faces in dice.js doesn't always work correctly
+      
+      // ✅ If skipAnimation, don't call box.roll at all - just create dice and show result
+      if (skipAnimation) {
+        // Create dice without rolling
+        box.prepare_dices_for_roll(vectors);
+        
+        // Emulate throw to get settled positions and rotations
+        const currentValues = box.emulate_throw();
+        console.log('🎲 Emulated throw result:', currentValues);
+        
+        // Now shift faces to show correct values
+        box.dices.forEach((die: any, i: number) => {
+          const currentValue = currentValues[i];
+          const targetValue = values[i];
+          
+          if (currentValue === targetValue) return;
+          
+          // Shift faces using same logic as dice.js
+          const num = targetValue - currentValue;
+          const geom = die.geometry.clone();
+          
+          for (let j = 0; j < geom.faces.length; j++) {
+            let matindex = geom.faces[j].materialIndex;
+            if (matindex === 0) continue;
+            
+            matindex += num - 1;
+            while (matindex > 6) matindex -= 6;
+            while (matindex < 1) matindex += 6;
+            
+            geom.faces[j].materialIndex = matindex + 1;
+          }
+          
+          die.geometry = geom;
+        });
+        
+        // Update visual positions to match physics
+        box.dices.forEach((die: any) => {
+          die.position.copy(die.body.position);
+          die.quaternion.copy(die.body.quaternion);
+        });
+        
+        // Force render
+        box.renderer.render(box.scene, box.camera);
+        
+        // Call completion immediately
+        clearTimeout(rollTimeout);
+        setIsRolling(false);
+        
+        const results: DiceResult[] = values.map((value) => ({
+          value,
+          type: 'd6',
+        }));
+        
+        onRollComplete?.(results);
+        return;
+      }
+      
       box.roll(vectors, values, (result: number[]) => {
         clearTimeout(rollTimeout);
+        
+        // ✅ Skip animation - stop physics immediately
+        if (skipAnimation && box.running) {
+          box.running = false; // Stop animation loop
+          
+          // Position dice at final settled positions
+          box.dices.forEach((die: any, i: number) => {
+            die.body.position.set(
+              (i - (box.dices.length - 1) / 2) * 1.5,
+              0.5,
+              0
+            );
+            die.body.velocity.set(0, 0, 0);
+            die.body.angularVelocity.set(0, 0, 0);
+            die.position.copy(die.body.position);
+            die.dice_stopped = true;
+          });
+          
+          // Force render
+          box.renderer.render(box.scene, box.camera);
+        }
         
         // ✅ For opening rolls (1d6), box.roll returns ALL dice on scene
         // We only want the LAST die that was just rolled
@@ -582,10 +700,19 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
   };
 
-  // Expose rollDice, clearDice, setDiceValues, reloadDiceScript and isReady via ref
+  // ✅ Show dice without animation (skip animation, show result immediately)
+  const showStaticDice = (values: number[]) => {
+    if (!isReady || !boxRef.current || !window.DICE) return;
+
+    // Roll with skipAnimation = true
+    setDiceValues(values, true);
+  };
+
+  // Expose rollDice, clearDice, setDiceValues, showStaticDice, reloadDiceScript and isReady via ref
   useImperativeHandle(ref, () => ({
     rollDice,
     setDiceValues,
+    showStaticDice,
     clearDice: () => {
       if (boxRef.current && boxRef.current.clear) {
         boxRef.current.clear();

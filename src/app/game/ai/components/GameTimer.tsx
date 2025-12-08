@@ -3,87 +3,80 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface GameTimerProps {
-  /** Initial time in seconds from database */
-  initialSeconds: number;
-  /** Whether this timer is currently active */
+  /** Server-calculated time in seconds - THIS IS THE SOURCE OF TRUTH */
+  serverSeconds: number;
+  /** Whether this timer is currently ticking */
   isActive: boolean;
   /** Callback when timer reaches zero */
   onTimeUp?: () => void;
-  /** Callback to get current time (called every second) */
-  onTick?: (seconds: number) => void;
 }
 
 /**
- * ⏱️ Clean Chess-Clock Style Timer Component
+ * ⏱️ Server-Authoritative Timer (Lichess Architecture)
  * 
- * - Counts down from initialSeconds
- * - Only runs when isActive = true
- * - Persists through page refresh via initialSeconds prop
- * - No external state management needed
+ * Simple and reliable:
+ * - Server calculates time based on lastDoneAt
+ * - Frontend displays server value with local countdown
+ * - Local countdown runs every second for smooth display
+ * - Server sync happens ONLY on important events (Done, Move, Load)
+ * 
+ * NO complex drift detection, NO periodic polling, NO state conflicts!
  */
-export function GameTimer({ initialSeconds, isActive, onTimeUp, onTick }: GameTimerProps) {
-  const [seconds, setSeconds] = useState(initialSeconds);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+export function GameTimer({ serverSeconds, isActive, onTimeUp }: GameTimerProps) {
+  const [displaySeconds, setDisplaySeconds] = useState(serverSeconds);
+  const lastServerUpdateRef = useRef<number>(Date.now());
   const timeUpCalledRef = useRef<boolean>(false);
 
-  // Reset timer when initialSeconds changes (on page load/refresh)
+  // ✅ SERVER SYNC - Update display when server sends new value
   useEffect(() => {
-    // ✅ Validate initialSeconds
-    if (typeof initialSeconds !== 'number' || isNaN(initialSeconds) || initialSeconds < 0) {
+    console.log(`⏱️ [GameTimer] Server update: ${serverSeconds}s`);
+    setDisplaySeconds(serverSeconds);
+    lastServerUpdateRef.current = Date.now();
+  }, [serverSeconds]);
+  
+  // 🔍 LOG isActive changes separately
+  useEffect(() => {
+    console.log(`⏱️ [GameTimer] isActive changed to: ${isActive}`);
+  }, [isActive]);
+
+  // ✅ LOCAL COUNTDOWN - Smooth display between server syncs
+  useEffect(() => {
+    console.log(`⏱️ [GameTimer] LOCAL COUNTDOWN useEffect - isActive: ${isActive}, serverSeconds: ${serverSeconds}`);
+    
+    if (!isActive) {
+      console.log(`⏱️ [GameTimer] Timer PAUSED (isActive=false)`);
       return;
     }
-    
-    setSeconds(initialSeconds);
-    
-    // If timer is already at 0 or negative, trigger onTimeUp immediately (only once)
-    if (initialSeconds <= 0 && onTimeUp && !timeUpCalledRef.current) {
-      timeUpCalledRef.current = true;
-      onTimeUp();
-    }
-    
-    // Reset flag if timer goes above 0 (for new game/set)
-    if (initialSeconds > 0) {
-      timeUpCalledRef.current = false;
-    }
-  }, [initialSeconds, onTimeUp]);
 
-  // Start/stop countdown based on isActive
-  useEffect(() => {
-    if (isActive && seconds > 0) {
-      intervalRef.current = setInterval(() => {
-        setSeconds((prev) => {
-          const newValue = Math.max(0, prev - 1);
-          
-          // Notify parent of new value
-          if (onTick) {
-            onTick(newValue);
-          }
-          
-          // Check if time is up (only call once)
-          if (newValue === 0 && onTimeUp && !timeUpCalledRef.current) {
-            timeUpCalledRef.current = true;
-            onTimeUp();
-          }
-          
-          return newValue;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
+    console.log(`⏱️ [GameTimer] Timer ACTIVE - starting countdown from ${displaySeconds}s`);
+
+    const interval = setInterval(() => {
+      setDisplaySeconds(prev => {
+        const newValue = Math.max(0, prev - 1);
+        console.log(`⏱️ [GameTimer ${serverSeconds}s base] Countdown: ${prev}s → ${newValue}s`);
+        
+        if (newValue === 0 && onTimeUp && !timeUpCalledRef.current) {
+          timeUpCalledRef.current = true;
+          onTimeUp();
+        }
+        
+        return newValue;
+      });
+    }, 1000);
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      console.log(`⏱️ [GameTimer ${serverSeconds}s base] Cleaning up interval`);
+      clearInterval(interval);
     };
-  }, [isActive, seconds, onTimeUp, onTick]);
+  }, [isActive, onTimeUp, serverSeconds]);
 
-  // Format seconds as MM:SS
+  // Reset timeout flag when time goes back up
+  useEffect(() => {
+    if (serverSeconds > 0) {
+      timeUpCalledRef.current = false;
+    }
+  }, [serverSeconds]);
+
   const formatTime = (totalSeconds: number): string => {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
@@ -94,56 +87,9 @@ export function GameTimer({ initialSeconds, isActive, onTimeUp, onTick }: GameTi
     <div style={{ 
       fontFamily: 'monospace', 
       fontSize: '1.2rem',
-      color: seconds < 30 ? '#ff4444' : 'inherit' 
+      color: displaySeconds < 30 ? '#ff4444' : 'inherit' 
     }}>
-      {formatTime(seconds)}
+      {formatTime(displaySeconds)}
     </div>
   );
-}
-
-/**
- * Hook to manage both player timers
- */
-export function useGameTimers(
-  whiteInitial: number,
-  blackInitial: number,
-  currentPlayer: 'white' | 'black',
-  gamePhase: string
-) {
-  const whiteTimeRef = useRef(whiteInitial);
-  const blackTimeRef = useRef(blackInitial);
-
-  // ✅ Update refs when initial values change (from database load)
-  useEffect(() => {
-    if (typeof whiteInitial === 'number' && !isNaN(whiteInitial) && whiteInitial >= 0) {
-      whiteTimeRef.current = whiteInitial;
-    }
-  }, [whiteInitial]);
-
-  useEffect(() => {
-    if (typeof blackInitial === 'number' && !isNaN(blackInitial) && blackInitial >= 0) {
-      blackTimeRef.current = blackInitial;
-    }
-  }, [blackInitial]);
-
-  // Only active if game is in play (not opening, not finished)
-  const isWhiteActive = currentPlayer === 'white' && gamePhase !== 'opening' && gamePhase !== 'game-over';
-  const isBlackActive = currentPlayer === 'black' && gamePhase !== 'opening' && gamePhase !== 'game-over';
-
-  const handleWhiteTick = (seconds: number) => {
-    whiteTimeRef.current = seconds;
-  };
-
-  const handleBlackTick = (seconds: number) => {
-    blackTimeRef.current = seconds;
-  };
-
-  return {
-    whiteTimeRef,
-    blackTimeRef,
-    isWhiteActive,
-    isBlackActive,
-    handleWhiteTick,
-    handleBlackTick,
-  };
 }

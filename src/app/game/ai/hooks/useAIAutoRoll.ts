@@ -180,16 +180,13 @@ export function useAIAutoRoll({
   }, [
     gameState.gamePhase,
     gameState.currentPlayer,
-    // ❌ REMOVED: gameState.nextRoll
-    // این باعث می‌شد هر بار که nextRoll update بشه، useEffect دوباره trigger بشه
-    // و AI 2 بار roll کنه! حالا از hasRolledRef استفاده می‌کنیم.
+    // ✅ Monitor if AI has dice available (convert to boolean to avoid object reference issues)
+    !!gameState.nextRoll?.[aiPlayerColor]?.length,
     aiPlayerColor,
     isRolling,
     isWaitingForBackend,
     isExecutingAIMove,
     backendGameId,
-    // ❌ REMOVED: diceRollerRef.current?.isReady
-    // این هم باعث unnecessary re-renders می‌شد
     rollDiceFromBackend,
   ]);
 }

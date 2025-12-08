@@ -400,6 +400,22 @@ class GamePersistenceAPI {
 
     return response.json();
   }
+
+  /**
+   * ⏱️ Check time status for both players
+   */
+  async checkTimeStatus(gameId: string): Promise<{
+    whiteTime: number;
+    blackTime: number;
+    whiteTimeUp: boolean;
+    blackTimeUp: boolean;
+    winner: 'white' | 'black' | null;
+    currentPlayer: string;
+    gameStatus: string;
+  }> {
+    const response = await this.axios.get(`/game/${gameId}/check-time`);
+    return response.data;
+  }
 }
 
 // Singleton instance
