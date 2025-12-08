@@ -821,6 +821,9 @@ function GameAIPageContent() {
       lastDoneBy,
       phase: gameState.gamePhase,
       winner,
+      isExecutingAIMove,
+      currentPlayer: gameState.currentPlayer,
+      aiPlayerColor,
     });
     
     // Determine which timer should count
@@ -840,6 +843,22 @@ function GameAIPageContent() {
         whiteWouldBe: lastDoneBy === 'black',
         blackWouldBe: lastDoneBy === 'white',
         phase: gameState.gamePhase,
+      });
+      return;
+    }
+    
+    // ⏱️ CRITICAL: Freeze HUMAN timer when AI is playing, but let AI timer count
+    const isAITurn = gameState.currentPlayer === aiPlayerColor;
+    const isAIMovingPhase = isAITurn && gameState.gamePhase === 'moving';
+    const humanPlayerColor = aiPlayerColor === 'white' ? 'black' : 'white';
+    
+    // If AI is playing and human timer would be active, freeze it
+    if ((isExecutingAIMove || isAIMovingPhase) && 
+        ((whiteIsActive && humanPlayerColor === 'white') || (blackIsActive && humanPlayerColor === 'black'))) {
+      console.log('⏱️ [Timer Countdown] Frozen - Human timer frozen during AI turn', {
+        isExecutingAIMove,
+        isAIMovingPhase,
+        humanPlayerColor,
       });
       return;
     }
@@ -935,7 +954,7 @@ function GameAIPageContent() {
     return () => {
       clearInterval(interval);
     };
-  }, [lastDoneBy, gameState.gamePhase, winner, backendGameId, user, gameState, maxSets]);
+  }, [lastDoneBy, gameState.gamePhase, gameState.currentPlayer, aiPlayerColor, winner, backendGameId, user, gameState, maxSets, isExecutingAIMove]);
 
   // ⏱️ Sync timers when page becomes visible again (after minimize/tab switch)
   useEffect(() => {

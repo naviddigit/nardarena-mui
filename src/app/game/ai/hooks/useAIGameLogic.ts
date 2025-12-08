@@ -280,6 +280,13 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
           // ✅ Calculate human player color (opposite of AI)
           const humanPlayerColor = aiPlayerColor === 'white' ? 'black' : 'white';
           
+          // ⏱️ CRITICAL: Call onTurnComplete BEFORE setting isExecutingAIMove to false
+          // This ensures lastDoneBy is updated before timer countdown resumes
+          if (onTurnComplete) {
+            console.log('⏱️ Calling onTurnComplete to update lastDoneBy BEFORE unfreezing timers');
+            await onTurnComplete();
+          }
+          
           // ✅ Just update frontend state to match backend
           setGameState(prev => ({
             ...prev,
@@ -289,12 +296,6 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
           }));
 
           console.log('✅ AI turn complete! Switched to player');
-          
-          // ✅ Call timer switch callback
-          if (onTurnComplete) {
-            console.log('⏱️ Calling onTurnComplete to switch timers');
-            onTurnComplete();
-          }
         }
       } catch (error: any) {
         console.error('❌ AI move failed:', error);
