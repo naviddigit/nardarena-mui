@@ -79,6 +79,16 @@ export function useAIAutoRoll({
       return;
     }
 
+    // ✅ شرط 1.5: AI نباید roll کنه اگر قبلاً Done زده
+    // این اتفاق میفته وقتی AI moves رو execute کرده و منتظره frontend Done بزنه
+    if (gameState.gamePhase === 'moving' || gameState.gamePhase === 'waiting' && gameState.turnCompleted) {
+      console.log('⛔ AI Auto-roll: AI already finished turn (waiting for Done)', {
+        phase: gameState.gamePhase,
+        turnCompleted: gameState.turnCompleted,
+      });
+      return;
+    }
+
     // ✅ شرط 2: فقط در فاز waiting (نه opening)
     if (gameState.gamePhase !== 'waiting') {
       console.log('⛔ AI Auto-roll: Not in waiting phase', {
@@ -106,6 +116,15 @@ export function useAIAutoRoll({
 
     // ✅ شرط 6: بررسی وجود تاس در nextRoll
     const aiDiceFromBackend = gameState.nextRoll?.[aiPlayerColor];
+    
+    console.log('🔍 AI Auto-roll: Checking nextRoll', {
+      aiPlayerColor,
+      nextRoll: gameState.nextRoll,
+      aiDiceFromBackend,
+      hasNextRoll: !!gameState.nextRoll,
+      nextDiceRoll: gameState.nextDiceRoll,
+    });
+    
     if (!aiDiceFromBackend || !Array.isArray(aiDiceFromBackend) || aiDiceFromBackend.length === 0) {
       console.log('⛔ AI Auto-roll: No dice in nextRoll', {
         aiPlayerColor,

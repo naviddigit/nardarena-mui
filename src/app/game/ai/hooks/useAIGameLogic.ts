@@ -99,8 +99,15 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
 
         // ⚠️ بررسی تعداد حرکات
         if (aiResult.moves.length === 0) {
-          console.warn('⚠️ AI returned 0 moves! Skipping turn...');
-          await finishAITurn(backendGameId, setGameState, gameState);
+          console.warn('⚠️ AI returned 0 moves! AI has no valid moves - auto-pressing Done...');
+          
+          // ⏱️ تاخیر کوچک (شبیه‌سازی فکر کردن AI)
+          const thinkDelay = getRandomDelay(500, 1500); // 0.5-1.5 seconds
+          console.log(`⏱️ AI thinking for ${thinkDelay}ms before passing turn...`);
+          await new Promise(resolve => setTimeout(resolve, thinkDelay));
+          
+          // 🎯 AI هیچ حرکتی نداره - باید Done بزنیم
+          await finishAITurn(backendGameId, setGameState, gameState, handleDone, onTurnComplete);
           return;
         }
 
@@ -273,27 +280,26 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
           console.log(`⏱️ Waiting ${doneDelay}ms before finishing turn (clicking Done)...`);
           await new Promise(resolve => setTimeout(resolve, doneDelay));
 
-          // 7️⃣ ✅ AI moves are already saved by makeAIMove - NO NEED to call handleDone!
-          // makeAIMove already: saves moves, switches turn, generates dice for human
-          console.log('✅ AI moves complete - makeAIMove already handled everything');
+          // 7️⃣ ✅ NEW: AI must call Done like human (for timer + PvP compatibility)
+          // ================================================================
+          // Backend's makeAIMove now ONLY executes moves (no Done)
+          // Frontend must call handleDone() to:
+          // - Update timer (lastDoneBy, lastDoneAt)
+          // - Generate dice for next player
+          // - Switch turn officially
+          // ================================================================
+          console.log('🎯 AI calling Done button (like human)...');
           
-          // ✅ Calculate human player color (opposite of AI)
-          const humanPlayerColor = aiPlayerColor === 'white' ? 'black' : 'white';
-          
-          // ⏱️ CRITICAL: Call onTurnComplete BEFORE setting isExecutingAIMove to false
-          // This ensures lastDoneBy is updated before timer countdown resumes
-          if (onTurnComplete) {
-            console.log('⏱️ Calling onTurnComplete to update lastDoneBy BEFORE unfreezing timers');
-            await onTurnComplete();
+          if (handleDone) {
+            await handleDone();
+            console.log('✅ AI Done button pressed - turn officially complete');
           }
           
-          // ✅ Just update frontend state to match backend
-          setGameState(prev => ({
-            ...prev,
-            currentPlayer: humanPlayerColor,
-            gamePhase: 'waiting',
-            diceValues: [],
-          }));
+          // ⏱️ CRITICAL: Call onTurnComplete AFTER Done to sync timers
+          if (onTurnComplete) {
+            console.log('⏱️ Calling onTurnComplete to sync timers from backend');
+            await onTurnComplete();
+          }
 
           console.log('✅ AI turn complete! Switched to player');
         }
@@ -332,30 +338,24 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
 async function finishAITurn(
   backendGameId: string,
   setGameState: React.Dispatch<React.SetStateAction<GameState>>,
-  currentGameState: GameState
+  currentGameState: GameState,
+  handleDone?: () => void,
+  onTurnComplete?: () => void
 ) {
   try {
-    // دریافت state جدید
-    const updatedGame = await gamePersistenceAPI.getGame(backendGameId);
-
-    if (updatedGame.gameState) {
-      const newValidMoves = calculateValidMoves(
-        updatedGame.gameState,
-        updatedGame.gameState.currentPlayer,
-        []
-      );
-
-  setGameState((prev) => ({
-    ...prev,
-    boardState: updatedGame.gameState,
-    currentPlayer: updatedGame.gameState.currentPlayer || 'white',
-    diceValues: [],
-    selectedPoint: null,
-    gamePhase: 'waiting',
-    validMoves: newValidMoves,
-    moveHistory: [],
-  }));      console.log('✅ AI turn finished (no moves)');
+    console.log('🎯 AI has no moves - calling Done automatically...');
+    
+    // ✅ Call Done to end AI turn (like human pressing Done)
+    if (handleDone) {
+      await handleDone();
     }
+    
+    // ✅ Sync timers from backend
+    if (onTurnComplete) {
+      await onTurnComplete();
+    }
+    
+    console.log('✅ AI turn finished (no moves available)');
   } catch (error) {
     console.error('❌ Failed to finish AI turn:', error);
   }

@@ -8,32 +8,11 @@
  * 2. handleDiceRollComplete (lines ~526-548)
  * 3. Dice state synchronization with backend
  * 4. skipBackendDice flag handling
- * 5. ⏱️ TIMER RESTORATION WITH ELAPSED TIME CALCULATION (lines ~538-587) ⚠️ CRITICAL ⚠️
  * 
  * ⚠️ تغییر بدون تایید منجر به bugs جدی میشود:
  * - AI با تاس اشتباه بازی میکنه
  * - Dice desync بین frontend و backend
  * - Race conditions در state updates
- * - ⏱️ Timer از اول شروع میشه بعد از refresh (باید elapsed time کم بشه)
- * 
- * 🕐 TIMER RESTORATION LOGIC (LOCKED - Dec 8, 2025):
- * =======================================================
- * وقتی صفحه refresh میشه:
- * 1. Timer values از database خونده میشه (whiteTimeRemaining, blackTimeRemaining)
- * 2. lastDoneBy و lastDoneAt از gameState خونده میشه
- * 3. Elapsed time محاسبه میشه: now - lastDoneAt
- * 4. Elapsed time از timer کسی که نوبتش بود کم میشه:
- *    - اگه lastDoneBy = 'black' → white timer counting بود → whiteTime - elapsed
- *    - اگه lastDoneBy = 'white' → black timer counting بود → blackTime - elapsed
- * 5. Timer با مقدار صحیح (منهای elapsed) نمایش داده میشه
- * 
- * مثال:
- * - Database: whiteTime = 120s, lastDoneBy = 'black', lastDoneAt = 10 seconds ago
- * - Calculation: whiteTime = 120 - 10 = 110s
- * - Result: White timer shows 110s (NOT 120s)
- * 
- * ⛔ بدون این محاسبه، timer همیشه از مقدار database شروع میشه که اشتباهه!
- * =======================================================
  * 
  * قبل از هر تغییر:
  * 1. مستندات و کامنت‌های موجود را بخوانید
@@ -48,7 +27,7 @@
  * 
  * LOCKED AFTER MONTHS OF DEBUGGING:
  * - Dice synchronization with backend
- * - ⏱️ Timer management with ELAPSED TIME calculation on refresh ⚠️ CRITICAL ⚠️
+ * - Timer management between players
  * - AI move execution with delays
  * - Roll button control logic
  * - State management and game flow
@@ -56,28 +35,12 @@
  * This file is the heart of the game. Any modification will break:
  * - Dice roll timing
  * - AI vs Player turn switching
- * - ⏱️ Timer countdown and restoration after refresh
+ * - Timer countdown
  * - Move execution order
- * 
- * 🕐 TIMER SYSTEM (LOCKED):
- * ========================
- * Timer restoration on page refresh MUST calculate elapsed time:
- * 
- * Formula: actualTime = dbTime - (now - lastDoneAt)
- * 
- * Example:
- * - DB has whiteTime = 120s, lastDoneBy = 'black', lastDoneAt = 10s ago
- * - White's timer was counting (because black pressed Done last)
- * - Correct value: 120 - 10 = 110s
- * - Wrong value: 120s (if elapsed time not calculated)
- * 
- * Lines ~538-587: Timer restoration with elapsed time calculation
- * Lines ~830-960: Local timer countdown with visibility sync
- * Lines ~973-1000: Timer sync when page becomes visible
  * 
  * ⚠️ User has explicitly forbidden modifications to this file!
  * 
- * Last stable: Dec 8, 2025 - Timer elapsed time fix applied
+ * Last stable: Dec 2, 2025
  */
 
 'use client';
@@ -325,7 +288,6 @@ function GameAIPageContent() {
   
   // ⏱️ Track who pressed Done last (to know whose timer should count)
   const [lastDoneBy, setLastDoneBy] = useState<'white' | 'black' | null>(null);
-  const [lastDoneAt, setLastDoneAt] = useState<string | null>(null);
   
   // AI player color state (opposite of human player)
   const [aiPlayerColor, setAiPlayerColor] = useState<'white' | 'black'>('black');
@@ -342,9 +304,6 @@ function GameAIPageContent() {
   
   // ✅ Lock to prevent multiple simultaneous roll requests
   const isRollingLockRef = useRef(false);
-  
-  // ✅ Track if timeout verification already triggered
-  const timeoutVerifiedRef = useRef<{ white: boolean; black: boolean }>({ white: false, black: false });
   
   // ✅ Track backend game object for dice restoration
   const [backendGame, setBackendGame] = useState<any>(null);
@@ -576,65 +535,25 @@ function GameAIPageContent() {
                 }, 500);
               }
               
-              // 🕐 TIMER RESTORATION - Chess Clock Style WITH ELAPSED TIME CALCULATION
-              // ⛔⛔⛔ CRITICAL LOGIC - DO NOT MODIFY ⛔⛔⛔
-              // 
-              // این بخش محاسبه elapsed time رو انجام میده که بعد از refresh
-              // timer از جای درست ادامه پیدا کنه نه از اول
-              //
-              // Logic:
-              // 1. Read timer values from database (whiteTimeRemaining, blackTimeRemaining)
-              // 2. Read lastDoneBy and lastDoneAt from gameState
-              // 3. Calculate elapsed: now - lastDoneAt
-              // 4. Subtract elapsed from active player's timer:
-              //    - lastDoneBy = 'black' → white was counting → whiteTime -= elapsed
-              //    - lastDoneBy = 'white' → black was counting → blackTime -= elapsed
-              // 5. Set corrected timer values
-              //
-              // Example:
-              // - DB: whiteTime=120, lastDoneBy='black', lastDoneAt=10 seconds ago
-              // - Calculation: whiteTime = 120 - 10 = 110
-              // - Display: 110 seconds (NOT 120!)
-              //
-              // ⛔ بدون این محاسبه timer همیشه از database value شروع میشه که غلطه!
-              // ⏱️ Timer restoration from backend
-              // =================================================================
-              // ✅ Backend's getGame() now calls calculateCurrentTimers()
-              // ✅ This means whiteTimeRemaining/blackTimeRemaining already have elapsed time subtracted
-              // ✅ Frontend just uses these values directly - NO recalculation needed!
-              // =================================================================
-              
-              // ✅ Read timer values from backend (already calculated with elapsed time)
+              // 🕐 TIMER RESTORATION - Chess Clock Style
+              // ✅ Read from database and calculate elapsed time from lastDoneAt
               const dbTimeControl = (game as any).timeControl || gameTimeControl;
               const whiteTimeDB = (game as any).whiteTimeRemaining;
               const blackTimeDB = (game as any).blackTimeRemaining;
-              const lastDoneByFromState = (game.gameState as any).lastDoneBy;
-              const lastDoneAtFromState = (game.gameState as any).lastDoneAt;
               
-              // ✅ Use backend values directly (backend already calculated elapsed time via calculateCurrentTimers)
-              const whiteTime = whiteTimeDB !== null && whiteTimeDB !== undefined ? whiteTimeDB : dbTimeControl;
-              const blackTime = blackTimeDB !== null && blackTimeDB !== undefined ? blackTimeDB : dbTimeControl;
+              // ✅ Server already calculated elapsed time, just use the values directly
+              let whiteTime = whiteTimeDB !== null && whiteTimeDB !== undefined ? whiteTimeDB : dbTimeControl;
+              let blackTime = blackTimeDB !== null && blackTimeDB !== undefined ? blackTimeDB : dbTimeControl;
               
-              // ✅ Set timer values from backend (DO NOT recalculate - backend already did this!)
+              // ✅ Set timer values (server already calculated elapsed time)
               setWhiteTimerSeconds(whiteTime);
               setBlackTimerSeconds(blackTime);
               
-              // ✅ Restore lastDoneBy and lastDoneAt from gameState
-              if (lastDoneByFromState) {
-                setLastDoneBy(lastDoneByFromState.toLowerCase() as 'white' | 'black');
-              }
-              if (lastDoneAtFromState) {
-                setLastDoneAt(lastDoneAtFromState);
-              }
-              
-              console.log('⏱️ Timers restored from backend (backend calculated elapsed):', {
+              console.log('⏱️ Timers restored from server (server-calculated):', {
                 white: whiteTime,
                 black: blackTime,
-                whiteFromDB: whiteTimeDB,
-                blackFromDB: blackTimeDB,
                 currentPlayer: game.gameState.currentPlayer,
-                lastDoneBy: lastDoneByFromState,
-                lastDoneAt: lastDoneAtFromState,
+                fromDatabase: whiteTimeDB !== null || blackTimeDB !== null,
               });
               
               try {
@@ -646,24 +565,19 @@ function GameAIPageContent() {
                 setCanUserPlay(canPlay);
                 setWaitingForOpponent(!canPlay);
                 
-                // ⏱️ Set lastDoneBy and lastDoneAt for timer logic
+                // ⏱️ Set lastDoneBy for timer logic
                 console.log('⏱️ [Timer] lastDoneBy from backend:', lastDoneByBackend, 'currentPlayer:', currentPlayer);
                 
                 if (lastDoneByBackend) {
                   setLastDoneBy(lastDoneByBackend.toLowerCase() as 'white' | 'black');
+                } else if (game.gameState?.phase === 'playing' || game.gameState?.phase === 'waiting') {
+                  // If lastDoneBy is null but game is active, it means opening just finished
+                  // Winner's timer should be counting, so lastDoneBy = loser
+                  const winner = game.gameState.currentPlayer?.toLowerCase();
+                  const loser = winner === 'white' ? 'black' : 'white';
+                  setLastDoneBy(loser);
+                  console.log(`⏱️ [Timer] Opening just finished - setting lastDoneBy to ${loser} (so ${winner} timer counts)`);
                 }
-                
-                const lastDoneAtBackend = game.gameState?.lastDoneAt;
-                if (lastDoneAtBackend) {
-                  setLastDoneAt(lastDoneAtBackend);
-                }
-                
-                // ⏱️ Timer logic is FULLY controlled by backend
-                // ================================================================
-                // Backend sets lastDoneBy when someone presses Done.
-                // Frontend NEVER sets lastDoneBy - it only reads from backend.
-                // If lastDoneBy is null, NO timer should count (e.g., during opening).
-                // ================================================================
                 
               } catch (error) {
               }
@@ -784,9 +698,8 @@ function GameAIPageContent() {
         // ✅ Success - Server returned nextRoll
         console.log(`✅ nextRoll:`, nextRoll);
         
-        // ⏱️ Update lastDoneBy and lastDoneAt (current player just pressed Done)
+        // ⏱️ Update lastDoneBy (current player just pressed Done)
         setLastDoneBy(currentPlayer);
-        setLastDoneAt(new Date().toISOString());
         console.log(`⏱️ [Timer] Updated lastDoneBy to: ${currentPlayer}`);
         
         // ✅ CRITICAL: Set canUserPlay based on WHO pressed Done
@@ -835,40 +748,21 @@ function GameAIPageContent() {
         try {
           const updatedGame = await gamePersistenceAPI.getGame(backendGameId);
           
-          // ✅ Backend already calculated timers with elapsed time
-          // Just use the values from backend (DO NOT recalculate on frontend!)
+          // Update timer values from backend
           setWhiteTimerSeconds(updatedGame.whiteTimeRemaining);
           setBlackTimerSeconds(updatedGame.blackTimeRemaining);
           
-          // ✅ Update lastDoneBy from backend
+          // Update lastDoneBy (AI just finished, so AI pressed Done)
           const lastDoneByBackend = updatedGame.gameState?.lastDoneBy;
           if (lastDoneByBackend) {
             setLastDoneBy(lastDoneByBackend.toLowerCase() as 'white' | 'black');
             console.log('⏱️ [AI Turn Complete] Updated lastDoneBy:', lastDoneByBackend);
           }
           
-          // ✅ CRITICAL: Use backend's lastDoneAt (NOT client NOW)
-          // =================================================================
-          // WHY: Backend already calculated elapsed time and returned updated timers.
-          //      If we use client NOW, there will be network delay (e.g., 3-6 seconds).
-          //      Timer countdown will see this delay as elapsed time and subtract it!
-          // 
-          // CORRECT: Use backend's lastDoneAt directly
-          //          Backend sets this to NOW when AI presses Done
-          //          Timers from backend are already adjusted for elapsed time
-          //          No further calculation needed on frontend
-          // =================================================================
-          const lastDoneAtBackend = updatedGame.gameState?.lastDoneAt;
-          if (lastDoneAtBackend) {
-            setLastDoneAt(lastDoneAtBackend);
-            console.log('⏱️ [AI Turn Complete] Using backend lastDoneAt (prevents network delay subtraction)');
-          }
-          
-          console.log('⏱️ [AI Turn Complete] Timers synced from backend:', {
+          console.log('⏱️ [AI Turn Complete] Timers synced:', {
             white: updatedGame.whiteTimeRemaining,
             black: updatedGame.blackTimeRemaining,
             lastDoneBy: lastDoneByBackend,
-            lastDoneAt: lastDoneAtBackend,
           });
         } catch (error) {
           console.error('❌ Failed to sync timers after AI turn:', error);
@@ -919,99 +813,6 @@ function GameAIPageContent() {
     checkConnection: checkBackendConnection,
     intervalSeconds: 5, // هر 5 ثانیه چک کن
   });
-
-  // ⏱️ PAGE VISIBILITY SYNC - Fetch from backend and recalculate timer when tab becomes visible
-  useEffect(() => {
-    if (!backendGameId || !gameState.gamePhase || gameState.gamePhase === 'opening' || gameState.gamePhase === 'game-over' || gameState.gamePhase === 'finished' || winner) {
-      return;
-    }
-
-    const handleVisibilityChange = async () => {
-      if (!document.hidden) {
-        console.log('👁️ [Visibility] Page visible - syncing timer from backend...');
-        
-        try {
-          // ✅ CRITICAL: Read from backend (server is source of truth)
-          const updatedGame = await gamePersistenceAPI.getGame(backendGameId);
-          
-          // ⚠️ Check if game ended while tab was hidden
-          if (updatedGame.status === 'COMPLETED' || updatedGame.winner) {
-            console.log('⚠️ [Visibility] Game completed - showing result dialog');
-            
-            const gameWinner = updatedGame.winner?.toLowerCase() as 'white' | 'black';
-            if (gameWinner) {
-              setWinner(gameWinner);
-              setScores({
-                white: updatedGame.whiteSetsWon || 0,
-                black: updatedGame.blackSetsWon || 0,
-              });
-              setTimeoutWinner(updatedGame.endReason === 'TIMEOUT');
-              setResultDialogOpen(true);
-              setGameState(prev => ({ ...prev, gamePhase: 'game-over' }));
-            }
-            return;
-          }
-          
-          const whiteTimeDB = updatedGame.whiteTimeRemaining;
-          const blackTimeDB = updatedGame.blackTimeRemaining;
-          const lastDoneByBackend = updatedGame.gameState?.lastDoneBy;
-          const lastDoneAtBackend = updatedGame.gameState?.lastDoneAt;
-          
-          // ✅ Calculate elapsed time since lastDoneAt
-          if (lastDoneByBackend && lastDoneAtBackend) {
-            const lastDoneAtDate = new Date(lastDoneAtBackend);
-            const now = new Date();
-            const elapsedSeconds = Math.floor((now.getTime() - lastDoneAtDate.getTime()) / 1000);
-            
-            if (elapsedSeconds > 0) {
-              // Determine which timer was counting
-              const activePlayer = lastDoneByBackend.toLowerCase() === 'white' ? 'black' : 'white';
-              
-              let whiteTime = whiteTimeDB;
-              let blackTime = blackTimeDB;
-              
-              // Subtract elapsed time from active player's timer
-              if (activePlayer === 'white') {
-                whiteTime = Math.max(0, whiteTimeDB - elapsedSeconds);
-                console.log(`👁️ [WHITE] Backend: ${whiteTimeDB}s - Elapsed: ${elapsedSeconds}s = ${whiteTime}s`);
-              } else {
-                blackTime = Math.max(0, blackTimeDB - elapsedSeconds);
-                console.log(`👁️ [BLACK] Backend: ${blackTimeDB}s - Elapsed: ${elapsedSeconds}s = ${blackTime}s`);
-              }
-              
-              // ✅ Set corrected timer values
-              setWhiteTimerSeconds(whiteTime);
-              setBlackTimerSeconds(blackTime);
-              
-              // ✅ Update lastDoneBy and lastDoneAt
-              setLastDoneBy(lastDoneByBackend.toLowerCase() as 'white' | 'black');
-              setLastDoneAt(lastDoneAtBackend);
-              
-              console.log('👁️ [Visibility] Timer synced from backend with elapsed calculation');
-            } else {
-              // No elapsed time - just use backend values
-              setWhiteTimerSeconds(whiteTimeDB);
-              setBlackTimerSeconds(blackTimeDB);
-              console.log('👁️ [Visibility] Timer synced from backend (no elapsed time)');
-            }
-          } else {
-            // No lastDoneAt - just use backend values
-            setWhiteTimerSeconds(whiteTimeDB);
-            setBlackTimerSeconds(blackTimeDB);
-            console.log('👁️ [Visibility] Timer synced from backend (no lastDoneAt)');
-          }
-        } catch (error) {
-          console.error('❌ Failed to sync timer on visibility change:', error);
-        }
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [backendGameId, gameState.gamePhase, winner]);
 
   // ⏱️ LOCAL TIMER COUNTDOWN - Update timer state every second
   // ✅ Uses timestamp-based system to work even when page is hidden/minimized
@@ -1087,51 +888,26 @@ function GameAIPageContent() {
               console.log(`⏱️ [WHITE] Catching up ${elapsed}s: ${prev}s → ${newValue}s`);
             }
             
-            // Check timeout - VERIFY WITH BACKEND
-            if (newValue === 0 && !winner && !timeoutVerifiedRef.current.white) {
-              console.log('⏱️ [WHITE] TIME UP! Verifying with backend...');
-              timeoutVerifiedRef.current.white = true; // Mark as verified to prevent multiple calls
+            // Check timeout
+            if (newValue === 0 && prev > 0 && !winner) {
+              console.log('⏱️ [WHITE] TIME UP!');
+              // Trigger timeout handler
+              const setsToWin = Math.ceil(maxSets / 2);
+              setScores(s => ({ ...s, black: setsToWin }));
+              setWinner('black');
+              setTimeoutWinner(true);
+              setResultDialogOpen(true);
               
-              // ✅ Verify timeout with backend (server is source of truth)
+              // Notify backend
               if (backendGameId && user) {
-                gamePersistenceAPI.getGame(backendGameId)
-                  .then(updatedGame => {
-                    const whiteTimeBackend = updatedGame.whiteTimeRemaining;
-                    const blackTimeBackend = updatedGame.blackTimeRemaining;
-                    
-                    console.log('⏱️ [Timeout Verification] Backend times:', {
-                      white: whiteTimeBackend,
-                      black: blackTimeBackend,
-                    });
-                    
-                    // Only trigger timeout if backend confirms time is up
-                    if (whiteTimeBackend <= 0) {
-                      console.log('✅ Backend confirmed WHITE timeout');
-                      const setsToWin = Math.ceil(maxSets / 2);
-                      setScores(s => ({ ...s, black: setsToWin }));
-                      setWinner('black');
-                      setTimeoutWinner(true);
-                      setResultDialogOpen(true);
-                      
-                      // Notify backend to end game
-                      gamePersistenceAPI.axios.post(`/game/${backendGameId}/end-game`, {
-                        winner: 'BLACK',
-                        whiteSetsWon: 0,
-                        blackSetsWon: setsToWin,
-                        endReason: 'TIMEOUT',
-                        finalGameState: gameState,
-                      }).then(() => console.log('✅ White timeout recorded'))
-                        .catch(err => console.error('❌ Failed to record timeout:', err));
-                    } else {
-                      console.log('⚠️ Backend says time NOT up yet - syncing timer');
-                      setWhiteTimerSeconds(whiteTimeBackend);
-                      timeoutVerifiedRef.current.white = false; // Reset flag if backend says not timeout
-                    }
-                  })
-                  .catch(err => {
-                    console.error('❌ Failed to verify timeout:', err);
-                    timeoutVerifiedRef.current.white = false; // Reset flag on error
-                  });
+                gamePersistenceAPI.axios.post(`/game/${backendGameId}/end-game`, {
+                  winner: 'BLACK',
+                  whiteSetsWon: 0,
+                  blackSetsWon: setsToWin,
+                  endReason: 'TIMEOUT',
+                  finalGameState: gameState,
+                }).then(() => console.log('✅ White timeout recorded'))
+                  .catch(err => console.error('❌ Failed to record timeout:', err));
               }
             }
             
@@ -1146,51 +922,26 @@ function GameAIPageContent() {
               console.log(`⏱️ [BLACK] Catching up ${elapsed}s: ${prev}s → ${newValue}s`);
             }
             
-            // Check timeout - VERIFY WITH BACKEND
-            if (newValue === 0 && !winner && !timeoutVerifiedRef.current.black) {
-              console.log('⏱️ [BLACK] TIME UP! Verifying with backend...');
-              timeoutVerifiedRef.current.black = true; // Mark as verified to prevent multiple calls
+            // Check timeout
+            if (newValue === 0 && prev > 0 && !winner) {
+              console.log('⏱️ [BLACK] TIME UP!');
+              // Trigger timeout handler
+              const setsToWin = Math.ceil(maxSets / 2);
+              setScores(s => ({ ...s, white: setsToWin }));
+              setWinner('white');
+              setTimeoutWinner(true);
+              setResultDialogOpen(true);
               
-              // ✅ Verify timeout with backend (server is source of truth)
+              // Notify backend
               if (backendGameId && user) {
-                gamePersistenceAPI.getGame(backendGameId)
-                  .then(updatedGame => {
-                    const whiteTimeBackend = updatedGame.whiteTimeRemaining;
-                    const blackTimeBackend = updatedGame.blackTimeRemaining;
-                    
-                    console.log('⏱️ [Timeout Verification] Backend times:', {
-                      white: whiteTimeBackend,
-                      black: blackTimeBackend,
-                    });
-                    
-                    // Only trigger timeout if backend confirms time is up
-                    if (blackTimeBackend <= 0) {
-                      console.log('✅ Backend confirmed BLACK timeout');
-                      const setsToWin = Math.ceil(maxSets / 2);
-                      setScores(s => ({ ...s, white: setsToWin }));
-                      setWinner('white');
-                      setTimeoutWinner(true);
-                      setResultDialogOpen(true);
-                      
-                      // Notify backend to end game
-                      gamePersistenceAPI.axios.post(`/game/${backendGameId}/end-game`, {
-                        winner: 'WHITE',
-                        whiteSetsWon: setsToWin,
-                        blackSetsWon: 0,
-                        endReason: 'TIMEOUT',
-                        finalGameState: gameState,
-                      }).then(() => console.log('✅ Black timeout recorded'))
-                        .catch(err => console.error('❌ Failed to record timeout:', err));
-                    } else {
-                      console.log('⚠️ Backend says time NOT up yet - syncing timer');
-                      setBlackTimerSeconds(blackTimeBackend);
-                      timeoutVerifiedRef.current.black = false; // Reset flag if backend says not timeout
-                    }
-                  })
-                  .catch(err => {
-                    console.error('❌ Failed to verify timeout:', err);
-                    timeoutVerifiedRef.current.black = false; // Reset flag on error
-                  });
+                gamePersistenceAPI.axios.post(`/game/${backendGameId}/end-game`, {
+                  winner: 'WHITE',
+                  whiteSetsWon: setsToWin,
+                  blackSetsWon: 0,
+                  endReason: 'TIMEOUT',
+                  finalGameState: gameState,
+                }).then(() => console.log('✅ Black timeout recorded'))
+                  .catch(err => console.error('❌ Failed to record timeout:', err));
               }
             }
             
@@ -1204,6 +955,47 @@ function GameAIPageContent() {
       clearInterval(interval);
     };
   }, [lastDoneBy, gameState.gamePhase, gameState.currentPlayer, aiPlayerColor, winner, backendGameId, user, gameState, maxSets, isExecutingAIMove]);
+
+  // ⏱️ Sync timers when page becomes visible again (after minimize/tab switch)
+  useEffect(() => {
+    if (!backendGameId || !gameState.gamePhase || gameState.gamePhase === 'opening' || gameState.gamePhase === 'game-over' || winner) {
+      return;
+    }
+
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        console.log('⏱️ [Page Visible] Syncing timers from backend...');
+        
+        try {
+          const updatedGame = await gamePersistenceAPI.getGame(backendGameId);
+          
+          // Update timer values from backend (server is source of truth)
+          setWhiteTimerSeconds(updatedGame.whiteTimeRemaining);
+          setBlackTimerSeconds(updatedGame.blackTimeRemaining);
+          
+          // Update lastDoneBy state
+          const lastDoneByBackend = updatedGame.gameState?.lastDoneBy;
+          if (lastDoneByBackend) {
+            setLastDoneBy(lastDoneByBackend.toLowerCase() as 'white' | 'black');
+          }
+          
+          console.log('⏱️ [Page Visible] Timers synced:', {
+            white: updatedGame.whiteTimeRemaining,
+            black: updatedGame.blackTimeRemaining,
+            lastDoneBy: lastDoneByBackend,
+          });
+        } catch (error) {
+          console.error('❌ Failed to sync timers on page visible:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [backendGameId, gameState.gamePhase, winner]);
 
   // ✅ Timer sync happens ONLY on Done button press (in handleDone)
   // No interval needed - reduces server load and prevents unnecessary syncs
@@ -1297,27 +1089,28 @@ function GameAIPageContent() {
     }
   }, [gameState.gamePhase, gameState.openingRoll.white, gameState.openingRoll.black, gameState.diceValues.length, isRolling]);
 
-  // Auto-skip turn if player has no valid moves
+  // Auto-skip turn if player can't enter from bar
   useEffect(() => {
     if (gameState.gamePhase !== 'moving' || winner) return;
-    if (!gameState.diceValues || gameState.diceValues.length === 0) return;
     
-    // ✅ CRITICAL: Check if player has ANY valid moves
-    const hasValidMoves = gameState.validMoves && gameState.validMoves.length > 0;
+    // Check if player has checkers on bar
+    const hasCheckersOnBar = gameState.boardState.bar[gameState.currentPlayer] > 0;
     
-    if (!hasValidMoves) {
-      console.warn('⚠️ Player has NO valid moves - auto-pressing Done...');
+    if (hasCheckersOnBar) {
+      // Check if there are ANY valid moves from bar
+      const hasValidBarMoves = gameState.validMoves.some((m) => m.from === -1);
       
-      // Player rolled dice but can't make any moves - skip turn automatically
-      // Wait a bit to show the situation, then end turn
-      const skipDelay = setTimeout(() => {
-        console.log('🎯 Auto-pressing Done (no valid moves)');
-        handleDone();
-      }, 1500); // 1.5 second delay so player can see they're blocked
-      
-      return () => clearTimeout(skipDelay);
+      if (!hasValidBarMoves) {
+        // Player has checkers on bar but can't enter - skip turn automatically
+        // Timers are automatically controlled by GameTimer component
+        
+        // Wait a bit to show the situation, then end turn
+        setTimeout(() => {
+          handleEndTurn();
+        }, 1500); // 1.5 second delay so player can see they're blocked
+      }
     }
-  }, [gameState.gamePhase, gameState.validMoves, gameState.diceValues, gameState.currentPlayer, winner, handleDone]);
+  }, [gameState.gamePhase, gameState.validMoves, gameState.currentPlayer, gameState.boardState.bar, winner, handleEndTurn]);
 
   // Check for set winner and start new set
   useEffect(() => {
@@ -1762,11 +1555,10 @@ function GameAIPageContent() {
           
           console.log('💾 Saving nextRoll to state:', response.data.nextRoll);
           
-          // ⏱️ Set lastDoneBy and lastDoneAt to opposite of winner (so winner's timer starts)
+          // ⏱️ Set lastDoneBy to opposite of winner (so winner's timer starts)
           // If white won opening → lastDoneBy = 'black' → white timer counts
           const loser = openingWinner === 'white' ? 'black' : 'white';
           setLastDoneBy(loser);
-          setLastDoneAt(new Date().toISOString());
           console.log(`⏱️ [Timer] Opening completed - set lastDoneBy to ${loser} (so ${openingWinner} timer starts)`);
           
           setGameState(prev => ({

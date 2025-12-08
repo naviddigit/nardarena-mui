@@ -1,11 +1,62 @@
 # 🎮 NardAria Backgammon - Complete Project Summary for AI Assistant
 
-## 📌 CRITICAL: Read This First! (Updated Dec 7, 2025 - 9:05 PM)
+## 📌 CRITICAL: Read This First! (Updated Dec 8, 2025)
 
 This project has been through **MONTHS** of debugging and testing. Many files are **LOCKED** and should **NEVER** be modified without explicit permission.
 
-### 🚨 NEW CRITICAL BUG - AI TIMER STEALING HUMAN TIME (Dec 7, 2025)
-**Status**: ⚠️ UNRESOLVED - Multiple fix attempts failed
+### ✅ LATEST FIX - TIMER REFRESH BUG RESOLVED (Dec 8, 2025)
+**Status**: ✅ FIXED AND LOCKED - Timer restoration with elapsed time calculation
+**Priority**: CRITICAL - Timer shows correct value after page refresh
+
+**Problem (BEFORE FIX)**:
+When page refreshes, timer would reset to database value without subtracting elapsed time!
+
+**Example**:
+```
+10:00:00 → User starts turn, timer = 120s (saved to DB)
+10:00:10 → 10 seconds pass, timer shows 110s on screen
+10:00:10 → User refreshes page
+         → Timer loads 120s from DB (WRONG!)
+         → Should show 110s (120 - 10 elapsed)
+```
+
+**Root Cause**:
+Frontend loaded timer values from database but didn't calculate elapsed time since `lastDoneAt`.
+
+**Solution (LOCKED - DO NOT MODIFY)**:
+Added elapsed time calculation in game load (page.tsx lines ~538-620):
+
+```typescript
+// Formula: actualTime = dbTime - (now - lastDoneAt)
+
+1. Read whiteTimeRemaining, blackTimeRemaining from DB
+2. Read lastDoneBy, lastDoneAt from gameState
+3. Calculate: elapsedSeconds = (now - lastDoneAt) / 1000
+4. Determine active player:
+   - if lastDoneBy = 'black' → white's timer was counting
+   - if lastDoneBy = 'white' → black's timer was counting
+5. Subtract elapsed from active timer:
+   - whiteTime = whiteTimeDB - elapsed
+   - blackTime = blackTimeDB - elapsed
+6. Set corrected timer values
+```
+
+**Files Modified (LOCKED)**:
+- `nard-frontend/src/app/game/ai/page.tsx` (lines 1-41, 48-73, 538-620)
+  - Added comprehensive TIMER RESTORATION LOGIC documentation
+  - Implemented elapsed time calculation on refresh
+  - Added console logs for debugging
+
+**Critical Documentation**:
+See top of `page.tsx` for complete TIMER RESTORATION LOGIC explanation with examples.
+
+**This fix is LOCKED! Don't modify timer restoration logic!**
+
+---
+
+### 🚨 OLD CRITICAL BUG - AI TIMER STEALING (Dec 7, 2025)
+**Status**: ⚠️ UNRESOLVED - Multiple fix attempts failed  
+**Note**: New timer refresh fix above is separate issue and IS working!
 **Priority**: CRITICAL - Human player loses extra seconds when AI plays
 
 **Problem**: When AI finishes its turn, human player's timer shows 10+ seconds already passed!
@@ -100,6 +151,8 @@ const updatedGameState = {
 
 ### ⛔ ABSOLUTELY LOCKED FILES - DO NOT TOUCH:
 1. `nard-frontend/src/app/game/ai/page.tsx` - ⛔⛔⛔ MAIN GAME PAGE - Heart of entire game
+   - **TIMER RESTORATION LOGIC (lines ~538-620)**: ⚠️ CRITICAL - Calculates elapsed time on refresh
+   - DO NOT modify timer restoration without explicit approval
 2. `nard-frontend/src/app/game/ai/hooks/useGameTimers.ts` - Timer management
 3. `nard-frontend/src/app/game/ai/hooks/useDiceRollControl.ts` - Roll button control
 4. `nard-frontend/src/app/game/ai/hooks/useAIGameLogic.ts` - AI logic with delays
@@ -107,6 +160,28 @@ const updatedGameState = {
 6. `nard-frontend/src/app/game/ai/hooks/useBackendDice.ts` - Backend dice
 7. `nard-frontend/src/components/dice-roller/dice-roller-load.tsx` - 3D dice renderer
 8. `nard-backend/src/modules/game/game.service.ts` - ⛔ Core game logic with hit detection
+
+### 🕐 TIMER SYSTEM (LOCKED - Dec 8, 2025):
+**Critical Formula**: `actualTime = dbTime - (now - lastDoneAt)`
+
+**How it works**:
+1. Database stores timer snapshots when Done pressed
+2. On page load/refresh, calculate elapsed time since lastDoneAt
+3. Subtract elapsed from active player's timer
+4. Active player determined by lastDoneBy:
+   - lastDoneBy = 'black' → white's timer was counting
+   - lastDoneBy = 'white' → black's timer was counting
+
+**Example**:
+- DB: whiteTime=120s, lastDoneBy='black', lastDoneAt=10s ago
+- Calculation: whiteTime = 120 - 10 = 110s
+- Display: 110s (NOT 120s)
+
+**Files**: 
+- Frontend: `page.tsx` lines ~538-620 (LOCKED)
+- Backend: `game.service.ts` lines ~258-290 (timer calculation)
+
+**⚠️ DO NOT modify timer restoration logic without approval!**
 
 ### 🎲 CURRENT CRITICAL ISSUE (Dec 6, 2025):
 **DICE DISPLAY BUG**: Backend generates correct pre-generated dice values, but Three.js renderer shows WRONG faces on screen!
