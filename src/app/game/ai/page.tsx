@@ -1800,6 +1800,10 @@ function GameAIPageContent() {
     // Close result dialog
     setResultDialogOpen(false);
     
+    // ✅ Save current player color to preserve it
+    const previousPlayerColor = playerColor;
+    const previousAiColor = aiPlayerColor;
+    
     // ✅ Reset all game state variables
     setWinner(null);
     setTimeoutWinner(false);
@@ -1808,16 +1812,17 @@ function GameAIPageContent() {
     setShowWinText(false);
     setWinTextMessage('');
     
-    // ✅ Reset backend game state
+    // ✅ Reset backend game state - create NEW game
     setBackendGameId(null); // Will create new game
     setBackendGame(null);
     setMoveCounter(0);
     setTurnStartTime(Date.now());
     
-    // ✅ Reset player states
+    // ✅ Reset player states - KEEP player colors for quick restart
     setCanUserPlay(true);
     setWaitingForOpponent(false);
-    setPlayerColor(null); // Reset to show color selection
+    // ⛔ DO NOT reset playerColor - keep it for rematch!
+    // setPlayerColor(null); // This was causing the dice to be disabled!
     
     // ✅ Reset timers - CRITICAL: Use fresh value from initial game settings
     let newWhiteTime = 1800; // Default 30 minutes
@@ -1871,8 +1876,13 @@ function GameAIPageContent() {
       debugLog.game('Game state reset to initial');
     }
     
-    debugLog.game('Rematch ready - awaiting color selection');
-  }, [resetGame, gameTimeControl, backendGameId]);
+    debugLog.game(`✅ Rematch ready - keeping colors: player=${previousPlayerColor}, AI=${previousAiColor}`);
+    
+    // Show "Start Set 1" message
+    setTimeout(() => {
+      showWinMessage(`Start Set 1 of ${maxSets}`);
+    }, 500);
+  }, [resetGame, gameTimeControl, backendGameId, playerColor, aiPlayerColor, maxSets]);
 
   const handleBackToDashboard = () => {
     router.push('/');
