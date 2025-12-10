@@ -108,6 +108,7 @@ import { useAIGame } from 'src/hooks/use-ai-game';
 import { useAIOpeningRoll } from 'src/hooks/use-ai-opening-roll';
 import { useGameRecovery } from 'src/hooks/use-game-recovery';
 import { useBackendConnection } from 'src/hooks/use-backend-connection';
+import { useGameSocket } from 'src/hooks/use-game-socket';
 import { _mock } from 'src/_mock';
 import { BoardThemeProvider } from 'src/contexts/board-theme-context';
 import { useAuthContext } from 'src/auth/hooks';
@@ -385,6 +386,48 @@ function GameAIPageContent() {
   const autoDoneTimerRef = useRef<NodeJS.Timeout | null>(null); // Track auto-done timer
   const openingJustCompletedRef = useRef(false); // Track if opening JUST completed (prevent immediate AI roll)
   const gameEndedRef = useRef(false); // Track if game has been ended to prevent duplicate calls
+
+  // 🔌 WebSocket connection for real-time updates
+  const {
+    socket,
+    isConnected: socketConnected,
+    isReconnecting: socketReconnecting,
+    error: socketError,
+    emitMove: emitSocketMove,
+    emitTimerUpdate: emitSocketTimer,
+  } = useGameSocket({
+    gameId: backendGameId,
+    userId: user?.id || GUEST_USER.id,
+    enabled: !!backendGameId && !!user,
+    onGameStateUpdate: (gameState: any) => {
+      debugLog.socket('[Socket] Game state update received', gameState);
+      // Update local state from server (real-time sync)
+      // TODO: Integrate with setGameState
+    },
+    onOpponentMove: (moveData: any) => {
+      debugLog.socket('[Socket] Opponent move received', moveData);
+      // AI move received via socket
+      playSound('move');
+    },
+    onTimerUpdate: (data: { timers: { white: number; black: number } }) => {
+      debugLog.socket('[Socket] Timer update received', data);
+      setWhiteTimerSeconds(data.timers.white);
+      setBlackTimerSeconds(data.timers.black);
+    },
+    onGameEnd: (result: any) => {
+      debugLog.socket('[Socket] Game end received', result);
+      // Game ended via socket
+      setWinner(result.winner === 'WHITE' ? 'white' : 'black');
+      if (result.endReason === 'TIMEOUT') {
+        setTimeoutWinner(true);
+      }
+      setResultDialogOpen(true);
+    },
+    onPlayerDisconnect: (data: { playerId: string }) => {
+      debugLog.socket('[Socket] Player disconnected', data);
+      toast.warning('حریف اتصال خود را از دست داد');
+    },
+  });
 
   // Win text display function
   const showWinMessage = (message: string) => {
