@@ -384,6 +384,7 @@ function GameAIPageContent() {
   const openingRollEndedRef = useRef(false); // Track if opening roll endTurn was called
   const autoDoneTimerRef = useRef<NodeJS.Timeout | null>(null); // Track auto-done timer
   const openingJustCompletedRef = useRef(false); // Track if opening JUST completed (prevent immediate AI roll)
+  const gameEndedRef = useRef(false); // Track if game has been ended to prevent duplicate calls
 
   // Win text display function
   const showWinMessage = (message: string) => {
@@ -1802,6 +1803,9 @@ function GameAIPageContent() {
       diceRollerRef.current.clearDice();
     }
     
+    // ✅ Reset game ended flag
+    gameEndedRef.current = false;
+    
     // ✅ Reset game state to initial (this resets board, phase, etc.)
     if (resetGame) {
       resetGame();
@@ -1958,7 +1962,9 @@ function GameAIPageContent() {
 
   // End game in backend when match is over
   useEffect(() => {
-    if (backendGameId && user && winner) {
+    if (backendGameId && user && winner && !gameEndedRef.current) {
+      gameEndedRef.current = true; // Mark as ended immediately to prevent duplicates
+      
       const endBackendGame = async () => {
         try {
           await gamePersistenceAPI.endGame(backendGameId, {
