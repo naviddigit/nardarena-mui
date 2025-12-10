@@ -8,9 +8,11 @@ import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import Container from '@mui/material/Container';
 import { useTheme, useColorScheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { varFade, varSlide } from 'src/components/animate';
 import { Iconify } from 'src/components/iconify';
+import { Logo } from 'src/components/logo';
 
 import { SettingsButton } from 'src/layouts/components';
 
@@ -24,6 +26,7 @@ type AuthMode = 'login' | 'register' | 'reset';
 
 export function AuthContainerView() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { mode, setMode } = useColorScheme();
   const [mode2, setMode2] = useState<AuthMode>('login');
   const [previousMode, setPreviousMode] = useState<AuthMode>('login');
@@ -75,37 +78,53 @@ export function AuthContainerView() {
         overflow: 'hidden',
       }}
     >
+      {/* Logo - top left on mobile */}
+      {isMobile && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 12,
+            left: 12,
+            zIndex: 999,
+          }}
+        >
+          <Logo />
+        </Box>
+      )}
+
       {/* Theme toggle button - top right */}
       <Box
         sx={{
           position: 'fixed',
-          top: 24,
-          right: 24,
+          top: isMobile ? 12 : 24,
+          right: isMobile ? 12 : 24,
           zIndex: 999,
         }}
       >
         <IconButton
           onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
-          sx={{ width: 40, height: 40 }}
+          sx={{ width: isMobile ? 36 : 40, height: isMobile ? 36 : 40 }}
         >
-          <Iconify icon={mode === 'light' ? 'solar:moon-bold' : 'solar:sun-bold'} width={24} />
+          <Iconify icon={mode === 'light' ? 'solar:moon-bold' : 'solar:sun-bold'} width={isMobile ? 20 : 24} />
         </IconButton>
       </Box>
 
-      {/* Background decorative elements */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.05,
-          backgroundImage: 'radial-gradient(circle at 20% 50%, currentColor 1px, transparent 1px), radial-gradient(circle at 80% 80%, currentColor 1px, transparent 1px)',
-          backgroundSize: '50px 50px',
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Background decorative elements - hide on mobile */}
+      {!isMobile && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            opacity: 0.05,
+            backgroundImage: 'radial-gradient(circle at 20% 50%, currentColor 1px, transparent 1px), radial-gradient(circle at 80% 80%, currentColor 1px, transparent 1px)',
+            backgroundSize: '50px 50px',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
 
       {/* Main content */}
       <Container
@@ -114,7 +133,8 @@ export function AuthContainerView() {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '100vh',
-          py: 4,
+          py: isMobile ? 2 : 4,
+          px: isMobile ? 1 : 3,
           zIndex: 1,
         }}
       >
@@ -158,7 +178,7 @@ export function AuthContainerView() {
         spacing={3}
         sx={{
           position: 'absolute',
-          bottom: 40,
+          bottom: isMobile ? 20 : 40,
           left: '50%',
           transform: 'translateX(-50%)',
           opacity: 0.2,

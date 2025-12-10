@@ -20,9 +20,10 @@ import { gamePersistenceAPI } from 'src/services/game-persistence-api';
 import { calculateValidMoves } from 'src/hooks/game-logic/validation';
 import type { GameState } from 'src/hooks/game-logic/types';
 
-// ⚠️ AI delay settings - loaded from backend
-let AI_MOVE_DELAY_MIN = 1000; // Default: 1 second
-let AI_MOVE_DELAY_MAX = 4000; // Default: 4 seconds
+// ⚠️ AI delay settings - loaded from backend via API
+// Default values are fallback only - actual values come from game settings
+let AI_MOVE_DELAY_MIN = 1000; // Fallback default (will be replaced by backend settings)
+let AI_MOVE_DELAY_MAX = 3000; // Fallback default (will be replaced by backend settings)
 
 interface UseAIGameLogicProps {
   gameState: GameState;
@@ -30,6 +31,7 @@ interface UseAIGameLogicProps {
   backendGameId: string | null;
   aiPlayerColor: 'white' | 'black'; // AI player color (not hard-coded!)
   handleDone: () => void; // ✅ Done function from page
+  playSound?: (type: 'move' | 'turn') => void; // ✅ صدا برای حرکات AI
   onTurnComplete?: () => void; // ✅ Callback when AI finishes turn
 }
 
@@ -40,7 +42,7 @@ function getRandomDelay(min: number = AI_MOVE_DELAY_MIN, max: number = AI_MOVE_D
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlayerColor, handleDone, onTurnComplete }: UseAIGameLogicProps) {
+export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlayerColor, handleDone, playSound, onTurnComplete }: UseAIGameLogicProps) {
   const [isExecutingAIMove, setIsExecutingAIMove] = useState(false);
 
   // Load AI delay settings from backend on mount
@@ -50,8 +52,12 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
         const delays = await gamePersistenceAPI.getAIMoveDelays();
         AI_MOVE_DELAY_MIN = delays.min;
         AI_MOVE_DELAY_MAX = delays.max;
+        console.log('⚙️ AI delays loaded from backend:', { min: delays.min, max: delays.max });
       } catch (error) {
-        console.warn('⚠️ Failed to load AI delays, using defaults');
+        console.warn('⚠️ Failed to load AI delays from backend, using fallback defaults:', {
+          min: AI_MOVE_DELAY_MIN,
+          max: AI_MOVE_DELAY_MAX,
+        });
       }
     };
     loadAIDelays();
@@ -134,6 +140,11 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
           
           // اجرای حرکت locally
           console.log(`➡️ AI moving from ${move.from} to ${move.to}`);
+          
+          // 🔊 پخش صدای حرکت AI
+          if (playSound) {
+            playSound('move');
+          }
           
           // Check if this is a hit move first
           const opponentColor = aiPlayerColor === 'white' ? 'black' : 'white';
@@ -311,10 +322,10 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
       }
     };
 
-    // تاخیر برای طبیعی‌تر شدن بازی
+    // Small delay to make game feel more natural (wait for dice animation to complete)
     const aiMoveDelay = setTimeout(() => {
       executeAIMoves();
-    }, 1500);
+    }, 300); // Wait for dice animation before starting moves
 
     return () => clearTimeout(aiMoveDelay);
   }, [
@@ -348,15 +359,19 @@ async function finishAITurn(
     // ✅ Call Done to end AI turn (like human pressing Done)
     if (handleDone) {
       await handleDone();
+      console.log('✅ Done called successfully for AI (no moves)');
     }
     
     // ✅ Sync timers from backend
     if (onTurnComplete) {
       await onTurnComplete();
+      console.log('✅ Timer sync completed after AI auto-done');
     }
     
     console.log('✅ AI turn finished (no moves available)');
   } catch (error) {
     console.error('❌ Failed to finish AI turn:', error);
+    // رو به کاربر نشون بدیم
+    throw error; // Re-throw to be caught by calling function
   }
 }

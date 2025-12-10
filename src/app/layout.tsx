@@ -26,6 +26,34 @@ export const viewport: Viewport = {
   themeColor: primary.main,
 };
 
+export const metadata = {
+  title: 'Nard Arena - تخته نرد آنلاین',
+  description: 'بهترین پلتفرم بازی تخته نرد آنلاین با هوش مصنوعی - بازی تخته نرد حرفه‌ای با امکان بازی با AI و بازیکنان واقعی',
+  keywords: 'تخته نرد, نرد آنلاین, بازی تخته نرد, backgammon, نرد با هوش مصنوعی, بازی آنلاین',
+  authors: [{ name: 'Nard Arena Team' }],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Nard Arena',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'Nard Arena',
+    title: 'Nard Arena - تخته نرد آنلاین 🎲',
+    description: 'بازی تخته نرد حرفه‌ای با هوش مصنوعی و بازیکنان واقعی',
+    locale: 'fa_IR',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Nard Arena - تخته نرد آنلاین',
+    description: 'بازی تخته نرد حرفه‌ای با هوش مصنوعی',
+  },
+};
+
 type Props = {
   children: React.ReactNode;
 };

@@ -76,7 +76,7 @@ export function DiceRoller({ diceNotation = '2d6', onRollComplete }: DiceRollerP
     const world = new CANNON.World();
     world.gravity.set(0, 0, -9.8 * 800);
     world.broadphase = new CANNON.NaiveBroadphase();
-    world.solver.iterations = 16;
+    world.solver.iterations = 25;
     worldRef.current = world;
 
     // Materials

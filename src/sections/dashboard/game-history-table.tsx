@@ -139,6 +139,7 @@ export function GameHistoryTable({ limit = 5, showViewAll = true }: GameHistoryT
       id: 'gameType',
       label: 'Game Type',
       align: 'center',
+      hideOnMobile: true,
       render: (row) => (
         <Chip
           label={row.gameType}
@@ -153,6 +154,7 @@ export function GameHistoryTable({ limit = 5, showViewAll = true }: GameHistoryT
       id: 'score',
       label: 'Score',
       align: 'center',
+      hideOnMobile: true,
       render: (row) => (
         <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
           {row.score}
@@ -192,6 +194,7 @@ export function GameHistoryTable({ limit = 5, showViewAll = true }: GameHistoryT
       id: 'actions',
       label: 'Actions',
       align: 'right',
+      hideOnMobile: true,
       render: () => (
         <IconButton
           size="small"

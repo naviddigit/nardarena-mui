@@ -13,7 +13,14 @@ const MuiInputBase: Components<Theme>['MuiInputBase'] = {
    * STYLE
    *************************************** */
   styleOverrides: {
-    root: ({ theme }) => ({
+    root: ({ theme, ownerState }) => ({
+      // Add vertical padding for small size on mobile
+      ...(ownerState.size === 'small' && {
+        [theme.breakpoints.down('sm')]: {
+          paddingTop: theme.spacing(0.5),
+          paddingBottom: theme.spacing(0.5),
+        },
+      }),
       [`&.${inputBaseClasses.disabled}`]: {
         '& svg': { color: theme.vars.palette.text.disabled },
       },

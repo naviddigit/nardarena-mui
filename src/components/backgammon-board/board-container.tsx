@@ -18,14 +18,28 @@ import type { BackgammonBoardProps } from './types';
 
 // ----------------------------------------------------------------------
 
-const BOARD_RATIO = 1.25;
+// 📐 تنظیمات ابعاد اصلی تخته
+const BOARD_DIMENSIONS = {
+  ratio: 1.20,                    // نسبت عرض به ارتفاع تخته
+  height: {
+    desktop: 600,                 // ارتفاع تخته در دسکتاپ (px)
+    mobile: 500,                  // ارتفاع تخته در موبایل (px)
+    smallMobile: 420,             // ارتفاع تخته در موبایل کوچک (px)
+  },
+  padding: {
+    desktop: 16,                  // فاصله داخلی از کناره‌های تخته (px)
+    mobile: 12,                   // فاصله داخلی در موبایل (px)
+    smallMobile: 8,               // فاصله داخلی در موبایل کوچک (px)
+  },
+  triangleHeightRatio: 0.25,       // نسبت ارتفاع مثلث به ارتفاع جایگاه (80%)
+};
 
 // ⚙️ CONTROL PANEL - تنظیمات مرکزی (فقط اینجا تغییر بده!)
 const SCALE_CONFIG = {
   // عرض جایگاه‌ها (Point Width Scale)
   pointWidth: {
     desktop: 0.9,    // 100% = عادی | مثال: 1.2 = 20% بزرگتر | 0.8 = 20% کوچکتر
-    mobile: 0.85,    // نسبت به desktop
+    mobile: 0.82,    // نسبت به desktop
   },
   // اندازه مهره‌ها (Checker Size Scale)
   checkerSize: {
@@ -293,17 +307,25 @@ export function BackgammonBoard({
     return newIds;
   }, [boardState, displayOffCounts]);
 
-  // Responsive sizing
-  const boardHeight = isSmallMobile ? 450 : isMobile ? 500 : 600;
-  const boardWidth = boardHeight * BOARD_RATIO;
-  const padding = isSmallMobile ? 8 : isMobile ? 12 : 16;
+  // 📏 محاسبه ابعاد تخته بر اساس BOARD_DIMENSIONS
+  const boardHeight = isSmallMobile 
+    ? BOARD_DIMENSIONS.height.smallMobile 
+    : isMobile 
+      ? BOARD_DIMENSIONS.height.mobile 
+      : BOARD_DIMENSIONS.height.desktop;
+  const boardWidth = boardHeight * BOARD_DIMENSIONS.ratio;
+  const padding = isSmallMobile 
+    ? BOARD_DIMENSIONS.padding.smallMobile 
+    : isMobile 
+      ? BOARD_DIMENSIONS.padding.mobile 
+      : BOARD_DIMENSIONS.padding.desktop;
   
   // استفاده از SCALE_CONFIG برای محاسبه سایزها
   const basePointWidth = (boardWidth - padding * 2) / 16;
   const pointWidthScale = isMobile ? SCALE_CONFIG.pointWidth.mobile : SCALE_CONFIG.pointWidth.desktop;
   const pointWidth = basePointWidth * pointWidthScale;
   const pointHeight = (boardHeight - padding * 2 - 20) / 2;
-  const triangleHeight = pointHeight - (pointHeight * 0.2); // ارتفاع مثلث‌ها نسبت به ارتفاع جایگاه‌ها
+  const triangleHeight = pointHeight - (pointHeight * BOARD_DIMENSIONS.triangleHeightRatio); // ارتفاع مثلث‌ها نسبت به ارتفاع جایگاه‌ها
   
   // استفاده از رنگ‌های تم - با useMemo برای رفرش خودکار
   const themeColors = useMemo(() => ({
@@ -655,6 +677,23 @@ export function BackgammonBoard({
             pointerEvents: 'none',
             borderRadius: 1,
           },
+          // لوگو سمت راست وسط
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: '50%',
+            right: '23%',
+            transform: 'translate(50%, -50%)',
+            width: '180px',
+            height: '180px',
+            backgroundImage: 'url(/assets/background.svg)',
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.5,
+            pointerEvents: 'none',
+            zIndex: 0,
+          },
         }}
       >
       <LayoutGroup id="board-checkers">
@@ -858,6 +897,25 @@ export function BackgammonBoard({
           </AnimatePresence>
         </Box>
       </Box>
+
+      {/* لوگو سمت چپ وسط تخته */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '23%',
+          transform: 'translate(-50%, -50%)',
+          width: '180px',
+          height: '180px',
+          backgroundImage: 'url(/assets/background.svg)',
+          backgroundSize: 'contain',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.5,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
 
       {/* 🎲 Dice Roller - Positioned relative to board */}
       {diceRoller && (

@@ -13,6 +13,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
@@ -36,6 +37,7 @@ type Props = {
 
 export function ResetPasswordView({ onSwitchToLogin }: Props) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -68,33 +70,43 @@ export function ResetPasswordView({ onSwitchToLogin }: Props) {
   return (
     <Card
       sx={{
-        p: 4,
+        p: isMobile ? 2 : 4,
         width: 1,
-        maxWidth: 480,
+        maxWidth: isMobile ? '100%' : 420,
         mx: 'auto',
-        backdropFilter: 'blur(20px)',
-        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+        ...(isMobile
+          ? {
+              boxShadow: 'none',
+              bgcolor: 'transparent',
+              backgroundImage: 'none',
+            }
+          : {
+              backdropFilter: 'blur(20px)',
+              backgroundColor: alpha(theme.palette.background.paper, 0.8),
+            }),
       }}
     >
-          <Stack spacing={3} alignItems="center" sx={{ mb: 4 }}>
-            <Typography
-              variant="h3"
-              sx={{
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontFamily: 'Brush Script MT, cursive',
-              }}
-            >
-              Nard Arena
-            </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary' }}>
-              Reset Password
-            </Typography>
-            <Typography variant="body2" textAlign="center" sx={{ color: 'text.secondary' }}>
-              Enter your email address and we'll send you a link to reset your password
-            </Typography>
-          </Stack>
+      <Stack spacing={isMobile ? 2 : 3} alignItems="center" sx={{ mb: isMobile ? 2 : 4 }}>
+        {!isMobile && (
+          <Typography
+            variant="h3"
+            sx={{
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontFamily: 'Brush Script MT, cursive',
+            }}
+          >
+            Nard Arena
+          </Typography>
+        )}
+        <Typography variant={isMobile ? 'h5' : 'h6'} sx={{ color: 'text.secondary' }}>
+          Reset Password
+        </Typography>
+        <Typography variant={isMobile ? 'caption' : 'body2'} textAlign="center" sx={{ color: 'text.secondary' }}>
+          Enter your email address and we'll send you a link to reset your password
+        </Typography>
+      </Stack>
 
           <Form methods={methods} onSubmit={onSubmit}>
         <Stack spacing={3}>

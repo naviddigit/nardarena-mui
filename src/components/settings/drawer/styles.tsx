@@ -20,9 +20,9 @@ export function Block({ title, tooltip, children, sx }: Props) {
   return (
     <Box
       sx={{
-        px: 2,
-        pb: 2,
-        pt: 4,
+        px: 1.5,
+        pb: 1.5,
+        pt: 2.5,
         borderRadius: 2,
         display: 'flex',
         position: 'relative',
@@ -34,11 +34,11 @@ export function Block({ title, tooltip, children, sx }: Props) {
       <Box
         component="span"
         sx={{
-          px: 1.25,
-          top: -12,
-          fontSize: 13,
-          borderRadius: 22,
-          lineHeight: '22px',
+          px: 1,
+          top: -9,
+          fontSize: 11,
+          borderRadius: 20,
+          lineHeight: '18px',
           position: 'absolute',
           alignItems: 'center',
           color: 'common.white',

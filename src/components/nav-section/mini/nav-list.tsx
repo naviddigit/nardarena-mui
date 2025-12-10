@@ -1,3 +1,5 @@
+'use client';
+
 import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Paper from '@mui/material/Paper';

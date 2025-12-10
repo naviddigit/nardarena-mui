@@ -35,6 +35,7 @@ export const CONFIG: ConfigValue = {
     version: packageJson.version,
   },
   isStaticExport: JSON.parse(`${process.env.BUILD_STATIC_EXPORT}`),
+
   /**
    * Auth
    * @method jwt

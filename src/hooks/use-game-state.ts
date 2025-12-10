@@ -133,24 +133,15 @@ export function useGameState(initialBoardState: BoardState) {
       // Auto-select bar if player has checkers on bar and has valid moves
       const autoSelectedPoint = hasCheckersOnBar && hasValidBarMoves ? -1 : null;
       
-      // If no valid moves available, skip turn automatically
-      if (validMoves.length === 0) {
-        const nextPlayer: Player = prev.currentPlayer === 'white' ? 'black' : 'white';
-        return {
-          ...prev,
-          currentPlayer: nextPlayer,
-          diceValues: [],
-          gamePhase: 'waiting',
-          validMoves: [],
-          moveHistory: [],
-          selectedPoint: null,
-        };
-      }
+      // ✅ CRITICAL FIX: Don't auto-skip here! Let page.tsx auto-done handle it
+      // This ensures handleDone is called (which syncs backend, timers, nextRoll)
+      // OLD CODE: if (validMoves.length === 0) { skip turn immediately }
+      // NEW: Always set gamePhase based on validMoves, let auto-done trigger
       
       return {
         ...prev,
         diceValues: finalDiceValues,
-        gamePhase: 'moving',
+        gamePhase: validMoves.length === 0 ? 'waiting' : 'moving', // waiting if blocked
         validMoves,
         moveHistory: [],
         selectedPoint: autoSelectedPoint, // Auto-select bar if needed

@@ -84,12 +84,53 @@ var DICE = (function() {
         this.diceToRoll = ''; //user input
         this.container = container;
 
-        this.renderer = window.WebGLRenderingContext
-            ? new THREE.WebGLRenderer({ antialias: true, alpha: true })
-            : new THREE.CanvasRenderer({ antialias: true, alpha: true });
+        // بهبود برای موبایل: چک کردن WebGL support و device type
+        var supportsWebGL = false;
+        var isMobile = false;
+        
+        try {
+            var canvas = document.createElement('canvas');
+            supportsWebGL = !!(window.WebGLRenderingContext && 
+                (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+            
+            // تشخیص دقیق موبایل: screen size + touch support
+            isMobile = (window.innerWidth <= 768) || 
+                       ('ontouchstart' in window) || 
+                       (navigator.maxTouchPoints > 0);
+        } catch(e) {
+            supportsWebGL = false;
+        }
+
+        // استفاده از WebGL با تنظیمات بهینه شده
+        if (supportsWebGL) {
+            this.renderer = new THREE.WebGLRenderer({ 
+                antialias: true, // فعال برای همه (کیفیت بهتر)
+                alpha: true,
+                powerPreference: isMobile ? 'high-performance' : 'default',
+                stencil: false,
+                depth: true
+            });
+            
+            // تنظیم pixelRatio برای کیفیت بهتر
+            var pixelRatio = window.devicePixelRatio || 1;
+            // محدود کردن به 2 برای جلوگیری از افت عملکرد
+            this.renderer.setPixelRatio(Math.min(pixelRatio, 2));
+        } else {
+            // Fallback به Canvas Renderer
+            console.log('WebGL not supported, using Canvas renderer');
+            this.renderer = new THREE.CanvasRenderer({ antialias: true, alpha: true });
+        }
+        
         container.appendChild(this.renderer.domElement);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        
+        // تنظیمات سایه (فعال برای دسکتاپ، غیرفعال برای موبایل)
+        if (supportsWebGL && !isMobile) {
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        } else {
+            this.renderer.shadowMap.enabled = false;
+        }
+        
         this.renderer.setClearColor(0xffffff, 0); //color, alpha
 
         this.reinit(container);
@@ -198,6 +239,8 @@ var DICE = (function() {
         var vector = { x: (rnd() * 2 - 1) * box.w, y: -(rnd() * 2 - 1) * box.h };
         var dist = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
         var boost = (rnd() + 3) * dist;
+        // محدود کردن boost برای جلوگیری از پرتاب‌های خیلی تند
+        boost = Math.max(300, Math.min(boost, 1500));
         throw_dices(box, vector, boost, dist, before_roll, after_roll);
     }
 
@@ -219,7 +262,9 @@ var DICE = (function() {
             if (dist < Math.sqrt(box.w * box.h * 0.01)) return;
             var time_int = (new Date()).getTime() - box.mouse_time;
             if (time_int > 2000) time_int = 2000;
-            var boost = Math.sqrt((2500 - time_int) / 2500) * dist * 2;           
+            var boost = Math.sqrt((2500 - time_int) / 2500) * dist * 2;
+            // محدود کردن boost برای swipe
+            boost = Math.max(300, Math.min(boost, 1500));
             throw_dices(box, vector, boost, dist, before_roll, after_roll);
         });
     }
@@ -231,7 +276,8 @@ var DICE = (function() {
         var notation = that.parse_notation(box.diceToRoll);
         if (notation.set.length == 0) return;
         //TODO: how do large numbers of vectors affect performance?
-        var vectors = box.generate_vectors(notation, vector, boost);
+        // ✅ دریافت currentPlayer از box (اگر set نشده باشه، default = 'white')
+        var vectors = box.generate_vectors(notation, vector, boost, box.currentPlayer || 'white');
         box.rolling = true;
         let request_results = null;        
 
@@ -276,26 +322,44 @@ var DICE = (function() {
     }
        
     //todo: the rest of these don't need to be public, but need to read the this properties
-    that.dice_box.prototype.generate_vectors = function(notation, vector, boost) {
+    that.dice_box.prototype.generate_vectors = function(notation, vector, boost, currentPlayer) {
+        // تشخیص بازیکن: اگر نفرستاده بشه، default = 'white'
+        var player = currentPlayer || 'white';
+        var isWhite = player === 'white';
+        
         var vectors = [];
         for (var i in notation.set) {
-            var vec = make_random_vector(vector);
+            // ✅ موقعیت بر اساس بازیکن
             var pos = {
-                x: this.w * (vec.x > 0 ? -1 : 1) * 0.9,
-                y: this.h * (vec.y > 0 ? -1 : 1) * 0.9,
-                z: rnd() * 200 + 200
+                x: this.w * (isWhite ? -0.6 : 0.6),         // white: چپ | black: راست
+                y: this.h * (isWhite ? -0.9 : 0.4),         // white: بالا | black: پایین
+                z: rnd() * 40 + 160                          // ✅ ارتفاع تصادفی کمتر (160-200)
             };
-            var projector = Math.abs(vec.x / vec.y);
-            if (projector > 1.0) pos.y /= projector; else pos.x *= projector;
-            var velvec = make_random_vector(vector);
-            var velocity = { x: velvec.x * boost, y: velvec.y * boost, z: -10 };
+            
+            // ✅ سرعت کمتر و با تنوع
+            var limitedBoost = 450 + rnd() * 100;            // ✅ 450-550 (کاهش از 600)
+            var velocity = { 
+                x: (isWhite ? 0.35 : -0.35) * limitedBoost,  // ✅ کاهش از 0.4
+                y: (isWhite ? 0.25 : -0.25) * limitedBoost,  // ✅ کاهش از 0.3
+                z: -(rnd() * 8 + 12)                          // ✅ سرعت Z تصادفی (12-20)
+            };
+            
+            // ✅ چرخش ملایم‌تر
             var inertia = CONSTS.dice_inertia[notation.set[i]];
             var angle = {
-                x: -(rnd() * vec.y * 5 + inertia * vec.y),
-                y: rnd() * vec.x * 5 + inertia * vec.x,
+                x: -(rnd() * 2 + 1),                         // ✅ 1-3 (کاهش از -2)
+                y: rnd() * 2 + 1,                            // ✅ 1-3 (کاهش از 3)
                 z: 0
             };
-            var axis = { x: rnd(), y: rnd(), z: rnd(), a: rnd() };
+            
+            // ✅ محور چرخش با تنوع بیشتر
+            var axis = { 
+                x: 0.4 + rnd() * 0.3,                        // ✅ 0.4-0.7
+                y: 0.4 + rnd() * 0.3,                        // ✅ 0.4-0.7
+                z: 0.6 + rnd() * 0.3,                        // ✅ 0.6-0.9
+                a: rnd()                                      // ✅ 0-1 (تنوع کامل)
+            };
+            
             vectors.push({ set: notation.set[i], pos: pos, velocity: velocity, angle: angle, axis: axis });
         }
         return vectors;
@@ -311,8 +375,8 @@ var DICE = (function() {
         dice.body.quaternion.setFromAxisAngle(new CANNON.Vec3(axis.x, axis.y, axis.z), axis.a * Math.PI * 2);
         dice.body.angularVelocity.set(angle.x, angle.y, angle.z);
         dice.body.velocity.set(velocity.x, velocity.y, velocity.z);
-        dice.body.linearDamping = 0.1;
-        dice.body.angularDamping = 0.1;
+        dice.body.linearDamping = 0.3; // افزایش برای settle سریع‌تر
+        dice.body.angularDamping = 0.3; // افزایش برای جلوگیری از چرخش بیش از حد
         this.scene.add(dice);
         this.dices.push(dice);
         this.world.add(dice.body);
@@ -876,16 +940,39 @@ var DICE = (function() {
     
     //playSound function and audio file copied from 
     //https://github.com/chukwumaijem/roll-a-die
+    // بهبود شده برای موبایل با pre-load و error handling
+    var diceAudio = null; // کش صدا برای استفاده مجدد
+    
     function playSound(outerContainer, soundVolume) {
         if (soundVolume === 0) return;
-        const audio = document.createElement('audio');
-        outerContainer.appendChild(audio);
-        audio.src = 'assets/sounds/dice-roll.mp3'; //sound file path
-        audio.volume = soundVolume;
-        audio.play();
-        audio.onended = () => {
-          audio.remove();
-        };
+        
+        try {
+            // اگه صدا قبلا لود نشده، الان لود کن
+            if (!diceAudio) {
+                diceAudio = new Audio();
+                diceAudio.src = '/assets/sounds/dice-roll.mp3'; // مسیر درست
+                diceAudio.volume = Math.min(soundVolume, 1); // حداکثر 1
+                diceAudio.load(); // pre-load برای سرعت بیشتر
+            }
+            
+            // تنظیم volume (ممکنه تغییر کرده باشه)
+            diceAudio.volume = Math.min(soundVolume, 1);
+            
+            // Reset position و پخش
+            diceAudio.currentTime = 0;
+            
+            var playPromise = diceAudio.play();
+            
+            // Handle promise برای موبایل
+            if (playPromise !== undefined) {
+                playPromise.catch(function(error) {
+                    // Autoplay blocked (معمولا در موبایل)
+                    console.log('Dice sound blocked - user interaction needed first');
+                });
+            }
+        } catch (error) {
+            console.warn('Failed to play dice sound:', error);
+        }
     }
 
     return that;

@@ -28,6 +28,7 @@ type DiceRollerProps = {
   diceNotation?: string;
   onRollComplete?: (results: DiceResult[]) => void;
   initialDiceValues?: number[];
+  currentPlayer?: 'white' | 'black'; // جهت پرتاب تاس بر اساس بازیکن
 };
 
 declare global {
@@ -40,7 +41,7 @@ declare global {
 }
 
 export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerComponent(
-  { diceNotation = '2d6', onRollComplete, initialDiceValues },
+  { diceNotation = '2d6', onRollComplete, initialDiceValues, currentPlayer = 'white' },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -209,18 +210,20 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
 
   const rollDice = () => {
     // Comprehensive checks before rolling
+    console.log('🎲 [rollDice] Called - isReady:', isReady, 'isRolling:', isRolling);
+    
     if (!isReady) {
-      console.error('🎲 Dice system not ready yet');
+      console.error('🎲 [rollDice] Dice system not ready yet');
       return;
     }
     
     if (isRolling) {
-      // Already rolling
+      console.warn('🎲 [rollDice] Already rolling, ignoring');
       return;
     }
     
     if (!boxRef.current) {
-      console.error('🎲 Dice box not initialized');
+      console.error('🎲 [rollDice] Dice box not initialized');
       // Try to reinitialize
       setIsReady(false);
       setInitAttempts(0);
@@ -228,10 +231,11 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     }
     
     if (!window.DICE) {
-      console.error('🎲 DICE library not available');
+      console.error('🎲 [rollDice] DICE library not available');
       return;
     }
     
+    console.log('🎲 [rollDice] Starting roll...');
     setIsRolling(true);
     
     // ✅ For opening rolls (1d6), override prepare function AND clear function to keep existing dice
@@ -287,7 +291,8 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       // Generate vectors for dice throw
       const vector = { x: -1, y: 0 };
       const boost = 500;
-      const vectors = box.generate_vectors(notation, vector, boost);
+      // ✅ ارسال currentPlayer برای تعیین جهت پرتاب (اولین generate_vectors)
+      const vectors = box.generate_vectors(notation, vector, boost, currentPlayer);
       
       if (!vectors || vectors.length === 0) {
         console.error('🎲 Failed to generate vectors');
@@ -440,7 +445,8 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
       // Generate vectors for dice throw
       const vector = { x: -1, y: 0 };
       const boost = 500;
-      const vectors = box.generate_vectors(notation, vector, boost);
+      // ✅ ارسال currentPlayer برای تعیین جهت پرتاب (دومین generate_vectors)
+      const vectors = box.generate_vectors(notation, vector, boost, currentPlayer);
       
       if (!vectors || vectors.length === 0) {
         console.error('🎲 Failed to generate vectors');
@@ -714,9 +720,13 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
     setDiceValues,
     showStaticDice,
     clearDice: () => {
+      console.log('🎲 [clearDice] Clearing dice and resetting state');
       if (boxRef.current && boxRef.current.clear) {
         boxRef.current.clear();
       }
+      // ✅ Reset isRolling state to allow new rolls
+      setIsRolling(false);
+      setLastDiceValues(null);
     },
     reloadDice: reloadDiceScript,
     isReady,

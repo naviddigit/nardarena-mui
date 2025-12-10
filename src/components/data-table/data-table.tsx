@@ -1,20 +1,23 @@
 'use client';
 
-import {
-  Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Skeleton,
-  Typography,
-  Box,
-  CardHeader,
-} from '@mui/material';
 import { ReactNode } from 'react';
+
+import Card from '@mui/material/Card';
+import Table from '@mui/material/Table';
+import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
+import TableRow from '@mui/material/TableRow';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import Skeleton from '@mui/material/Skeleton';
+import TableContainer from '@mui/material/TableContainer';
+import TablePagination from '@mui/material/TablePagination';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import CardHeader from '@mui/material/CardHeader';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 // ----------------------------------------------------------------------
 
@@ -24,6 +27,7 @@ export interface DataTableColumn<T> {
   align?: 'left' | 'center' | 'right';
   width?: number | string;
   render?: (row: T, index: number) => ReactNode;
+  hideOnMobile?: boolean; // پنهان کردن ستون در موبایل
 }
 
 interface DataTableProps<T> {
@@ -59,6 +63,9 @@ export function DataTable<T>({
   emptyMessage = 'No data available',
   rowsPerPageOptions = [5, 10, 25, 50],
 }: DataTableProps<T>) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const handleChangePage = (_event: unknown, newPage: number) => {
     onPageChange?.(newPage);
   };
@@ -69,6 +76,81 @@ export function DataTable<T>({
 
   const showPagination = totalRows !== undefined && onPageChange && onRowsPerPageChange;
 
+  // فیلتر ستون‌های قابل نمایش در موبایل
+  const visibleColumns = isMobile ? columns.filter((col) => !col.hideOnMobile) : columns;
+
+  // رندر موبایل - Card Layout
+  if (isMobile) {
+    return (
+      <Card>
+        {(title || subtitle || action) && (
+          <CardHeader title={title} subheader={subtitle} action={action} />
+        )}
+
+        <Box sx={{ p: 2 }}>
+          {loading ? (
+            <Stack spacing={2}>
+              {Array.from({ length: skeletonRows }).map((_, index) => (
+                <Card key={`skeleton-${index}`} variant="outlined" sx={{ p: 2 }}>
+                  <Stack spacing={1.5}>
+                    {visibleColumns.map((column) => (
+                      <Box key={column.id}>
+                        <Skeleton variant="text" width="40%" height={16} sx={{ mb: 0.5 }} />
+                        <Skeleton variant="text" width="80%" height={20} />
+                      </Box>
+                    ))}
+                  </Stack>
+                </Card>
+              ))}
+            </Stack>
+          ) : rows.length === 0 ? (
+            <Box sx={{ py: 8, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                {emptyMessage}
+              </Typography>
+            </Box>
+          ) : (
+            <Stack spacing={2}>
+              {rows.map((row, rowIndex) => (
+                <Card key={rowIndex} variant="outlined" sx={{ p: 2 }}>
+                  <Stack spacing={1.5} divider={<Divider />}>
+                    {visibleColumns.map((column) => (
+                      <Box key={column.id}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}
+                        >
+                          {column.label}
+                        </Typography>
+                        <Box>
+                          {column.render ? column.render(row, rowIndex) : (row as any)[column.id]}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Card>
+              ))}
+            </Stack>
+          )}
+        </Box>
+
+        {showPagination && !loading && (
+          <TablePagination
+            component="div"
+            count={totalRows}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={rowsPerPageOptions}
+          />
+        )}
+      </Card>
+    );
+  }
+
+  // رندر دسکتاپ - Table Layout
   return (
     <Card>
       {(title || subtitle || action) && (

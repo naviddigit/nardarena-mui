@@ -9,6 +9,12 @@
  */
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
 
+// 🔍 DEBUG: Log API URL on client side only
+if (typeof window !== 'undefined') {
+  console.log('🌐 API_BASE_URL:', API_BASE_URL);
+  console.log('🔧 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+}
+
 /**
  * Check if we're in development mode
  */

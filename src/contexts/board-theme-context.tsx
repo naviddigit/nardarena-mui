@@ -39,9 +39,19 @@ type Props = {
 };
 
 export function BoardThemeProvider({ children, useApi = false }: Props) {
-  const [currentTheme, setCurrentTheme] = useState<BoardTheme>(
-    BOARD_THEMES.find((t) => t.isActive) || BOARD_THEMES[0]
-  );
+  const [currentTheme, setCurrentTheme] = useState<BoardTheme>(() => {
+    // بارگذاری تم ذخیره شده از localStorage
+    if (typeof window !== 'undefined') {
+      const savedThemeId = localStorage.getItem('selectedBoardTheme');
+      if (savedThemeId) {
+        const savedTheme = BOARD_THEMES.find((t) => t.id === savedThemeId);
+        if (savedTheme) {
+          return savedTheme;
+        }
+      }
+    }
+    return BOARD_THEMES.find((t) => t.isActive) || BOARD_THEMES[0];
+  });
   const [allThemes, setAllThemes] = useState<BoardTheme[]>(BOARD_THEMES);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,8 +72,9 @@ export function BoardThemeProvider({ children, useApi = false }: Props) {
       } else {
         // استفاده از Mock Data
         setAllThemes([...BOARD_THEMES]);
-        const active = BOARD_THEMES.find((t) => t.isActive) || BOARD_THEMES[0];
-        setCurrentTheme({ ...active });
+        // ⚠️ فقط allThemes رو آپدیت کن، currentTheme رو دست نزن (از localStorage خونده شده)
+        // const active = BOARD_THEMES.find((t) => t.isActive) || BOARD_THEMES[0];
+        // setCurrentTheme({ ...active });
       }
     } catch (err) {
       console.error('Error loading themes:', err);
@@ -80,7 +91,6 @@ export function BoardThemeProvider({ children, useApi = false }: Props) {
   // تغییر تم
   const changeTheme = useCallback(
     async (themeId: string) => {
-      console.log('🔄 Context changeTheme called with:', themeId);
       setLoading(true);
       setError(null);
 
@@ -88,9 +98,16 @@ export function BoardThemeProvider({ children, useApi = false }: Props) {
         if (useApi) {
           const newTheme = await setActiveBoardTheme(themeId);
           setCurrentTheme(newTheme);
+          // ذخیره در localStorage برای API mode
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('selectedBoardTheme', themeId);
+          }
         } else {
           // تغییر در Mock Data
-          console.log('📝 Before change - Current theme:', currentTheme.id);
+          // اول localStorage رو آپدیت کن (قبل از state)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('selectedBoardTheme', themeId);
+          }
 
           BOARD_THEMES.forEach((t) => {
             t.isActive = false;
@@ -99,14 +116,11 @@ export function BoardThemeProvider({ children, useApi = false }: Props) {
           const newTheme = BOARD_THEMES.find((t) => t.id === themeId);
           if (newTheme) {
             newTheme.isActive = true;
-            console.log('✨ New theme found:', newTheme.id, newTheme.name);
             
             // آپدیت state با object جدید
             const themeClone = { ...newTheme };
             setCurrentTheme(themeClone);
             setAllThemes([...BOARD_THEMES]);
-            
-            console.log('✅ Context state updated to:', themeClone.id);
           } else {
             console.error('❌ Theme not found:', themeId);
           }

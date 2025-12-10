@@ -16,6 +16,7 @@ import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -54,6 +55,7 @@ type Props = {
 export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
   const theme = useTheme();
   const router = useRouter();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { checkUserSession } = useAuthContext();
   const [errorMsg, setErrorMsg] = useState('');
   const password = useBoolean();
@@ -97,35 +99,47 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
   return (
     <Card
       sx={{
-        p: 4,
+        p: isMobile ? 2 : 4,
         width: 1,
-        maxWidth: 480,
+        maxWidth: isMobile ? '100%' : 420,
         mx: 'auto',
-        backdropFilter: 'blur(20px)',
-        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+        ...(isMobile
+          ? {
+              boxShadow: 'none',
+              bgcolor: 'transparent',
+              backgroundImage: 'none',
+            }
+          : {
+              backdropFilter: 'blur(20px)',
+              backgroundColor: alpha(theme.palette.background.paper, 0.8),
+            }),
       }}
     >
-      <Stack spacing={3} alignItems="center" sx={{ mb: 4 }}>
-        <Typography
-          variant="h3"
-          sx={{
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontFamily: 'Brush Script MT, cursive',
-          }}
-        >
-          Nard Arena
-        </Typography>
-        <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+      <Stack spacing={isMobile ? 2 : 3} alignItems="center" sx={{ mb: isMobile ? 2 : 4 }}>
+        {!isMobile && (
+          <Typography
+            variant="h3"
+            sx={{
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontFamily: 'Brush Script MT, cursive',
+            }}
+          >
+            Nard Arena
+          </Typography>
+        )}
+        <Typography variant={isMobile ? 'h5' : 'h6'} sx={{ color: 'text.secondary' }}>
           Login
         </Typography>
       </Stack>
 
       <Form methods={methods} onSubmit={onSubmit}>
-        <Stack spacing={3}>
+        <Stack spacing={isMobile ? 2 : 3}>
           {errorMsg && (
-            <Alert severity="error">{errorMsg}</Alert>
+            <Alert severity="error" sx={{ py: isMobile ? 0.5 : 1 }}>
+              <Typography variant={isMobile ? 'caption' : 'body2'}>{errorMsg}</Typography>
+            </Alert>
           )}
 
           <Field.Text
@@ -133,6 +147,7 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
             label="Email"
             placeholder="your@email.com"
             InputLabelProps={{ shrink: true }}
+            size={isMobile ? 'small' : 'medium'}
           />
 
           <Field.Text
@@ -141,11 +156,12 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
             placeholder="6+ characters"
             type={password.value ? 'text' : 'password'}
             InputLabelProps={{ shrink: true }}
+            size={isMobile ? 'small' : 'medium'}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={password.onToggle} edge="end">
-                    <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                  <IconButton onClick={password.onToggle} edge="end" size={isMobile ? 'small' : 'medium'}>
+                    <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} width={isMobile ? 18 : 22} />
                   </IconButton>
                 </InputAdornment>
               ),
@@ -154,7 +170,7 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
 
           <LoadingButton
             fullWidth
-            size="large"
+            size={isMobile ? 'medium' : 'large'}
             type="submit"
             variant="contained"
             loading={isSubmitting}
@@ -168,17 +184,17 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
             Login
           </LoadingButton>
 
-          <Divider>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Divider sx={{ my: isMobile ? 1 : 2 }}>
+            <Typography variant={isMobile ? 'caption' : 'body2'} sx={{ color: 'text.secondary' }}>
               OR
             </Typography>
           </Divider>
 
           <Button
             fullWidth
-            size="large"
+            size={isMobile ? 'medium' : 'large'}
             variant="outlined"
-            startIcon={<Iconify icon="flat-color-icons:google" />}
+            startIcon={<Iconify icon="flat-color-icons:google" width={isMobile ? 18 : 20} />}
             sx={{
               borderColor: alpha(theme.palette.grey[500], 0.2),
               '&:hover': {
@@ -187,7 +203,7 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
               },
             }}
           >
-            Sign in with Google
+            <Typography variant={isMobile ? 'body2' : 'body1'}>Sign in with Google</Typography>
           </Button>
 
           <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -195,11 +211,16 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
               variant="text"
               size="small"
               onClick={onSwitchToReset}
-              sx={{ color: 'text.secondary' }}
+              sx={{ color: 'text.secondary', fontSize: isMobile ? '0.75rem' : '0.875rem' }}
             >
               Forgot Password?
             </Button>
-            <Button variant="text" size="small" onClick={onSwitchToRegister}>
+            <Button 
+              variant="text" 
+              size="small" 
+              onClick={onSwitchToRegister}
+              sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+            >
               Register
             </Button>
           </Stack>

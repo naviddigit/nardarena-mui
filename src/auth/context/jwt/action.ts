@@ -28,6 +28,7 @@ export const signInWithPassword = async ({ email, password }: SignInParams): Pro
   try {
     const params = { email, password };
 
+    console.log('🔐 Attempting login to:', endpoints.auth.signIn);
     const res = await axios.post(endpoints.auth.signIn, params);
 
     const { access_token, user } = res.data;
@@ -37,10 +38,14 @@ export const signInWithPassword = async ({ email, password }: SignInParams): Pro
     }
 
     setSession(access_token);
+    console.log('✅ Login successful, user:', user);
     
     return user; // Return user data including role
-  } catch (error) {
-    console.error('Error during sign in:', error);
+  } catch (error: any) {
+    console.error('❌ Error during sign in:', error);
+    console.error('❌ Error response:', error?.response?.data);
+    console.error('❌ Error status:', error?.response?.status);
+    console.error('❌ Error message:', error?.message);
     throw error;
   }
 };

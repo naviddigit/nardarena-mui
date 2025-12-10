@@ -22,12 +22,13 @@ export function ThemeOption({ theme, selected, ...other }: ThemeOptionProps) {
   return (
     <ButtonBase
       sx={{
-        width: 1,
-        height: 80,
+        width: 100,
+        height: 'auto',
         borderRadius: 1.5,
         flexDirection: 'column',
-        gap: 0.5,
-        bgcolor: theme.colors.background,
+        gap: 0.75,
+        p: 1,
+        bgcolor: 'background.paper',
         border: selected
           ? `2px solid ${muiTheme.palette.primary.main}`
           : `1px solid ${hexAlpha(muiTheme.palette.grey[500], 0.12)}`,
@@ -38,27 +39,42 @@ export function ThemeOption({ theme, selected, ...other }: ThemeOptionProps) {
           borderColor: muiTheme.palette.primary.main,
           boxShadow: muiTheme.customShadows.z4,
         },
+        position: 'relative',
       }}
       {...other}
     >
-      {/* Color preview circles */}
-      <Box display="flex" gap={0.75} alignItems="center">
+      {/* Color preview box */}
+      <Box
+        sx={{
+          width: '100%',
+          height: 40,
+          borderRadius: 1,
+          bgcolor: theme.colors.background,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 0.75,
+          border: `1px solid ${hexAlpha(muiTheme.palette.grey[500], 0.1)}`,
+        }}
+      >
         <Box
           sx={{
-            width: 24,
-            height: 24,
+            width: 16,
+            height: 16,
             borderRadius: '50%',
             bgcolor: theme.colors.darkPoint,
-            border: `2px solid ${hexAlpha('#fff', 0.2)}`,
+            border: `2px solid ${hexAlpha('#fff', 0.3)}`,
+            boxShadow: 1,
           }}
         />
         <Box
           sx={{
-            width: 24,
-            height: 24,
+            width: 16,
+            height: 16,
             borderRadius: '50%',
             bgcolor: theme.colors.lightPoint,
-            border: `2px solid ${hexAlpha('#000', 0.1)}`,
+            border: `2px solid ${hexAlpha('#000', 0.15)}`,
+            boxShadow: 1,
           }}
         />
       </Box>
@@ -67,15 +83,18 @@ export function ThemeOption({ theme, selected, ...other }: ThemeOptionProps) {
       <Box
         component="span"
         sx={{
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: selected ? 600 : 500,
           color: selected ? 'primary.main' : 'text.secondary',
           lineHeight: 1.2,
           textAlign: 'center',
-          px: 1,
+          width: '100%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
         }}
       >
-        {theme.name}
+        {theme.nameEn || theme.name}
       </Box>
 
       {/* Premium badge */}
@@ -83,8 +102,8 @@ export function ThemeOption({ theme, selected, ...other }: ThemeOptionProps) {
         <Box
           sx={{
             position: 'absolute',
-            top: 4,
-            right: 4,
+            top: 6,
+            right: 6,
           }}
         >
           <Iconify icon="solar:star-bold" width={14} sx={{ color: 'warning.main' }} />
@@ -96,8 +115,8 @@ export function ThemeOption({ theme, selected, ...other }: ThemeOptionProps) {
         <Box
           sx={{
             position: 'absolute',
-            top: 4,
-            left: 4,
+            top: 6,
+            left: 6,
           }}
         >
           <Iconify icon="solar:check-circle-bold" width={16} sx={{ color: 'success.main' }} />

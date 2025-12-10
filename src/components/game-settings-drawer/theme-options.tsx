@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+
 import Box from '@mui/material/Box';
 
 import { useBoardTheme } from 'src/contexts/board-theme-context';
@@ -10,23 +12,52 @@ import { ThemeOption } from './theme-option';
 
 export function ThemeOptions() {
   const { currentTheme, allThemes, changeTheme } = useBoardTheme();
+  const scrollRef = useRef<HTMLUListElement>(null);
 
-  console.log('🎨 Theme Options - Total themes:', allThemes.length);
-  console.log('📐 Grid columns should be: 1fr (single column)');
+  // Handle horizontal scroll with mouse wheel
+  const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
+    if (scrollRef.current) {
+      e.preventDefault();
+      scrollRef.current.scrollLeft += e.deltaY;
+    }
+  };
 
   return (
     <Block title="Board Themes">
       <Box
+        ref={scrollRef}
         component="ul"
+        onWheel={handleWheel}
         sx={{
-          gap: 1.5,
-          display: 'grid',
-          gridTemplateColumns: '1fr !important',
-          width: '100%',
+          display: 'flex',
+          gap: 2,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollBehavior: 'smooth',
+          pb: 1,
+          // Hide scrollbar
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+          // Snap scrolling
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          cursor: 'grab',
+          '&:active': {
+            cursor: 'grabbing',
+          },
         }}
       >
         {allThemes.map((theme) => (
-          <Box component="li" key={theme.id} sx={{ display: 'flex', width: '100%' }}>
+          <Box 
+            component="li" 
+            key={theme.id} 
+            sx={{ 
+              flex: '0 0 auto',
+              scrollSnapAlign: 'start',
+            }}
+          >
             <ThemeOption
               theme={theme}
               selected={currentTheme.id === theme.id}

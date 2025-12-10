@@ -102,8 +102,19 @@ class GamePersistenceAPI {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      console.log('🔗 API Request:', config.method?.toUpperCase(), config.url, '| Base:', config.baseURL);
       return config;
     });
+
+    // Add response interceptor to log errors
+    this.axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        console.error('❌ API Error:', error.config?.method?.toUpperCase(), error.config?.url);
+        console.error('❌ Error details:', error.response?.data || error.message);
+        return Promise.reject(error);
+      }
+    );
   }
 
   private getAuthToken(): string | null {
@@ -186,6 +197,13 @@ class GamePersistenceAPI {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: response.statusText }));
+      
+      // ✅ If game is already ended (400), return gracefully instead of throwing
+      if (response.status === 400 && error.message?.includes('already ended')) {
+        console.warn('⚠️ Game already ended, skipping duplicate end call');
+        return { message: 'Game already ended' } as any;
+      }
+      
       throw new Error(error.message || 'Failed to end game');
     }
 

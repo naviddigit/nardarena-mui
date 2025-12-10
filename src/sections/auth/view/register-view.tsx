@@ -19,6 +19,7 @@ import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -67,6 +68,7 @@ const AVATAR_OPTIONS = Array.from({ length: 25 }, (_, i) => _mock.image.avatar(i
 
 export function RegisterView({ onSwitchToLogin }: Props) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
   const { checkUserSession } = useAuthContext();
   const [errorMsg, setErrorMsg] = useState('');
@@ -160,27 +162,37 @@ export function RegisterView({ onSwitchToLogin }: Props) {
   return (
     <Card
       sx={{
-        p: 4,
+        p: isMobile ? 2 : 4,
         width: 1,
-        maxWidth: 480,
+        maxWidth: isMobile ? '100%' : 420,
         mx: 'auto',
-        backdropFilter: 'blur(20px)',
-        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+        ...(isMobile
+          ? {
+              boxShadow: 'none',
+              bgcolor: 'transparent',
+              backgroundImage: 'none',
+            }
+          : {
+              backdropFilter: 'blur(20px)',
+              backgroundColor: alpha(theme.palette.background.paper, 0.8),
+            }),
       }}
     >
-      <Stack spacing={3} alignItems="center" sx={{ mb: 4 }}>
-        <Typography
-          variant="h3"
-          sx={{
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontFamily: 'Brush Script MT, cursive',
-          }}
-        >
-          Nard Arena
-        </Typography>
-        <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+      <Stack spacing={isMobile ? 2 : 3} alignItems="center" sx={{ mb: isMobile ? 2 : 4 }}>
+        {!isMobile && (
+          <Typography
+            variant="h3"
+            sx={{
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontFamily: 'Brush Script MT, cursive',
+            }}
+          >
+            Nard Arena
+          </Typography>
+        )}
+        <Typography variant={isMobile ? 'h5' : 'h6'} sx={{ color: 'text.secondary' }}>
           Create Account
         </Typography>
         <Stack direction="row" spacing={1}>
@@ -188,8 +200,8 @@ export function RegisterView({ onSwitchToLogin }: Props) {
             <Box
               key={s}
               sx={{
-                width: 8,
-                height: 8,
+                width: isMobile ? 6 : 8,
+                height: isMobile ? 6 : 8,
                 borderRadius: '50%',
                 bgcolor: s === step ? 'primary.main' : 'grey.300',
                 transition: 'all 0.3s',
