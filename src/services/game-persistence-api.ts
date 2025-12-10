@@ -62,6 +62,13 @@ export interface GameResponse {
   createdAt: string;
   startedAt?: string;
   endedAt?: string;
+  // Timer fields
+  whiteTimeRemaining?: number;
+  blackTimeRemaining?: number;
+  // Dice tracking fields
+  currentDiceValues?: number[];
+  whiteHasDiceRolled?: boolean;
+  blackHasDiceRolled?: boolean;
 }
 
 export interface GameHistoryItem {

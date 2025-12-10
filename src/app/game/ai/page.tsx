@@ -873,8 +873,12 @@ function GameAIPageContent() {
           
           // ✅ Backend already calculated timers with elapsed time
           // Just use the values from backend (DO NOT recalculate on frontend!)
-          setWhiteTimerSeconds(updatedGame.whiteTimeRemaining);
-          setBlackTimerSeconds(updatedGame.blackTimeRemaining);
+          if (updatedGame.whiteTimeRemaining !== undefined) {
+            setWhiteTimerSeconds(updatedGame.whiteTimeRemaining);
+          }
+          if (updatedGame.blackTimeRemaining !== undefined) {
+            setBlackTimerSeconds(updatedGame.blackTimeRemaining);
+          }
           
           // ✅ Update lastDoneBy from backend
           const lastDoneByBackend = updatedGame.gameState?.lastDoneBy;
@@ -1073,8 +1077,12 @@ function GameAIPageContent() {
           });
           
           // ✅ Set timer values directly from backend (NO recalculation!)
-          setWhiteTimerSeconds(whiteTimeDB);
-          setBlackTimerSeconds(blackTimeDB);
+          if (whiteTimeDB !== undefined) {
+            setWhiteTimerSeconds(whiteTimeDB);
+          }
+          if (blackTimeDB !== undefined) {
+            setBlackTimerSeconds(blackTimeDB);
+          }
           
           // ✅ Update lastDoneBy and lastDoneAt
           if (lastDoneByBackend) {
@@ -1177,7 +1185,7 @@ function GameAIPageContent() {
                     });
                     
                     // Only trigger timeout if backend confirms time is up
-                    if (whiteTimeBackend <= 0) {
+                    if (whiteTimeBackend !== undefined && whiteTimeBackend <= 0) {
                       debugLog.timeout('Backend confirmed WHITE timeout');
                       const setsToWin = Math.ceil(maxSets / 2);
                       
@@ -1212,7 +1220,9 @@ function GameAIPageContent() {
                       });
                     } else {
                       debugLog.timeout('Backend says time NOT up yet - syncing timer');
-                      setWhiteTimerSeconds(whiteTimeBackend);
+                      if (whiteTimeBackend !== undefined) {
+                        setWhiteTimerSeconds(whiteTimeBackend);
+                      }
                       timeoutVerifiedRef.current.white = false; // Reset flag if backend says not timeout
                     }
                   })
@@ -1249,7 +1259,7 @@ function GameAIPageContent() {
                     });
                     
                     // Only trigger timeout if backend confirms time is up
-                    if (blackTimeBackend <= 0) {
+                    if (blackTimeBackend !== undefined && blackTimeBackend <= 0) {
                       debugLog.timeout('Backend confirmed BLACK timeout');
                       const setsToWin = Math.ceil(maxSets / 2);
                       
@@ -1284,7 +1294,9 @@ function GameAIPageContent() {
                       });
                     } else {
                       debugLog.timeout('Backend says time NOT up yet - syncing timer');
-                      setBlackTimerSeconds(blackTimeBackend);
+                      if (blackTimeBackend !== undefined) {
+                        setBlackTimerSeconds(blackTimeBackend);
+                      }
                       timeoutVerifiedRef.current.black = false; // Reset flag if backend says not timeout
                     }
                   })
