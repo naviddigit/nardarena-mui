@@ -1819,24 +1819,30 @@ function GameAIPageContent() {
     setWaitingForOpponent(false);
     setPlayerColor(null); // Reset to show color selection
     
-    // ✅ Reset timers
-    let newWhiteTime = gameTimeControl;
-    let newBlackTime = gameTimeControl;
+    // ✅ Reset timers - CRITICAL: Use fresh value from initial game settings
+    let newWhiteTime = 1800; // Default 30 minutes
+    let newBlackTime = 1800;
     
     if (backendGameId) {
       try {
         const game = await gamePersistenceAPI.getGame(backendGameId);
-        const dbTimeControl = (game as any).timeControl || gameTimeControl;
+        const dbTimeControl = (game as any).timeControl || 1800;
         newWhiteTime = dbTimeControl;
         newBlackTime = dbTimeControl;
-        debugLog.timerRestore('Timer values for rematch:', { timeControl: dbTimeControl });
+        debugLog.timerRestore('✅ Timer RESET for rematch:', { timeControl: dbTimeControl });
       } catch (error) {
-        debugLog.warn('Failed to fetch timer values, using default:', error);
+        debugLog.warn('Failed to fetch timer values, using default 1800s:', error);
       }
+    } else {
+      // No backend game yet, use default
+      newWhiteTime = 1800;
+      newBlackTime = 1800;
+      debugLog.timerRestore('✅ Timer RESET for new game:', { timeControl: 1800 });
     }
     
     setWhiteTimerSeconds(newWhiteTime);
     setBlackTimerSeconds(newBlackTime);
+    setGameTimeControl(newWhiteTime); // ✅ Update time control too
     setLastDoneBy(null);
     setLastDoneAt(null);
     
