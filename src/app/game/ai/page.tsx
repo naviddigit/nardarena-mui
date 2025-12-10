@@ -1818,38 +1818,27 @@ function GameAIPageContent() {
     setMoveCounter(0);
     setTurnStartTime(Date.now());
     
+    // ✅ Clear URL to allow new game creation
+    window.history.pushState({}, '', window.location.pathname);
+    
     // ✅ Reset player states - KEEP player colors for quick restart
     setCanUserPlay(true);
     setWaitingForOpponent(false);
     // ⛔ DO NOT reset playerColor - keep it for rematch!
     // setPlayerColor(null); // This was causing the dice to be disabled!
     
-    // ✅ Reset timers - CRITICAL: Use fresh value from initial game settings
-    let newWhiteTime = 1800; // Default 30 minutes
-    let newBlackTime = 1800;
-    
-    if (backendGameId) {
-      try {
-        const game = await gamePersistenceAPI.getGame(backendGameId);
-        const dbTimeControl = (game as any).timeControl || 1800;
-        newWhiteTime = dbTimeControl;
-        newBlackTime = dbTimeControl;
-        debugLog.timerRestore('✅ Timer RESET for rematch:', { timeControl: dbTimeControl });
-      } catch (error) {
-        debugLog.warn('Failed to fetch timer values, using default 1800s:', error);
-      }
-    } else {
-      // No backend game yet, use default
-      newWhiteTime = 1800;
-      newBlackTime = 1800;
-      debugLog.timerRestore('✅ Timer RESET for new game:', { timeControl: 1800 });
-    }
+    // ✅ Reset timers - CRITICAL: Use default value for new game
+    // Don't fetch from old backend game - it will have old timer values
+    const newWhiteTime = 1800; // Default 30 minutes
+    const newBlackTime = 1800;
     
     setWhiteTimerSeconds(newWhiteTime);
     setBlackTimerSeconds(newBlackTime);
     setGameTimeControl(newWhiteTime); // ✅ Update time control too
     setLastDoneBy(null);
     setLastDoneAt(null);
+    
+    debugLog.timerRestore('✅ Timer RESET for rematch:', { timeControl: newWhiteTime });
     
     // ✅ Reset all refs
     openingRollEndedRef.current = false;

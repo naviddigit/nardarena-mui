@@ -108,7 +108,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
           console.warn('⚠️ AI returned 0 moves! AI has no valid moves - auto-pressing Done...');
           
           // ⏱️ تاخیر کوچک (شبیه‌سازی فکر کردن AI)
-          const thinkDelay = getRandomDelay(500, 1500); // 0.5-1.5 seconds
+          const thinkDelay = getRandomDelay(200, 400); // 0.2-0.4 seconds (کمتر برای صرفه‌جویی در timer)
           console.log(`⏱️ AI thinking for ${thinkDelay}ms before passing turn...`);
           await new Promise(resolve => setTimeout(resolve, thinkDelay));
           
@@ -123,8 +123,8 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
         for (let i = 0; i < aiResult.moves.length; i++) {
           const move = aiResult.moves[i];
           
-          // ⏱️ وقفه تصادفی قبل از هر حرکت (بین حداقل و حداکثر)
-          const moveDelay = getRandomDelay();
+          // ⏱️ وقفه ثابت قبل از هر حرکت (کمتر برای صرفه‌جویی در timer)
+          const moveDelay = 150; // Fixed 150ms (کافی برای انیمیشن، سریع برای timer)
           console.log(`⏱️ Waiting ${moveDelay}ms before move ${i + 1}/${aiResult.moves.length}`);
           await new Promise(resolve => setTimeout(resolve, moveDelay));
           
@@ -136,7 +136,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
           }));
           
           // وقفه کوچک برای نمایش انتخاب
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise(resolve => setTimeout(resolve, 100));
           
           // اجرای حرکت locally
           console.log(`➡️ AI moving from ${move.from} to ${move.to}`);
@@ -184,7 +184,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
             });
 
             // Wait for hit animation
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 150));
 
             // STEP 2: Move our checker (triggers move animation)
             setGameState((prev) => {
@@ -255,7 +255,7 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
               };
             });
 
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 150));
           }
         }
 
@@ -286,8 +286,8 @@ export function useAIGameLogic({ gameState, setGameState, backendGameId, aiPlaye
             moveHistory: [],
           }));
 
-          // 6️⃣ ⏱️ وقفه تصادفی قبل از Done (بین حداقل و حداکثر)
-          const doneDelay = getRandomDelay();
+          // 6️⃣ ⏱️ وقفه کوتاه قبل از Done (ثابت برای صرفه‌جویی در timer)
+          const doneDelay = 200; // Fixed 200ms (کافی برای UX، سریع برای timer)
           console.log(`⏱️ Waiting ${doneDelay}ms before finishing turn (clicking Done)...`);
           await new Promise(resolve => setTimeout(resolve, doneDelay));
 
