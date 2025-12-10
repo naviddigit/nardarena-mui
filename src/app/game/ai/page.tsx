@@ -388,6 +388,15 @@ function GameAIPageContent() {
   const gameEndedRef = useRef(false); // Track if game has been ended to prevent duplicate calls
 
   // 🔌 WebSocket connection for real-time updates
+  // ⛔ TEMPORARILY DISABLED - Causing reconnect loop and system hang
+  // TODO: Fix reconnect loop before re-enabling
+  const socketConnected = false;
+  const socketReconnecting = false;
+  const socketError = null;
+  const emitSocketMove = () => {};
+  const emitSocketTimer = () => {};
+  
+  /*
   const {
     socket,
     isConnected: socketConnected,
@@ -428,6 +437,7 @@ function GameAIPageContent() {
       toast.warning('حریف اتصال خود را از دست داد');
     },
   });
+  */
 
   // Win text display function
   const showWinMessage = (message: string) => {
