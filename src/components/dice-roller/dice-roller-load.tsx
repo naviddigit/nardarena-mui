@@ -270,7 +270,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
 
     // Play dice roll sound
     try {
-      const audio = new Audio('/dice-main/assets/nc93322.mp3');
+      const audio = new Audio('/dice-main/assets/dice-rolls.m4a');
       audio.volume = 0.5;
       audio.play().catch(() => {});
     } catch (error) {
@@ -424,7 +424,7 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
 
     // Play dice roll sound
     try {
-      const audio = new Audio('/dice-main/assets/nc93322.mp3');
+      const audio = new Audio('/dice-main/assets/dice-rolls.m4a');
       audio.volume = 0.5;
       audio.play().catch(() => {});
     } catch (error) {

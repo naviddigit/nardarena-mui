@@ -2,11 +2,12 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 
 // ----------------------------------------------------------------------
 
-type SoundType = 'move' | 'turn';
+type SoundType = 'move' | 'turn' | 'roll';
 
 const SOUND_PATHS = {
-  move: '/dice-main/assets/stet.mp3',
-  turn: '/dice-main/assets/select.mp3',
+  move: '/dice-main/assets/stet.m4a',
+  turn: '/dice-main/assets/select.m4a',
+  roll: '/dice-main/assets/dice-rolls.m4a',
 };
 
 // Audio Pool برای پخش همزمان صداها
@@ -22,18 +23,23 @@ export function useSound() {
   const audioPoolsRef = useRef<Record<SoundType, HTMLAudioElement[]>>({
     move: [],
     turn: [],
+    roll: [],
   });
   
   const poolIndexRef = useRef<Record<SoundType, number>>({
     move: 0,
     turn: 0,
+    roll: 0,
   });
+
+  // تشخیص موبایل
+  const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   // Initialize audio pools
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // ساخت pool برای هر نوع صدا
-      (['move', 'turn'] as SoundType[]).forEach(type => {
+      (['move', 'turn', 'roll'] as SoundType[]).forEach(type => {
         audioPoolsRef.current[type] = [];
         for (let i = 0; i < AUDIO_POOL_SIZE; i++) {
           const audio = new Audio(SOUND_PATHS[type]);
@@ -85,6 +91,22 @@ export function useSound() {
   const playSound = useCallback(
     (type: SoundType) => {
       if (isMuted) return;
+
+      // Vibration برای موبایل
+      if (isMobile && 'vibrate' in navigator) {
+        // select sound = vibrate کوتاه
+        if (type === 'turn') {
+          navigator.vibrate(50);
+        }
+        // move sound = vibrate خیلی کوتاه  
+        else if (type === 'move') {
+          navigator.vibrate(30);
+        }
+        // roll sound = vibrate الگویی
+        else if (type === 'roll') {
+          navigator.vibrate([50, 30, 50]);
+        }
+      }
 
       const pool = audioPoolsRef.current[type];
       if (!pool || pool.length === 0) return;

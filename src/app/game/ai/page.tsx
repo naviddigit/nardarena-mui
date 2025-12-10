@@ -98,6 +98,9 @@ import { useTheme } from '@mui/material/styles';
 import { useColorScheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
+// 🐛 Debug configuration
+import { debugLog, perfLog } from 'src/config/debug.config';
+
 import { useGameState, type Player, type GamePhase } from 'src/hooks/use-game-state';
 import { calculateValidMoves } from 'src/hooks/game-logic/validation';
 import { useSound } from 'src/hooks/use-sound';
@@ -412,11 +415,11 @@ function GameAIPageContent() {
   };
 
   const handleShowStaticDice = () => {
-    console.log('🧪 DEV: Showing static dice [2, 5]');
+    debugLog.dice('DEV: Showing static dice [2, 5]');
     if (diceRollerRef.current?.showStaticDice) {
       diceRollerRef.current.showStaticDice([2, 5]);
     } else {
-      console.error('🧪 DEV: showStaticDice not available');
+      debugLog.error('DEV: showStaticDice not available');
     }
   };
 
@@ -445,7 +448,7 @@ function GameAIPageContent() {
           // ✅ Save backend game for dice restoration
           setBackendGame(game);
           
-          console.log('🎲 Dice restoration data:', {
+          debugLog.dice('Dice restoration data:', {
             currentDiceValues: game.currentDiceValues,
             whiteHasDiceRolled: game.whiteHasDiceRolled,
             blackHasDiceRolled: game.blackHasDiceRolled,
@@ -453,7 +456,7 @@ function GameAIPageContent() {
           });
           
           // 📋 Log complete gameState structure from backend
-          console.log('🎮 gameState:', {
+          debugLog.state('gameState:', {
             currentPlayer: game.gameState.currentPlayer,
             lastDoneBy: game.gameState.lastDoneBy || null,
             lastDoneAt: game.gameState.lastDoneAt || null,
@@ -523,7 +526,7 @@ function GameAIPageContent() {
             const isWhitePlayer = game.whitePlayerId === user.id;
             const isBlackPlayer = game.blackPlayerId === user.id;
             
-            console.log('👤 Player Check:', { userId: user.id, whitePlayerId: game.whitePlayerId, blackPlayerId: game.blackPlayerId, isWhitePlayer, isBlackPlayer });
+            debugLog.game('Player Check:', { userId: user.id, whitePlayerId: game.whitePlayerId, blackPlayerId: game.blackPlayerId, isWhitePlayer, isBlackPlayer });
             
             // ✅ Determine player color from actual game assignment
             const resumedPlayerColor = isWhitePlayer ? 'white' : 'black';
@@ -553,12 +556,12 @@ function GameAIPageContent() {
               // This handles refresh during AI's turn - AI finished but page shows moving
               // ALSO: Clear diceValues to allow fresh roll
               if (game.gameState.turnCompleted === true) {
-                console.log('⚠️ turnCompleted=true detected, forcing phase to waiting and clearing diceValues (was:', restoredPhase, ')');
+                debugLog.state('turnCompleted=true detected, forcing phase to waiting and clearing diceValues (was:', restoredPhase, ')');
                 restoredPhase = 'waiting';
                 game.gameState.diceValues = []; // ✅ Clear old dice to allow new roll
               }
               
-              console.log('🔍 Phase restoration:', {
+              debugLog.state('Phase restoration:', {
                 fromBackend: game.gameState.phase,
                 turnCompleted: game.gameState.turnCompleted,
                 finalPhase: restoredPhase,
@@ -646,7 +649,7 @@ function GameAIPageContent() {
                 setLastDoneAt(lastDoneAtFromState);
               }
               
-              console.log('⏱️ Timers restored from backend (backend calculated elapsed):', {
+              debugLog.timerRestore('Timers restored from backend (backend calculated elapsed):', {
                 white: whiteTime,
                 black: blackTime,
                 whiteFromDB: whiteTimeDB,
@@ -666,7 +669,7 @@ function GameAIPageContent() {
                 setWaitingForOpponent(!canPlay);
                 
                 // ⏱️ Set lastDoneBy and lastDoneAt for timer logic
-                console.log('⏱️ [Timer] lastDoneBy from backend:', lastDoneByBackend, 'currentPlayer:', currentPlayer);
+                debugLog.timerSync('[Timer] lastDoneBy from backend:', lastDoneByBackend, 'currentPlayer:', currentPlayer);
                 
                 if (lastDoneByBackend) {
                   setLastDoneBy(lastDoneByBackend.toLowerCase() as 'white' | 'black');
@@ -766,14 +769,14 @@ function GameAIPageContent() {
         // ✅ NOW END TURN
         const response = await gamePersistenceAPI.axios.post(`/game/${backendGameId}/end-turn`);
         
-        console.log('📥 Backend endTurn response:', JSON.stringify(response.data, null, 2));
+        debugLog.backend('Backend endTurn response:', JSON.stringify(response.data, null, 2));
         
         // ⏱️ SYNC TIMER after Done button (server calculates based on lastDoneAt)
         const updatedGame = await gamePersistenceAPI.getGame(backendGameId);
         const whiteTime = (updatedGame as any).whiteTimeRemaining || 0;
         const blackTime = (updatedGame as any).blackTimeRemaining || 0;
         
-        console.log('⏱️ [Timer Sync after Done]:', { whiteTime, blackTime });
+        debugLog.timerSync('[Timer Sync after Done]:', { whiteTime, blackTime });
         
         setWhiteTimerSeconds(whiteTime);
         setBlackTimerSeconds(blackTime);
@@ -795,23 +798,23 @@ function GameAIPageContent() {
         const nextRoll = response.data.nextRoll;
         const nextPlayer = response.data.nextPlayer;
         
-        console.log(`🎯 currentPlayer BEFORE: ${currentPlayer}, nextPlayer FROM BACKEND: ${nextPlayer}`);
-        console.log(`🎲 nextRoll FROM BACKEND:`, JSON.stringify(nextRoll));
+        debugLog.dice(`currentPlayer BEFORE: ${currentPlayer}, nextPlayer FROM BACKEND: ${nextPlayer}`);
+        debugLog.dice(`nextRoll FROM BACKEND:`, JSON.stringify(nextRoll));
         
         if (!nextRoll || !nextRoll[nextPlayer] || nextRoll[nextPlayer].length === 0) {
-          console.error('❌ Server did NOT return nextRoll! Cannot end turn.');
-          console.error('Response:', response.data);
+          debugLog.error('Server did NOT return nextRoll! Cannot end turn.');
+          debugLog.error('Response:', response.data);
           toast.error('Server error: Next dice not generated. Please try again.');
           return; // ⛔ STOP - Don't switch turns!
         }
         
         // ✅ Success - Server returned nextRoll
-        console.log(`✅ nextRoll:`, nextRoll);
+        debugLog.dice(`nextRoll:`, nextRoll);
         
         // ⏱️ Update lastDoneBy and lastDoneAt (current player just pressed Done)
         setLastDoneBy(currentPlayer);
         setLastDoneAt(new Date().toISOString());
-        console.log(`⏱️ [Timer] Updated lastDoneBy to: ${currentPlayer}`);
+        debugLog.timerSync(`[Timer] Updated lastDoneBy to: ${currentPlayer}`);
         
         // ✅ CRITICAL: Set canUserPlay based on WHO pressed Done
         // If AI pressed Done → nextPlayer is human → canUserPlay = true
@@ -826,7 +829,7 @@ function GameAIPageContent() {
         setIsWaitingForBackend(false);
         autoDoneTriggeredRef.current = false; // Allow auto-done for next turn
         
-        console.log('🔓 All locks RESET after end-turn');
+        debugLog.state('All locks RESET after end-turn');
         
         setGameState(prev => ({
           ...prev,
@@ -842,7 +845,7 @@ function GameAIPageContent() {
         setTurnStartTime(Date.now());
         
       } catch (error) {
-        console.error('Failed to end turn:', error);
+        debugLog.error('Failed to end turn:', error);
         const errorMsg = error instanceof Error ? error.message : 'Failed to end turn';
         toast.error(errorMsg);
       }
@@ -862,7 +865,7 @@ function GameAIPageContent() {
     playSound,
     onTurnComplete: async () => {
       // ⏱️ CRITICAL: Sync timers from backend after AI finishes turn
-      console.log('⏱️ [AI Turn Complete] Syncing timers from backend...');
+      debugLog.timerSync('[AI Turn Complete] Syncing timers from backend...');
       
       if (backendGameId) {
         try {
@@ -877,7 +880,7 @@ function GameAIPageContent() {
           const lastDoneByBackend = updatedGame.gameState?.lastDoneBy;
           if (lastDoneByBackend) {
             setLastDoneBy(lastDoneByBackend.toLowerCase() as 'white' | 'black');
-            console.log('⏱️ [AI Turn Complete] Updated lastDoneBy:', lastDoneByBackend);
+            debugLog.timerSync('[AI Turn Complete] Updated lastDoneBy:', lastDoneByBackend);
           }
           
           // ✅ CRITICAL: Use backend's lastDoneAt (NOT client NOW)
@@ -894,17 +897,17 @@ function GameAIPageContent() {
           const lastDoneAtBackend = updatedGame.gameState?.lastDoneAt;
           if (lastDoneAtBackend) {
             setLastDoneAt(lastDoneAtBackend);
-            console.log('⏱️ [AI Turn Complete] Using backend lastDoneAt (prevents network delay subtraction)');
+            debugLog.timerSync('[AI Turn Complete] Using backend lastDoneAt (prevents network delay subtraction)');
           }
           
-          console.log('⏱️ [AI Turn Complete] Timers synced from backend:', {
+          debugLog.timerSync('[AI Turn Complete] Timers synced from backend:', {
             white: updatedGame.whiteTimeRemaining,
             black: updatedGame.blackTimeRemaining,
             lastDoneBy: lastDoneByBackend,
             lastDoneAt: lastDoneAtBackend,
           });
         } catch (error) {
-          console.error('❌ Failed to sync timers after AI turn:', error);
+          debugLog.error('Failed to sync timers after AI turn:', error);
         }
       }
     },
@@ -923,7 +926,7 @@ function GameAIPageContent() {
 
   // 🐛 Debug canRoll
   useEffect(() => {
-    console.log('🎯 canRoll status:', {
+    debugLog.dice('canRoll status:', {
       canRoll,
       canRollReason,
       gamePhase: gameState.gamePhase,
@@ -961,7 +964,7 @@ function GameAIPageContent() {
       backendGameId;
 
     if (shouldAutoDone) {
-      console.log('⚠️ Player is BLOCKED - has dice but no valid moves - auto-pressing Done... (gamePhase:', gameState.gamePhase, ')');
+      debugLog.state('Player is BLOCKED - has dice but no valid moves - auto-pressing Done... (gamePhase:', gameState.gamePhase, ')');
       
       // Set lock to prevent multiple triggers
       autoDoneTriggeredRef.current = true;
@@ -978,12 +981,12 @@ function GameAIPageContent() {
       
       // Delay to let player see they're blocked
       autoDoneTimerRef.current = setTimeout(async () => {
-        console.log('🎯 Auto-pressing Done (blocked - no valid moves)');
+        debugLog.state('Auto-pressing Done (blocked - no valid moves)');
         try {
           await handleDone();
-          console.log('✅ Auto-done completed successfully');
+          debugLog.state('Auto-done completed successfully');
         } catch (error) {
-          console.error('❌ Auto-done failed:', error);
+          debugLog.error('Auto-done failed:', error);
           // Reset lock on error
           autoDoneTriggeredRef.current = false;
         }
@@ -1028,7 +1031,7 @@ function GameAIPageContent() {
 
     const handleVisibilityChange = async () => {
       if (!document.hidden) {
-        console.log('👁️ [Visibility] Page visible - syncing timer from backend...');
+        debugLog.visibility('[Visibility] Page visible - syncing timer from backend...');
         
         try {
           // ✅ CRITICAL: Read from backend (server is source of truth)
@@ -1036,7 +1039,7 @@ function GameAIPageContent() {
           
           // ⚠️ Check if game ended while tab was hidden
           if (updatedGame.status === 'COMPLETED' || updatedGame.winner) {
-            console.log('⚠️ [Visibility] Game completed - showing result dialog');
+            debugLog.visibility('[Visibility] Game completed - showing result dialog');
             
             const gameWinner = updatedGame.winner?.toLowerCase() as 'white' | 'black';
             if (gameWinner) {
@@ -1062,7 +1065,7 @@ function GameAIPageContent() {
           // We should NEVER subtract elapsed time again on frontend!
           // Just use backend values directly (they are already correct)
           
-          console.log('👁️ [Visibility] Using backend timer values (already includes elapsed time):', {
+          debugLog.visibility('[Visibility] Using backend timer values (already includes elapsed time):', {
             white: whiteTimeDB,
             black: blackTimeDB,
             lastDoneBy: lastDoneByBackend,
@@ -1081,7 +1084,7 @@ function GameAIPageContent() {
             setLastDoneAt(lastDoneAtBackend);
           }
         } catch (error) {
-          console.error('❌ Failed to sync timer on visibility change:', error);
+          debugLog.error('Failed to sync timer on visibility change:', error);
         }
       }
     };
@@ -1096,7 +1099,7 @@ function GameAIPageContent() {
   // ⏱️ LOCAL TIMER COUNTDOWN - Update timer state every second
   // ✅ Uses timestamp-based system to work even when page is hidden/minimized
   useEffect(() => {
-    console.log('⏱️ [Timer Countdown] useEffect triggered:', {
+    debugLog.timerCountdown('[Timer Countdown] useEffect triggered:', {
       lastDoneBy,
       phase: gameState.gamePhase,
       winner,
@@ -1117,7 +1120,7 @@ function GameAIPageContent() {
                          !winner;
 
     if (!whiteIsActive && !blackIsActive) {
-      console.log('⏱️ [Timer Countdown] No active timer', {
+      debugLog.timerCountdown('[Timer Countdown] No active timer', {
         lastDoneBy,
         whiteWouldBe: lastDoneBy === 'black',
         blackWouldBe: lastDoneBy === 'white',
@@ -1134,7 +1137,7 @@ function GameAIPageContent() {
     // If AI is playing and human timer would be active, freeze it
     if ((isExecutingAIMove || isAIMovingPhase) && 
         ((whiteIsActive && humanPlayerColor === 'white') || (blackIsActive && humanPlayerColor === 'black'))) {
-      console.log('⏱️ [Timer Countdown] Frozen - Human timer frozen during AI turn', {
+      debugLog.timerCountdown('[Timer Countdown] Frozen - Human timer frozen during AI turn', {
         isExecutingAIMove,
         isAIMovingPhase,
         humanPlayerColor,
@@ -1142,7 +1145,7 @@ function GameAIPageContent() {
       return;
     }
 
-    console.log('⏱️ [Timer Countdown] Starting interval:', {
+    debugLog.timerCountdown('[Timer Countdown] Starting interval:', {
       whiteIsActive,
       blackIsActive,
       whiteTime: whiteTimerSeconds,
@@ -1158,7 +1161,7 @@ function GameAIPageContent() {
           
           // Check timeout - VERIFY WITH BACKEND
           if (newValue === 0 && !winner && !timeoutVerifiedRef.current.white) {
-              console.log('⏱️ [WHITE] TIME UP! Verifying with backend...');
+              debugLog.timeout('[WHITE] TIME UP! Verifying with backend...');
               timeoutVerifiedRef.current.white = true; // Mark as verified to prevent multiple calls
               
               // ✅ Verify timeout with backend (server is source of truth)
@@ -1168,20 +1171,20 @@ function GameAIPageContent() {
                     const whiteTimeBackend = updatedGame.whiteTimeRemaining;
                     const blackTimeBackend = updatedGame.blackTimeRemaining;
                     
-                    console.log('⏱️ [Timeout Verification] Backend times:', {
+                    debugLog.timeout('[Timeout Verification] Backend times:', {
                       white: whiteTimeBackend,
                       black: blackTimeBackend,
                     });
                     
                     // Only trigger timeout if backend confirms time is up
                     if (whiteTimeBackend <= 0) {
-                      console.log('✅ Backend confirmed WHITE timeout');
+                      debugLog.timeout('Backend confirmed WHITE timeout');
                       const setsToWin = Math.ceil(maxSets / 2);
                       
                       // ✅ Award enough sets to black to win the match
                       setScores(s => {
                         const blackNewScore = Math.max(s.black, setsToWin);
-                        console.log('🏆 Timeout victory:', {
+                        debugLog.timeout('Timeout victory:', {
                           winner: 'black',
                           reason: 'WHITE timeout',
                           finalScore: { white: s.white, black: blackNewScore },
@@ -1202,19 +1205,19 @@ function GameAIPageContent() {
                           blackSetsWon: currentScores.black,
                           endReason: 'TIMEOUT',
                           finalGameState: gameState,
-                        }).then(() => console.log('✅ White timeout recorded'))
-                          .catch(err => console.error('❌ Failed to record timeout:', err));
+                        }).then(() => debugLog.timeout('White timeout recorded'))
+                          .catch(err => debugLog.error('Failed to record timeout:', err));
                         
                         return currentScores; // Return unchanged to not trigger re-render
                       });
                     } else {
-                      console.log('⚠️ Backend says time NOT up yet - syncing timer');
+                      debugLog.timeout('Backend says time NOT up yet - syncing timer');
                       setWhiteTimerSeconds(whiteTimeBackend);
                       timeoutVerifiedRef.current.white = false; // Reset flag if backend says not timeout
                     }
                   })
                   .catch(err => {
-                    console.error('❌ Failed to verify timeout:', err);
+                    debugLog.error('Failed to verify timeout:', err);
                     timeoutVerifiedRef.current.white = false; // Reset flag on error
                   });
               }
@@ -1230,7 +1233,7 @@ function GameAIPageContent() {
             
             // Check timeout - VERIFY WITH BACKEND
             if (newValue === 0 && !winner && !timeoutVerifiedRef.current.black) {
-              console.log('⏱️ [BLACK] TIME UP! Verifying with backend...');
+              debugLog.timeout('[BLACK] TIME UP! Verifying with backend...');
               timeoutVerifiedRef.current.black = true; // Mark as verified to prevent multiple calls
               
               // ✅ Verify timeout with backend (server is source of truth)
@@ -1240,20 +1243,20 @@ function GameAIPageContent() {
                     const whiteTimeBackend = updatedGame.whiteTimeRemaining;
                     const blackTimeBackend = updatedGame.blackTimeRemaining;
                     
-                    console.log('⏱️ [Timeout Verification] Backend times:', {
+                    debugLog.timeout('[Timeout Verification] Backend times:', {
                       white: whiteTimeBackend,
                       black: blackTimeBackend,
                     });
                     
                     // Only trigger timeout if backend confirms time is up
                     if (blackTimeBackend <= 0) {
-                      console.log('✅ Backend confirmed BLACK timeout');
+                      debugLog.timeout('Backend confirmed BLACK timeout');
                       const setsToWin = Math.ceil(maxSets / 2);
                       
                       // ✅ Award enough sets to white to win the match
                       setScores(s => {
                         const whiteNewScore = Math.max(s.white, setsToWin);
-                        console.log('🏆 Timeout victory:', {
+                        debugLog.timeout('Timeout victory:', {
                           winner: 'white',
                           reason: 'BLACK timeout',
                           finalScore: { white: whiteNewScore, black: s.black },
@@ -1274,19 +1277,19 @@ function GameAIPageContent() {
                           blackSetsWon: currentScores.black,
                           endReason: 'TIMEOUT',
                           finalGameState: gameState,
-                        }).then(() => console.log('✅ Black timeout recorded'))
-                          .catch(err => console.error('❌ Failed to record timeout:', err));
+                        }).then(() => debugLog.timeout('Black timeout recorded'))
+                          .catch(err => debugLog.error('Failed to record timeout:', err));
                         
                         return currentScores; // Return unchanged to not trigger re-render
                       });
                     } else {
-                      console.log('⚠️ Backend says time NOT up yet - syncing timer');
+                      debugLog.timeout('Backend says time NOT up yet - syncing timer');
                       setBlackTimerSeconds(blackTimeBackend);
                       timeoutVerifiedRef.current.black = false; // Reset flag if backend says not timeout
                     }
                   })
                   .catch(err => {
-                    console.error('❌ Failed to verify timeout:', err);
+                    debugLog.error('Failed to verify timeout:', err);
                     timeoutVerifiedRef.current.black = false; // Reset flag on error
                   });
               }
@@ -1340,7 +1343,7 @@ function GameAIPageContent() {
     originalHandleBarClick();
   }, [gameState.currentPlayer, gameState.boardState.bar, playerColor, originalHandleBarClick]);
 
-  // Start timer when real game begins (after opening roll)
+  // 🔊 ترکیب شده: Sound Effects (Turn + Move)
   useEffect(() => {
     if (!playerColor || winner || gameState.gamePhase === 'opening') {
       return;
@@ -1360,10 +1363,8 @@ function GameAIPageContent() {
     else if (gameState.gamePhase !== 'waiting') {
       lastTurnPlayerRef.current = null;
     }
-  }, [playerColor, gameState.currentPlayer, gameState.gamePhase, winner, playSound]);
 
-  // Play move sound when move history changes
-  useEffect(() => {
+    // Play move sound when move history changes
     if (gameState.moveHistory.length > lastMoveCountRef.current) {
       playSound('move');
       lastMoveCountRef.current = gameState.moveHistory.length;
@@ -1371,7 +1372,7 @@ function GameAIPageContent() {
       // Reset counter when game resets
       lastMoveCountRef.current = 0;
     }
-  }, [gameState.moveHistory.length, playSound]);
+  }, [playerColor, gameState.currentPlayer, gameState.gamePhase, gameState.moveHistory.length, winner, playSound]);
 
   // ✅ Stop rolling when gamePhase changes OR when dice values are set
   useEffect(() => {
@@ -1395,7 +1396,7 @@ function GameAIPageContent() {
       // ✅ SAFETY: Force reset after 5 seconds (in case animation callback never fires)
       const safetyTimeout = setTimeout(() => {
         if (isRolling) {
-          console.warn('⚠️ Safety timeout: Force resetting isRolling after 5s');
+          debugLog.warn('Safety timeout: Force resetting isRolling after 5s');
           isRollingLockRef.current = false;
           setIsRolling(false);
           setIsWaitingForBackend(false);
@@ -1430,7 +1431,7 @@ function GameAIPageContent() {
         // 1 set: need 1 | 3 sets: need 2 | 5 sets: need 3 | 9 sets: need 5
         const setsToWin = Math.ceil(maxSets / 2);
         
-        console.log('🏆 Set winner check:', {
+        debugLog.setWinner('Set winner check:', {
           currentSetWinner,
           newScore,
           maxSets,
@@ -1445,7 +1446,7 @@ function GameAIPageContent() {
           setResultDialogOpen(true);
           playSound('move');
           
-          console.log(`🎉 MATCH WON by ${currentSetWinner}! Won ${newScore[currentSetWinner]} sets out of ${maxSets}`);
+          debugLog.matchWinner(`MATCH WON by ${currentSetWinner}! Won ${newScore[currentSetWinner]} sets out of ${maxSets}`);
         } else {
           // Start next set after delay
           
@@ -1481,9 +1482,9 @@ function GameAIPageContent() {
                   const dbTimeControl = (game as any).timeControl || gameTimeControl;
                   newWhiteTime = dbTimeControl;
                   newBlackTime = dbTimeControl;
-                  console.log('⏱️ Timer reset for new set:', { timeControl: dbTimeControl });
+                  debugLog.timerRestore('Timer reset for new set:', { timeControl: dbTimeControl });
                 } catch (error) {
-                  console.warn('⚠️ Failed to fetch timer values, using state:', error);
+                  debugLog.warn('Failed to fetch timer values, using state:', error);
                 }
               }
               
@@ -1514,8 +1515,8 @@ function GameAIPageContent() {
     let actualResults = results;
     
     if (backendDiceRef.current) {
-      console.log('🎲 Physics showed:', results.map(r => r.value));
-      console.log('✅ Using backend dice:', backendDiceRef.current);
+      debugLog.dice('Physics showed:', results.map(r => r.value));
+      debugLog.dice('Using backend dice:', backendDiceRef.current);
       
       actualResults = backendDiceRef.current.map(value => ({ value, type: 'd6' }));
       
@@ -1530,20 +1531,20 @@ function GameAIPageContent() {
     // but we DON'T need to wait for it - dice are already rolled visually
     if (gameState.gamePhase !== 'opening') {
       // Just log the dice values - backend doesn't need to validate them
-      console.log('Dice rolled:', actualResults.map(r => r.value));
+      debugLog.dice('Dice rolled:', actualResults.map(r => r.value));
     }
   };
 
   const triggerDiceRoll = async () => {
-    console.log('🎲 triggerDiceRoll called');
+    debugLog.dice('🎲 triggerDiceRoll called');
     
     // ✅ CRITICAL: Check lock first (synchronous, prevents race condition)
     if (isRollingLockRef.current) {
-      console.log('⛔ Roll already in progress (locked)');
+      debugLog.dice('⛔ Roll already in progress (locked)');
       return;
     }
     
-    console.log('📊 State:', {
+    debugLog.state('📊 State:', {
       gamePhase: gameState.gamePhase,
       currentPlayer: gameState.currentPlayer,
       playerColor,
@@ -1597,7 +1598,7 @@ function GameAIPageContent() {
       if (backendGameId) {
         try {
           const diceResponse = await gamePersistenceAPI.rollDice(backendGameId);
-          console.log('🎲 Opening roll from backend:', diceResponse);
+          debugLog.opening('Opening roll from backend:', diceResponse);
           
           // ✅ Save backend dice to ref (only 1 die for opening)
           backendDiceRef.current = diceResponse.dice;
@@ -1638,7 +1639,7 @@ function GameAIPageContent() {
     
     // Prevent rolling if already rolling or waiting (only in normal gameplay)
     if (isRolling || isWaitingForBackend) {
-      console.log('⛔ Roll blocked by state:', { isRolling, isWaitingForBackend });
+      debugLog.dice('Roll blocked by state:', { isRolling, isWaitingForBackend });
       return;
     }
 
@@ -1669,11 +1670,11 @@ function GameAIPageContent() {
 
     try {
       const diceResponse = await gamePersistenceAPI.rollDice(backendGameId);
-      console.log('🎲 xxxxxxxxxxxxxxxxxxxxxxx:', diceResponse);
+      debugLog.dice('Dice response:', diceResponse);
       
       // ✅ CRITICAL: Save backend dice to ref (for anti-cheat)
       backendDiceRef.current = diceResponse.dice;
-      console.log('🎲 Backend dice saved:', diceResponse.dice);
+      debugLog.dice('Backend dice saved:', diceResponse.dice);
 
       // Show dice animation with backend values
       if (diceRollerRef.current?.setDiceValues) {
@@ -1728,7 +1729,7 @@ function GameAIPageContent() {
 
 
   const handleRematch = useCallback(async () => {
-    console.log('🔄 Starting rematch - resetting all game state...');
+    debugLog.game('Starting rematch - resetting all game state...');
     
     // Close result dialog
     setResultDialogOpen(false);
@@ -1762,9 +1763,9 @@ function GameAIPageContent() {
         const dbTimeControl = (game as any).timeControl || gameTimeControl;
         newWhiteTime = dbTimeControl;
         newBlackTime = dbTimeControl;
-        console.log('⏱️ Timer values for rematch:', { timeControl: dbTimeControl });
+        debugLog.timerRestore('Timer values for rematch:', { timeControl: dbTimeControl });
       } catch (error) {
-        console.warn('⚠️ Failed to fetch timer values, using default:', error);
+        debugLog.warn('Failed to fetch timer values, using default:', error);
       }
     }
     
@@ -1792,10 +1793,10 @@ function GameAIPageContent() {
     // ✅ Reset game state to initial (this resets board, phase, etc.)
     if (resetGame) {
       resetGame();
-      console.log('✅ Game state reset to initial');
+      debugLog.game('Game state reset to initial');
     }
     
-    console.log('✅ Rematch ready - awaiting color selection');
+    debugLog.game('Rematch ready - awaiting color selection');
   }, [resetGame, gameTimeControl, backendGameId]);
 
   const handleBackToDashboard = () => {
@@ -1838,7 +1839,7 @@ function GameAIPageContent() {
           setWhiteTimerSeconds(dbTimeControl);
           setBlackTimerSeconds(dbTimeControl);
           
-          console.log('🎮 Game created with timeControl:', dbTimeControl);
+          debugLog.game('Game created with timeControl:', dbTimeControl);
           
           // Update URL with game ID
           const newUrl = `${window.location.pathname}?game-id=${game.id}`;
@@ -1869,14 +1870,14 @@ function GameAIPageContent() {
       
       openingRollEndedRef.current = true;
       
-      console.log('🎯 Opening roll conditions met, saving to backend...');
+      debugLog.opening('🎯 Opening roll conditions met, saving to backend...');
       
       const saveOpeningRoll = async () => {
         try {
           // ✅ Determine winner from opening roll (HIGHER dice wins in Nard!)
           const openingWinner: Player = gameState.openingRoll.white! > gameState.openingRoll.black! ? 'white' : 'black';
-          console.log(`🎯 Opening roll: white=${gameState.openingRoll.white}, black=${gameState.openingRoll.black}, winner=${openingWinner}`);
-          console.log(`📊 In Nard, HIGHER dice wins! Winner: ${openingWinner}`);
+          debugLog.openingWinner(`🎯 Opening roll: white=${gameState.openingRoll.white}, black=${gameState.openingRoll.black}, winner=${openingWinner}`);
+          debugLog.game(`📊 In Nard, HIGHER dice wins! Winner: ${openingWinner}`);
           
           const updatedGameState = {
             openingRoll: gameState.openingRoll,
@@ -1888,7 +1889,7 @@ function GameAIPageContent() {
             diceValues: [],
           };
           
-          console.log('📤 Sending opening roll to backend...');
+          debugLog.backend('📤 Sending opening roll to backend...');
           
           // ✅ Save opening roll AND generate dice for winner in one call
           const response = await gamePersistenceAPI.axios.post(
@@ -1896,24 +1897,24 @@ function GameAIPageContent() {
             { winner: openingWinner }
           );
           
-          console.log('✅ Opening roll completed, dice generated for winner');
-          console.log('📋 Full response:', response.data);
-          console.log('📋 nextRoll:', response.data.nextRoll);
+          debugLog.opening('Opening roll completed, dice generated for winner');
+          debugLog.opening('Full response:', response.data);
+          debugLog.opening('nextRoll:', response.data.nextRoll);
           
           // ✅ CRITICAL: Verify nextRoll exists before saving
           if (!response.data.nextRoll) {
-            console.error('❌ Backend did not return nextRoll!');
+            debugLog.error('Backend did not return nextRoll!');
             throw new Error('Backend did not generate dice for winner');
           }
           
-          console.log('💾 Saving nextRoll to state:', response.data.nextRoll);
+          debugLog.opening('Saving nextRoll to state:', response.data.nextRoll);
           
           // ⏱️ Set lastDoneBy and lastDoneAt to opposite of winner (so winner's timer starts)
           // If white won opening → lastDoneBy = 'black' → white timer counts
           const loser = openingWinner === 'white' ? 'black' : 'white';
           setLastDoneBy(loser);
           setLastDoneAt(new Date().toISOString());
-          console.log(`⏱️ [Timer] Opening completed - set lastDoneBy to ${loser} (so ${openingWinner} timer starts)`);
+          debugLog.timerSync(`[Timer] Opening completed - set lastDoneBy to ${loser} (so ${openingWinner} timer starts)`);
           
           setGameState(prev => ({
             ...prev,
@@ -1924,8 +1925,8 @@ function GameAIPageContent() {
           }));
           
         } catch (error) {
-          console.error('❌ Error saving opening roll:', error);
-          console.error('❌ Error details:', error.response?.data || error.message);
+          debugLog.error('Error saving opening roll:', error);
+          debugLog.error('Error details:', error.response?.data || error.message);
           
           // ✅ Show user-friendly error message
           const errorMsg = error.response?.data?.message || 'System error occurred. Please try again.';
@@ -1956,7 +1957,7 @@ function GameAIPageContent() {
             finalGameState: gameState.boardState,
           });
           
-          console.log('✅ Game ended successfully:', { 
+          debugLog.results('Game ended successfully:', { 
             winner, 
             reason: timeoutWinner ? 'TIMEOUT' : 'NORMAL_WIN', 
             scores 
@@ -1965,7 +1966,7 @@ function GameAIPageContent() {
           // ✅ Silently ignore "already ended" errors (handled in API layer)
           // Only log unexpected errors
           if (error instanceof Error && !error.message.includes('already ended')) {
-            console.error('❌ Failed to end game:', error.message);
+            debugLog.error('Failed to end game:', error.message);
           }
         }
       };
@@ -1993,8 +1994,9 @@ function GameAIPageContent() {
     }
   }, [gameState.boardState.off.white, gameState.boardState.off.black, gameState.gamePhase]);
 
-  // Clear dice when opening roll is a tie (shouldClearDice flag)
+  // 🎲 ترکیب شده: Dice Clear Management (Tie + Opening Winner)
   useEffect(() => {
+    // Clear dice when opening roll is a tie (shouldClearDice flag)
     if (gameState.shouldClearDice && diceRollerRef.current?.clearDice) {
       diceRollerRef.current.clearDice();
       
@@ -2011,11 +2013,8 @@ function GameAIPageContent() {
         shouldClearDice: false,
       }));
     }
-  }, [gameState.shouldClearDice, setGameState]);
 
-  // ⚠️ CRITICAL: Clear dice when opening roll completes (winner determined)
-  useEffect(() => {
-    // If we just left opening phase and have a current player set
+    // ⚠️ CRITICAL: Clear dice when opening roll completes (winner determined)
     if (
       gameState.gamePhase === 'waiting' &&
       gameState.openingRoll.white !== null &&
@@ -2025,18 +2024,18 @@ function GameAIPageContent() {
       diceRollerRef.current?.clearDice
     ) {
       // Clear opening roll dice from board
-      console.log('🧹 Clearing opening roll dice - winner must roll new dice');
+      debugLog.opening('Clearing opening roll dice - winner must roll new dice');
       diceRollerRef.current.clearDice();
       
       // ✅ CRITICAL: Wait for clear to complete, then clear again to ensure scene is empty
       setTimeout(() => {
         if (diceRollerRef.current?.clearDice) {
-          console.log('🧹 Double-clear to ensure no leftover dice');
+          debugLog.opening('Double-clear to ensure no leftover dice');
           diceRollerRef.current.clearDice();
         }
       }, 200);
     }
-  }, [gameState.gamePhase, gameState.openingRoll, gameState.diceValues.length]);
+  }, [gameState.shouldClearDice, gameState.gamePhase, gameState.openingRoll, gameState.diceValues.length, setGameState]);
 
   // Auto-roll for AI in opening phase using modular hook
   useAIOpeningRoll({
@@ -2334,27 +2333,27 @@ function GameAIPageContent() {
         isMuted={isMuted}
         onToggleMute={toggleMute}
         onShare={() => {
-          console.log('🔗 Share clicked, backendGameId:', backendGameId);
+          debugLog.share('Share clicked, backendGameId:', backendGameId);
           const shareUrl = `${window.location.origin}${window.location.pathname}?game-id=${backendGameId}`;
-          console.log('📋 Share URL:', shareUrl);
+          debugLog.share('Share URL:', shareUrl);
           
           if (navigator.share) {
-            console.log('✅ Using native share API');
+            debugLog.share('Using native share API');
             navigator.share({
               title: 'Nard Arena - AI Game',
               text: 'Watch me play backgammon against AI!',
               url: shareUrl,
-            }).catch((error) => console.log('❌ Share failed:', error));
+            }).catch((error) => debugLog.error('Share failed:', error));
           } else {
-            console.log('📋 Using clipboard API');
+            debugLog.share('Using clipboard API');
             navigator.clipboard.writeText(shareUrl)
               .then(() => {
-                console.log('✅ Copied to clipboard');
+                debugLog.share('Copied to clipboard');
                 setShareToast(true);
                 setTimeout(() => setShareToast(false), 3000);
               })
               .catch((error) => {
-                console.error('❌ Clipboard write failed:', error);
+                debugLog.error('Clipboard write failed:', error);
               });
           }
         }}

@@ -8,6 +8,7 @@ import Card from '@mui/material/Card';
 import { LayoutGroup, AnimatePresence, m } from 'framer-motion';
 
 import { varAlpha } from 'src/theme/styles';
+import { useAnimationConfig } from 'src/utils/animation-config';
 import { useBoardTheme } from 'src/contexts/board-theme-context';
 
 import { Checker } from './checker';
@@ -395,7 +396,7 @@ export function BackgammonBoard({
         )}
 
         {/* Render checkers - max 5 visible with count label if more */}
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
         {(() => {
           const point = boardState.points[pointIndex];
           // ✅ Safety check: ensure point and checkers array exist
@@ -629,6 +630,8 @@ export function BackgammonBoard({
     return checkers;
   }, [boardState?.bar?.white, boardState?.bar?.black, checkerIds.bar.white, checkerIds.bar.black, pointWidth, pointHeight, isMobile, onBarClick, playablePoints, currentPlayer, validMoves, selectedPoint, onPointClick]);
 
+  const animConfig = useAnimationConfig();
+
   if (!mounted) {
     return <SplashScreen />;
   }
@@ -645,7 +648,7 @@ export function BackgammonBoard({
       transition={{ 
         opacity: { duration: 0.3 },
         scale: { duration: 0.3 },
-        rotate: { duration: 0.6, ease: 'easeInOut' }
+        rotate: animConfig.board
       }}
       sx={{ display: 'inline-block' }}
     >

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import type { BoxProps } from '@mui/material/Box';
 
 import { m, AnimatePresence } from 'framer-motion';
@@ -7,6 +8,66 @@ import { m, AnimatePresence } from 'framer-motion';
 import Box from '@mui/material/Box';
 
 import { varAlpha } from 'src/theme/styles';
+
+// ----------------------------------------------------------------------
+
+/**
+ * Render dots for dice face (1-6)
+ */
+function renderDiceDots(value: number, size: number): JSX.Element[] {
+  const dotSize = size * 0.2;
+  const positions: Record<number, Array<{ x: number; y: number }>> = {
+    1: [{ x: 50, y: 50 }],
+    2: [
+      { x: 30, y: 30 },
+      { x: 70, y: 70 },
+    ],
+    3: [
+      { x: 30, y: 30 },
+      { x: 50, y: 50 },
+      { x: 70, y: 70 },
+    ],
+    4: [
+      { x: 30, y: 30 },
+      { x: 70, y: 30 },
+      { x: 30, y: 70 },
+      { x: 70, y: 70 },
+    ],
+    5: [
+      { x: 30, y: 30 },
+      { x: 70, y: 30 },
+      { x: 50, y: 50 },
+      { x: 30, y: 70 },
+      { x: 70, y: 70 },
+    ],
+    6: [
+      { x: 30, y: 25 },
+      { x: 70, y: 25 },
+      { x: 30, y: 50 },
+      { x: 70, y: 50 },
+      { x: 30, y: 75 },
+      { x: 70, y: 75 },
+    ],
+  };
+
+  return positions[value]?.map((pos, idx) => (
+    <Box
+      key={idx}
+      sx={{
+        position: 'absolute',
+        width: dotSize,
+        height: dotSize,
+        borderRadius: '50%',
+        bgcolor: 'common.white',
+        left: `${pos.x}%`,
+        top: `${pos.y}%`,
+        transform: 'translate(-50%, -50%)',
+        boxShadow: (theme) =>
+          `inset 0 1px 2px ${varAlpha(theme.vars.palette.common.blackChannel, 0.15)}`,
+      }}
+    />
+  ));
+}
 
 // ----------------------------------------------------------------------
 
@@ -26,7 +87,7 @@ type DiceIndicatorsProps = {
  * Renders clickable dice indicators next to a selected checker
  * Shows available move options for that checker
  */
-export function DiceIndicators({
+export const DiceIndicators = memo<DiceIndicatorsProps>(function DiceIndicators({
   availableDice,
   size,
   checkerSize,
@@ -34,7 +95,7 @@ export function DiceIndicators({
   isTopPoint,
   isRotated,
   onDiceClick,
-}: DiceIndicatorsProps) {
+}) {
   if (!isVisible || availableDice.length === 0) return null;
 
   const distance = 1; // Distance from checker center
@@ -115,64 +176,4 @@ export function DiceIndicators({
       })}
     </AnimatePresence>
   );
-}
-
-// ----------------------------------------------------------------------
-
-/**
- * Render dots for dice face (1-6)
- */
-function renderDiceDots(value: number, size: number) {
-  const dotSize = size * 0.2;
-  const positions: Record<number, Array<{ x: number; y: number }>> = {
-    1: [{ x: 50, y: 50 }],
-    2: [
-      { x: 30, y: 30 },
-      { x: 70, y: 70 },
-    ],
-    3: [
-      { x: 30, y: 30 },
-      { x: 50, y: 50 },
-      { x: 70, y: 70 },
-    ],
-    4: [
-      { x: 30, y: 30 },
-      { x: 70, y: 30 },
-      { x: 30, y: 70 },
-      { x: 70, y: 70 },
-    ],
-    5: [
-      { x: 30, y: 30 },
-      { x: 70, y: 30 },
-      { x: 50, y: 50 },
-      { x: 30, y: 70 },
-      { x: 70, y: 70 },
-    ],
-    6: [
-      { x: 30, y: 25 },
-      { x: 70, y: 25 },
-      { x: 30, y: 50 },
-      { x: 70, y: 50 },
-      { x: 30, y: 75 },
-      { x: 70, y: 75 },
-    ],
-  };
-
-  return positions[value]?.map((pos, idx) => (
-    <Box
-      key={idx}
-      sx={{
-        position: 'absolute',
-        width: dotSize,
-        height: dotSize,
-        borderRadius: '50%',
-        bgcolor: 'common.white',
-        left: `${pos.x}%`,
-        top: `${pos.y}%`,
-        transform: 'translate(-50%, -50%)',
-        boxShadow: (theme) =>
-          `inset 0 1px 2px ${varAlpha(theme.vars.palette.common.blackChannel, 0.15)}`,
-      }}
-    />
-  ));
-}
+});

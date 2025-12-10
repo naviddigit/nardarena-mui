@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import type { BoxProps } from '@mui/material/Box';
 
 import { m } from 'framer-motion';
@@ -7,6 +8,7 @@ import { m } from 'framer-motion';
 import Box from '@mui/material/Box';
 
 import { varAlpha } from 'src/theme/styles';
+import { useAnimationConfig } from 'src/utils/animation-config';
 
 import type { Player } from './types';
 import { DiceIndicators } from './dice-indicators';
@@ -29,7 +31,7 @@ type CheckerProps = BoxProps & {
 
 // ----------------------------------------------------------------------
 
-export function Checker({ 
+export const Checker = memo(function Checker({ 
   player, 
   size, 
   yPosition, 
@@ -45,32 +47,20 @@ export function Checker({
   ...other 
 }: CheckerProps) {
   const diceSize = size * 0.7;
+  const animConfig = useAnimationConfig();
 
   return (
     <Box
       component={m.div}
-      layout
+      layout={animConfig.checker.layout}
       layoutId={layoutId}
-      initial={{ opacity: 0, scale: 0.8 }}
+      initial={animConfig.checker.initial}
       animate={{ 
         opacity: 1,
         scale: 1,
       }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ 
-        type: 'spring', 
-        stiffness: 300,
-        damping: 30,
-        mass: 0.8,
-        opacity: { duration: 0.3 },
-        scale: { duration: 0.3 },
-        layout: { 
-          type: 'spring',
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8,
-        }
-      }}
+      exit={animConfig.checker.exit}
+      transition={animConfig.checker.transition}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
         onCheckerClick?.();
@@ -85,6 +75,10 @@ export function Checker({
         cursor: 'pointer',
         isolation: 'isolate',
         zIndex: 100,
+        // 🚀 GPU Acceleration برای performance بهتر
+        willChange: 'transform, opacity',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
         // White checkers
         ...(player === 'white' && {
           background: 'linear-gradient(135deg, #FFFFFF 0%, #c7c7c7ff 50%, #E8E8E8 100%)',
@@ -107,16 +101,19 @@ export function Checker({
               ? `0 0 20px 8px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.25)}, 0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`
               : `0 4px 12px ${varAlpha(theme.vars.palette.common.blackChannel, 0.5)}, inset -2px -2px 8px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.15)}, inset 2px 2px 4px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}`,
         }),
-        '&:hover': {
-          filter: 'brightness(1.1)',
-          boxShadow: (theme) => 
-            player === 'white'
-              ? `0 6px 20px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.9)}`
-              : `0 6px 20px ${varAlpha(theme.vars.palette.common.blackChannel, 0.7)}, inset -2px -2px 10px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.2)}`,
-        },
-        '&:active': {
-          filter: 'brightness(0.9)',
-        },
+        // Hover effects فقط برای دسکتاپ با performance بالا
+        ...(!animConfig.checker.disableHoverEffects && {
+          '&:hover': {
+            filter: 'brightness(1.1)',
+            boxShadow: (theme) => 
+              player === 'white'
+                ? `0 6px 20px ${varAlpha(theme.vars.palette.common.blackChannel, 0.3)}, inset 0 2px 4px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.9)}`
+                : `0 6px 20px ${varAlpha(theme.vars.palette.common.blackChannel, 0.7)}, inset -2px -2px 10px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.2)}`,
+          },
+          '&:active': {
+            filter: 'brightness(0.9)',
+          },
+        }),
         ...sx,
       }}
       {...other}
@@ -133,4 +130,4 @@ export function Checker({
       />
     </Box>
   );
-}
+});

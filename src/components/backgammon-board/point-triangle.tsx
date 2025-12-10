@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import type { BoxProps } from '@mui/material/Box';
 
 import Box from '@mui/material/Box';
@@ -20,7 +21,7 @@ const CLIP_PATHS = {
   up: 'polygon(50% 0, 0 100%, 100% 100%)',
 } as const;
 
-export function PointTriangle({
+export const PointTriangle = memo(function PointTriangle({
   color,
   direction,
   width,
@@ -46,4 +47,4 @@ export function PointTriangle({
       {...other}
     />
   );
-}
+});
