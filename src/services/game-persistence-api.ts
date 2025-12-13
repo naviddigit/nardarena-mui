@@ -218,6 +218,30 @@ class GamePersistenceAPI {
   }
 
   /**
+   * Start a new set (reset board and timers)
+   */
+  async startNewSet(gameId: string, winner: 'white' | 'black'): Promise<{
+    message: string;
+    winner: string;
+    nextRoll: { white: [number, number] | null; black: [number, number] | null };
+    timers: { white: number; black: number };
+    game: any;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/game/${gameId}/start-new-set`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ winner }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to start new set');
+    }
+
+    return response.json();
+  }
+
+  /**
    * Get game details
    */
   async getGame(gameId: string): Promise<GameResponse> {

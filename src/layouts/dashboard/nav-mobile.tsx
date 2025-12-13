@@ -13,8 +13,6 @@ import { Logo } from 'src/components/logo';
 import { Scrollbar } from 'src/components/scrollbar';
 import { NavSectionVertical } from 'src/components/nav-section';
 
-import { NavUpgrade } from '../components/nav-upgrade';
-
 // ----------------------------------------------------------------------
 
 type NavMobileProps = NavSectionProps & {
@@ -57,7 +55,6 @@ export function NavMobile({ data, open, onClose, slots, sx, ...other }: NavMobil
 
       <Scrollbar fillContent>
         <NavSectionVertical data={data} sx={{ px: 2, flex: '1 1 auto' }} {...other} />
-        <NavUpgrade />
       </Scrollbar>
 
       {slots?.bottomArea}

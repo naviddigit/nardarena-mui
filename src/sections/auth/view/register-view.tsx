@@ -281,6 +281,11 @@ export function RegisterView({ onSwitchToLogin }: Props) {
               size="large"
               variant="outlined"
               startIcon={<Iconify icon="flat-color-icons:google" />}
+              onClick={() => {
+                // Redirect to backend Google OAuth
+                const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3002';
+                window.location.href = `${baseUrl}/api/auth/google`;
+              }}
             >
               Sign up with Google
             </Button>

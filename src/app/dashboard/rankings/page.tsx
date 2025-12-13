@@ -1,4 +1,4 @@
-import { RankingsView } from 'src/sections/rankings/view';
+import RankingsView from 'src/sections/dashboard/rankings-view';
 
 // ----------------------------------------------------------------------
 

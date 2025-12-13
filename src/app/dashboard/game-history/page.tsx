@@ -1,4 +1,4 @@
-import { GameHistoryView } from 'src/sections/game-history/view';
+import GameHistoryView from 'src/sections/dashboard/game-history-view';
 
 // ----------------------------------------------------------------------
 

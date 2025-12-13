@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, cloneElement, isValidElement } from 'react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
@@ -10,6 +10,7 @@ import { LayoutGroup, AnimatePresence, m } from 'framer-motion';
 import { varAlpha } from 'src/theme/styles';
 import { useAnimationConfig } from 'src/utils/animation-config';
 import { useBoardTheme } from 'src/contexts/board-theme-context';
+import { BOARD_CONFIG, BOARD_ELEMENTS_CONFIG, MOVE_INDICATORS_CONFIG } from 'src/config/board-dimensions.config';
 
 import { Checker } from './checker';
 import { SplashScreen } from '../loading-screen';
@@ -19,49 +20,9 @@ import type { BackgammonBoardProps } from './types';
 
 // ----------------------------------------------------------------------
 
-// 📐 تنظیمات ابعاد اصلی تخته
-const BOARD_DIMENSIONS = {
-  ratio: 1.20,                    // نسبت عرض به ارتفاع تخته
-  height: {
-    desktop: 600,                 // ارتفاع تخته در دسکتاپ (px)
-    mobile: 500,                  // ارتفاع تخته در موبایل (px)
-    smallMobile: 420,             // ارتفاع تخته در موبایل کوچک (px)
-  },
-  padding: {
-    desktop: 16,                  // فاصله داخلی از کناره‌های تخته (px)
-    mobile: 12,                   // فاصله داخلی در موبایل (px)
-    smallMobile: 8,               // فاصله داخلی در موبایل کوچک (px)
-  },
-  triangleHeightRatio: 0.25,       // نسبت ارتفاع مثلث به ارتفاع جایگاه (80%)
-};
-
-// ⚙️ CONTROL PANEL - تنظیمات مرکزی (فقط اینجا تغییر بده!)
-const SCALE_CONFIG = {
-  // عرض جایگاه‌ها (Point Width Scale)
-  pointWidth: {
-    desktop: 0.9,    // 100% = عادی | مثال: 1.2 = 20% بزرگتر | 0.8 = 20% کوچکتر
-    mobile: 0.82,    // نسبت به desktop
-  },
-  // اندازه مهره‌ها (Checker Size Scale)
-  checkerSize: {
-    desktop: 0.9,   // نسبت به pointWidth | 0.85 = 85% عرض جایگاه
-    mobile: 0.9,     // نسبت به pointWidth
-  },
-  // فاصله بین مهره‌ها (Stack Spacing)
-  stackSpacing: {
-    desktop: 0.9,    // نسبت به pointWidth
-    mobile: 0.9,     // نسبت به pointWidth
-  },
-  // مهره‌های bar
-  barChecker: {
-    desktop: 0.7,    // نسبت به pointWidth
-    mobile: 0.6,    // نسبت به pointWidth
-  },
-  // عرض bar وسطی (10% کوچک‌تر از pointWidth)
-  barWidth: 0.9,
-  // ارتفاع مثلث‌ها (Triangle Height)
-  // triangleHeight: 240, // px - ارتفاع ثابت مثلث‌ها
-};
+// استفاده از تنظیمات مرکزی (برای تغییر ابعاد به src/config/board-dimensions.config.ts برو)
+const BOARD_DIMENSIONS = BOARD_CONFIG;
+const SCALE_CONFIG = BOARD_ELEMENTS_CONFIG;
 
 // ----------------------------------------------------------------------
 
@@ -89,8 +50,16 @@ export function BackgammonBoard({
   const diceValues = validMoves?.map(m => m.die) || [];
   const uniqueDiceValues = new Set(diceValues);
   const isDoubles = uniqueDiceValues.size === 1 && diceValues.length > 1;
+  
+  // 📱 تشخیص سایز صفحه
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // 📱 تشخیص گوشی‌های خیلی کوچک (iPhone SE: 375px, iPhone 12/13 mini: 390px)
+  // iPhone Pro Max: 430px
+  const isVerySmallMobile = useMediaQuery('(max-width:400px)');
+  
   const [mounted, setMounted] = useState(false);
 
   // Calculate playable points (points with checkers that can move)
@@ -308,13 +277,21 @@ export function BackgammonBoard({
     return newIds;
   }, [boardState, displayOffCounts]);
 
-  // 📏 محاسبه ابعاد تخته بر اساس BOARD_DIMENSIONS
-  const boardHeight = isSmallMobile 
-    ? BOARD_DIMENSIONS.height.smallMobile 
-    : isMobile 
-      ? BOARD_DIMENSIONS.height.mobile 
-      : BOARD_DIMENSIONS.height.desktop;
+  // 📏 محاسبه ابعاد تخته با Scale Factor (نسبت ثابت)
+  // تشخیص سایز دستگاه و انتخاب Scale مناسب
+  const currentScale = isVerySmallMobile 
+    ? BOARD_DIMENSIONS.scale.smallMobile  // گوشی‌های خیلی کوچک (SE: 375px)
+    : isSmallMobile
+      ? BOARD_DIMENSIONS.scale.mobile     // گوشی‌های متوسط (Pro Max: 430px)
+      : isTablet
+        ? BOARD_DIMENSIONS.scale.tablet   // تبلت
+        : BOARD_DIMENSIONS.scale.desktop; // دسکتاپ
+  
+  // محاسبه ابعاد با Scale Factor
+  const boardHeight = BOARD_DIMENSIONS.baseHeight * currentScale;
   const boardWidth = boardHeight * BOARD_DIMENSIONS.ratio;
+  
+  // Padding نسبی به Scale
   const padding = isSmallMobile 
     ? BOARD_DIMENSIONS.padding.smallMobile 
     : isMobile 
@@ -380,15 +357,15 @@ export function BackgammonBoard({
           <Box
             sx={{
               position: 'absolute',
-              top: '50%',
+              top: `calc(50% + ${(isTop ? 1 : -1) * MOVE_INDICATORS_CONFIG.validDestination.verticalOffset * pointWidth}px)`,
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: pointWidth * 0.4,
-              height: pointWidth * 0.4,
+              width: pointWidth * MOVE_INDICATORS_CONFIG.validDestination.size,
+              height: pointWidth * MOVE_INDICATORS_CONFIG.validDestination.size,
               borderRadius: '50%',
-              border: '3px solid',
+              border: `${MOVE_INDICATORS_CONFIG.validDestination.borderWidth} solid`,
               borderColor: theme.vars.palette.success.main,
-              bgcolor: varAlpha(theme.vars.palette.success.mainChannel, 0.1),
+              bgcolor: varAlpha(theme.vars.palette.success.mainChannel, MOVE_INDICATORS_CONFIG.validDestination.backgroundOpacity),
               zIndex: 5,
               pointerEvents: 'none',
             }}
@@ -396,7 +373,7 @@ export function BackgammonBoard({
         )}
 
         {/* Render checkers - max 5 visible with count label if more */}
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
         {(() => {
           const point = boardState.points[pointIndex];
           // ✅ Safety check: ensure point and checkers array exist
@@ -929,7 +906,14 @@ export function BackgammonBoard({
             ...dicePosition,
           }}
         >
-          {diceRoller}
+          {/* Pass boardScale and boardHeight to DiceRoller component */}
+          {isValidElement(diceRoller) 
+            ? cloneElement(diceRoller as React.ReactElement<any>, { 
+                boardScale: currentScale,
+                boardHeight: boardHeight 
+              })
+            : diceRoller
+          }
         </Box>
       )}
       </LayoutGroup>

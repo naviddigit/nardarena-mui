@@ -195,6 +195,11 @@ export function LoginView({ onSwitchToRegister, onSwitchToReset }: Props) {
             size={isMobile ? 'medium' : 'large'}
             variant="outlined"
             startIcon={<Iconify icon="flat-color-icons:google" width={isMobile ? 18 : 20} />}
+            onClick={() => {
+              // Redirect to backend Google OAuth
+              const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3002';
+              window.location.href = `${baseUrl}/api/auth/google`;
+            }}
             sx={{
               borderColor: alpha(theme.palette.grey[500], 0.2),
               '&:hover': {

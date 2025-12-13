@@ -165,6 +165,24 @@ class AdminAPIService {
     const response = await axios.put(`/api/admin/users/${userId}/password`, { newPassword });
     return response.data;
   }
+
+  /**
+   * Get detailed user info (device, location, login history)
+   */
+  async getUserDetails(userId: string): Promise<any> {
+    const response = await axios.get(`/api/admin/users/${userId}/details`);
+    return response.data;
+  }
+
+  /**
+   * Get user login history
+   */
+  async getUserLoginHistory(userId: string, limit = 50): Promise<any[]> {
+    const response = await axios.get(`/api/admin/users/${userId}/login-history`, {
+      params: { limit },
+    });
+    return response.data;
+  }
 }
 
 // Singleton instance

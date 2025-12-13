@@ -133,6 +133,7 @@ import { GameResultDialog } from 'src/components/game-result-dialog';
 import { ColorSelectionDialog } from 'src/components/color-selection-dialog';
 import { BackgammonBoard, type BoardState } from 'src/components/backgammon-board';
 import { GameSettingsDrawer } from 'src/components/game-settings-drawer';
+import { DICE_CONFIG } from 'src/config/board-dimensions.config';
 import { DevHotkeys } from 'src/components/dev-hotkeys';
 import { BackgroundPattern } from 'src/components/background-pattern';
 
@@ -298,6 +299,7 @@ function GameAIPageContent() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isVerySmallMobile = useMediaQuery('(max-width:400px)'); // iPhone SE و گوشی‌های خیلی کوچک
   const diceRollerRef = useRef<any>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [isWaitingForBackend, setIsWaitingForBackend] = useState(false); // NEW: prevent multiple rolls
@@ -402,8 +404,8 @@ function GameAIPageContent() {
     enabled: !!backendGameId && !!user,
     onGameStateUpdate: (gameState: any) => {
       debugLog.socket('[Socket] Game state update received', gameState);
-      // Update local state from server (real-time sync)
-      // TODO: Integrate with setGameState
+      // Real-time sync via Socket.IO (for PvP mode)
+      // AI mode uses polling instead
     },
     onOpponentMove: (moveData: any) => {
       debugLog.socket('[Socket] Opponent move received', moveData);
@@ -1529,19 +1531,28 @@ function GameAIPageContent() {
                 diceRollerRef.current.clearDice();
               }
               
-              // ✅ Reset timer values for new set - READ FROM BACKEND
+              // ⏱️ CRITICAL: Reset timers in backend (fixes timer bug)
               let newWhiteTime = gameTimeControl;
               let newBlackTime = gameTimeControl;
               
               if (backendGameId) {
                 try {
-                  const game = await gamePersistenceAPI.getGame(backendGameId);
-                  const dbTimeControl = (game as any).timeControl || gameTimeControl;
-                  newWhiteTime = dbTimeControl;
-                  newBlackTime = dbTimeControl;
-                  debugLog.timerRestore('Timer reset for new set:', { timeControl: dbTimeControl });
+                  // 🔧 Call backend to reset timers and board
+                  const result = await gamePersistenceAPI.startNewSet(backendGameId, currentSetWinner);
+                  newWhiteTime = result.timers.white;
+                  newBlackTime = result.timers.black;
+                  debugLog.timerRestore('Backend reset timers for new set:', result.timers);
                 } catch (error) {
-                  debugLog.warn('Failed to fetch timer values, using state:', error);
+                  debugLog.warn('Failed to reset timers in backend, using state:', error);
+                  // Fallback to reading from game
+                  try {
+                    const game = await gamePersistenceAPI.getGame(backendGameId);
+                    const dbTimeControl = (game as any).timeControl || gameTimeControl;
+                    newWhiteTime = dbTimeControl;
+                    newBlackTime = dbTimeControl;
+                  } catch (err) {
+                    debugLog.warn('Failed to fetch game, using default timeControl');
+                  }
                 }
               }
               
@@ -2149,12 +2160,12 @@ function GameAIPageContent() {
   // Determine dice notation based on game phase
   const diceNotation = gameState.gamePhase === 'opening' ? '1d6' : '2d6';
 
-  // Responsive dice position
-  const dicePosition = isSmallMobile 
-    ? { top: 155, left: 0 } 
-    : isMobile 
-      ? { top: 210, left: 0 } 
-      : { top: 230, left: 0 };
+  // Responsive dice position (از config مرکزی)
+  const dicePosition = isVerySmallMobile 
+    ? DICE_CONFIG.position.smallMobile    // iPhone SE (375px)
+    : isSmallMobile 
+      ? DICE_CONFIG.position.mobile       // iPhone Pro Max (430px)
+      : DICE_CONFIG.position.desktop;     // دسکتاپ و تبلت
 
   if (loading) {
     return (
@@ -2178,6 +2189,7 @@ function GameAIPageContent() {
       <ColorSelectionDialog
         open
         onSelectColor={handleColorSelect}
+        onCancel={() => router.push('/dashboard')}
       />
     );
   }

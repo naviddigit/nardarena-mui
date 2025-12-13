@@ -27,6 +27,7 @@ import { adminAPI } from 'src/services/admin-api';
 
 import { AdminUserQuickEditForm } from './admin-user-quick-edit-form';
 import { AdminResetPasswordForm } from './admin-reset-password-form';
+import { AdminUserDetailsDialog } from './admin-user-details-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -60,6 +61,7 @@ export function AdminUserTableRow({ row, selected, onSelectRow, onRefresh }: Pro
   const popover = usePopover();
   const quickEdit = useBoolean();
   const resetPassword = useBoolean();
+  const viewDetails = useBoolean();
 
   const handleDelete = async () => {
     try {
@@ -200,6 +202,15 @@ export function AdminUserTableRow({ row, selected, onSelectRow, onRefresh }: Pro
 
         <TableCell>
           <Stack direction="row" alignItems="center">
+            <Tooltip title="User Report" placement="top" arrow>
+              <IconButton
+                color="primary"
+                onClick={viewDetails.onTrue}
+              >
+                <Iconify icon="solar:document-text-bold" />
+              </IconButton>
+            </Tooltip>
+
             <Tooltip title="Quick Edit" placement="top" arrow>
               <IconButton
                 color={quickEdit.value ? 'inherit' : 'default'}
@@ -229,6 +240,12 @@ export function AdminUserTableRow({ row, selected, onSelectRow, onRefresh }: Pro
         onClose={resetPassword.onFalse}
       />
 
+      <AdminUserDetailsDialog
+        user={row}
+        open={viewDetails.value}
+        onClose={viewDetails.onFalse}
+      />
+
       <CustomPopover
         open={popover.open}
         anchorEl={popover.anchorEl}
@@ -236,6 +253,16 @@ export function AdminUserTableRow({ row, selected, onSelectRow, onRefresh }: Pro
         slotProps={{ arrow: { placement: 'right-top' } }}
       >
         <MenuList>
+          <MenuItem
+            onClick={() => {
+              viewDetails.onTrue();
+              popover.onClose();
+            }}
+          >
+            <Iconify icon="solar:document-text-bold" />
+            User Report
+          </MenuItem>
+
           <MenuItem
             onClick={() => {
               quickEdit.onTrue();

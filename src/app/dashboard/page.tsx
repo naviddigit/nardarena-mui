@@ -1,4 +1,4 @@
-import DashboardView from 'src/sections/dashboard/view';
+import DashboardHomeView from 'src/sections/dashboard/home-view';
 
 // ----------------------------------------------------------------------
 
@@ -7,5 +7,5 @@ export const metadata = {
 };
 
 export default function DashboardPage() {
-  return <DashboardView />;
+  return <DashboardHomeView />;
 }

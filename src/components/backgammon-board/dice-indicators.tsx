@@ -9,6 +9,8 @@ import Box from '@mui/material/Box';
 
 import { varAlpha } from 'src/theme/styles';
 
+import { MOVE_INDICATORS_CONFIG } from 'src/config/board-dimensions.config';
+
 // ----------------------------------------------------------------------
 
 /**
@@ -98,18 +100,20 @@ export const DiceIndicators = memo<DiceIndicatorsProps>(function DiceIndicators(
 }) {
   if (!isVisible || availableDice.length === 0) return null;
 
-  const distance = 1; // Distance from checker center
+  const distanceTop = MOVE_INDICATORS_CONFIG.diceIndicators.distanceTop;
+  const distanceBottom = MOVE_INDICATORS_CONFIG.diceIndicators.distanceBottom;
+  const spacing = MOVE_INDICATORS_CONFIG.diceIndicators.horizontalSpacing;
 
-  // For top points: south-west and south-east
-  // For bottom points: north-west and north-east
+  // For top points: south-west and south-east (تاس‌ها پایین میفتن)
+  // For bottom points: north-west and north-east (تاس‌ها بالا میفتن)
   const dicePositions = isTopPoint
     ? [
-        { x: -0.7, y: distance }, // South-west (جنوب غربی)
-        { x: 0.7, y: distance }, // South-east (جنوب شرقی)
+        { x: -spacing, y: distanceTop }, // South-west (جنوب غربی)
+        { x: spacing, y: distanceTop }, // South-east (جنوب شرقی)
       ]
     : [
-        { x: -0.7, y: -distance }, // North-west (شمال غربی)
-        { x: 0.7, y: -distance }, // North-east (شمال شرقی)
+        { x: -spacing, y: -distanceBottom }, // North-west (شمال غربی)
+        { x: spacing, y: -distanceBottom }, // North-east (شمال شرقی)
       ];
 
   return (

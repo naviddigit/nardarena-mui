@@ -1,4 +1,4 @@
-import { DepositView } from 'src/sections/dashboard/deposit';
+import DepositView from 'src/sections/dashboard/deposit-view';
 
 // ----------------------------------------------------------------------
 

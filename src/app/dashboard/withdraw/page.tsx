@@ -1,4 +1,4 @@
-import { WithdrawView } from 'src/sections/dashboard/withdraw';
+import WithdrawView from 'src/sections/dashboard/withdraw-view';
 
 // ----------------------------------------------------------------------
 

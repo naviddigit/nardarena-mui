@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 
 import { varAlpha } from 'src/theme/styles';
 import { useAnimationConfig } from 'src/utils/animation-config';
+import { MOVE_INDICATORS_CONFIG } from 'src/config/board-dimensions.config';
 
 import type { Player } from './types';
 import { DiceIndicators } from './dice-indicators';
@@ -46,7 +47,7 @@ export const Checker = memo(function Checker({
   sx, 
   ...other 
 }: CheckerProps) {
-  const diceSize = size * 0.7;
+  const diceSize = size * MOVE_INDICATORS_CONFIG.diceIndicators.size;
   const animConfig = useAnimationConfig();
 
   return (

@@ -19,6 +19,8 @@ import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
+import { DICE_CONFIG } from 'src/config/board-dimensions.config';
+
 export type DiceResult = {
   value: number;
   type: string;
@@ -29,6 +31,8 @@ type DiceRollerProps = {
   onRollComplete?: (results: DiceResult[]) => void;
   initialDiceValues?: number[];
   currentPlayer?: 'white' | 'black'; // جهت پرتاب تاس بر اساس بازیکن
+  boardScale?: number; // 📐 Scale Factor از تخته (برای responsive شدن)
+  boardHeight?: number; // 📏 ارتفاع واقعی تخته
 };
 
 declare global {
@@ -41,7 +45,7 @@ declare global {
 }
 
 export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerComponent(
-  { diceNotation = '2d6', onRollComplete, initialDiceValues, currentPlayer = 'white' },
+  { diceNotation = '2d6', onRollComplete, initialDiceValues, currentPlayer = 'white', boardScale = 1.0, boardHeight },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,9 +60,25 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // Responsive sizes - container and canvas should match to prevent overflow
-  const containerSize = isMobile ? 150 : 170;
-  const canvasWidth = isMobile ? 180 : 260;
+  // 📐 محاسبه سایز بر اساس ارتفاع واقعی تخته (از config مرکزی)
+  let containerSize: number;
+  let canvasWidth: number;
+  let canvasHeight: number;
+  
+  if (boardHeight) {
+    // استفاده از ارتفاع واقعی تخته و تنظیمات از config
+    containerSize = Math.round(boardHeight * DICE_CONFIG.sizeRatio);
+    canvasWidth = Math.round(containerSize * DICE_CONFIG.canvasWidthRatio);
+    canvasHeight = containerSize;
+  } else {
+    // Fallback به روش قبلی
+    const baseContainerSize = 170;
+    const baseCanvasWidth = 260;
+    const finalScale = boardScale * DICE_CONFIG.mobileScale;
+    containerSize = Math.round(baseContainerSize * finalScale);
+    canvasWidth = Math.round(baseCanvasWidth * finalScale);
+    canvasHeight = Math.round(baseContainerSize * finalScale);
+  }
   useEffect(() => {
     let mounted = true;
     let initTimeout: NodeJS.Timeout;
@@ -733,12 +753,18 @@ export const DiceRoller = forwardRef<any, DiceRollerProps>(function DiceRollerCo
   }));
 
   return (
-    <Box sx={{ position: 'relative', width: containerSize, height: containerSize }}>
+    <Box 
+      sx={{ 
+        position: 'relative', 
+        width: containerSize, 
+        height: containerSize,
+      }}
+    >
       <Box
         ref={containerRef}
         sx={{
           width: canvasWidth,
-          height: '100%',
+          height: canvasHeight,
           borderRadius: 2,
           overflow: 'hidden',
           '& canvas': {
